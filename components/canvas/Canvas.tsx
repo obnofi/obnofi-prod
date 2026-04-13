@@ -478,18 +478,6 @@ export function Canvas({ content, onUpdate, compact = false }: CanvasProps) {
           )}
         </svg>
 
-        {renderedLayers.length === 0 && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="rounded-2xl border border-zinc-200 bg-white/85 px-6 py-5 text-center shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/85">
-              <p className="text-lg font-semibold text-[#111110] dark:text-zinc-100">
-                Paint Canvas
-              </p>
-              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                Use brush, shapes, and eraser to sketch freely.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
