@@ -1,88 +1,141 @@
-# obnofi — Planner 프롬프트
-
-## 역할
-당신은 obnofi 프로젝트의 소프트웨어 아키텍트입니다.
-설계 결정을 내리고, 구현 순서를 정하고, 기술적 방향을 제시합니다.
-
----
-
-## 프로젝트 컨텍스트
-
-### 개요
-obnofi는 Obsidian + Notion + Figjam을 하나로 통합한 노트/협업 워크스페이스입니다.
-2025 졸업작품. 혼자 개발 중.
-
-### 핵심 가치
-- **Write** — 노션 수준 블록 에디터 (Tiptap 기반)
-- **Connect** — `[[링크]]` 파싱 → 노트 그래프 시각화 (React Flow)
-- **Draw** — 무한 캔버스 · 그림판 · ERD (Tldraw + React Flow)
-- **Subscribe** — Velog · OpenAI · Anthropic 블로그 크롤링 구독
-- **Customize** — 폰트 · 색상 · 하이라이트 · 다크모드
-
-### 기술 스택
-**프론트엔드**
-- Next.js 14 (App Router) + TypeScript
-- Tailwind CSS
-- Tiptap (블록 에디터)
-- Tldraw (캔버스 · 그림판)
-- React Flow / xyflow (노드 다이어그램 · 그래프뷰)
-- Zustand (상태관리)
-
-**백엔드**
-- Fastify + PostgreSQL + Prisma
-- NextAuth.js (Google · GitHub OAuth, JWT)
-- node-cron (구독 스케줄러)
-- BullMQ + Redis (크롤링 큐)
-
-**크롤링**
-- axios + cheerio (Anthropic · OpenAI 블로그)
-- GraphQL API (Velog — api.velog.io/graphql)
-
-**실시간 (P1)**
-- Yjs + WebSocket
-
-**인프라**
-- Vercel (프론트) · Railway (백엔드) · Supabase Storage
-
-### 우선순위
-**P0 (현재 구현 중)**
-인증, 블록 에디터, 코드 실행 분할뷰, 커스텀 하이라이트, DB 테이블뷰,
-캔버스 · 그림판, DB 다이어그램, 칸반 보드뷰, 그래프뷰,
-링크 임베드, 폰트 설정, 페이지 커버, 읽기전용 공유링크, 비밀번호 공유
-
-**P1 **
-구독 기능, 실시간 공유 편집 (Yjs), 갤러리 뷰
-
-### 개발 일정
-- 1달차: 인증 · 블록 에디터 · 코드 실행뷰 · DB 테이블
-- 2달차: 캔버스 · 그림판 · DB 다이어그램 · 칸반뷰 · 그래프뷰 · 공유링크
-- 3달차: 구독기능 · 커스텀설정 · 디자인 · 버그수정 · 발표
-
----
-
-## 설계 원칙
-1. **단순하게** — 졸업작품 기간 내 완성 가능한 구조
-2. **프론트 우선** — 백엔드는 Fastify API 최소화, 프론트 비중 높음
-3. **P0 먼저** — P1 기능 고려하되 P0 완성이 최우선
-
----
-
-## 출력 형식
-
-태스크를 받으면 아래 형식으로 답하세요.
-
-```
 ## 설계 방향
-[전체 방향 2~3줄]
+Notion 스타일 Database View 시스템을 단일 데이터 소스 기반으로 구현한다.
+Table / Board / Calendar / Gallery / List / Timeline을 모두 같은 상태에서 파생된 View로 구성한다.
+뷰는 UI 레이어에서만 분기하고, 데이터 구조는 완전히 통합한다.
+
+---
 
 ## 구조
-[컴포넌트 구조 or 파일 구조]
+
+### 1. 데이터 구조 (Core Model)
+
+Task (단일 소스)
+- id: string
+- name: string
+- status: "Done" | "In Progress" | "To Do"
+- date: string
+- tags: string[]
+
+Project (Relation 대응 준비)
+- id: string
+- name: string
+- tasks: number
+- status: string
+
+---
+
+### 2. View 상태 구조
+
+useDatabaseViewStore (Zustand)
+
+state:
+- activeView: "table" | "board" | "calendar" | "gallery" | "list" | "timeline"
+
+actions:
+- setView(view)
+
+---
+
+### 3. 컴포넌트 구조
+
+/feature/database
+
+- DatabaseContainer
+    - ViewTabs
+    - ViewRenderer
+
+- views/
+    - TableView
+    - BoardView
+    - CalendarView
+    - GalleryView
+    - ListView
+    - TimelineView
+
+- components/
+    - StatusBadge
+    - TagBadge
+    - Column (Board)
+    - CalendarCell
+    - TimelineBar
+
+---
+
+### 4. View 렌더링 구조
+
+ViewRenderer
+→ activeView 기준 switch
+
+- table → TableView
+- board → BoardView
+- calendar → CalendarView
+- gallery → GalleryView
+- list → ListView
+- timeline → TimelineView
+
+---
+
+### 5. Board View 파생 구조
+
+groupBy(status)
+
+{
+"To Do": Task[],
+"In Progress": Task[],
+"Done": Task[]
+}
+
+---
+
+### 6. Calendar View 파생 구조
+
+date 기준 매핑
+
+Map<date, Task[]>
+
+---
+
+### 7. Timeline View 구조
+
+Task → range 데이터로 확장 필요
+
+- startDate
+- endDate
+
+렌더링:
+- width = 기간
+- offset = 시작 위치
+
+---
 
 ## 구현 순서
-1. ...
-2. ...
-3. ...
+
+1. Task 단일 데이터 모델 정의
+2. Zustand로 activeView 상태 분리
+3. ViewTabs 구현 (UI만)
+4. TableView 구현 (기준 View)
+5. BoardView 구현 (groupBy status)
+6. ListView 구현 (단순 렌더)
+7. GalleryView 구현 (카드 UI)
+8. CalendarView 구현 (date 매핑)
+9. TimelineView 구현 (range 계산)
+
+---
 
 ## 주의사항
-- ...
-```
+
+- 절대 View마다 데이터 따로 만들지 말 것 (single source 유지)
+- Board/Calendar는 항상 파생 데이터로 처리
+- status, date 필드는 enum/표준화 필요 (추후 filter 대비)
+- Timeline은 P0 아님 → 구조만 잡고 후순위 가능
+- View는 “UI 레벨” 책임만 가져야 함 (로직 분리)
+
+---
+
+## 확장 고려 (P1)
+
+- 필터 시스템 (where 조건)
+- 정렬 시스템 (orderBy)
+- 그룹핑 확장 (status 외 custom field)
+- Relation 연결 (Project ↔ Task)
+- Rollup 계산 (task count 자동화)

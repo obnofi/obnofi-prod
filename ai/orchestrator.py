@@ -10,6 +10,7 @@ import tempfile
 import time
 from pathlib import Path
 
+import httpx
 from google.genai import errors as genai_errors
 
 # ── 환경변수 로드 ──────────────────────────────────────────────
@@ -25,7 +26,7 @@ GEMINI_MODEL  = os.environ.get("GEMINI_MODEL", "gemini-2.5-pro")
 GEMINI_FALLBACK_MODEL = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
 KIMI_CMD      = os.environ.get("KIMI_CMD", "").strip()
 CODEX_CMD     = os.environ.get("CODEX_CMD", "codex").strip()
-CLAUDE_CMD    = os.environ.get("CLAUDE_CMD", "claude").strip()
+GEMINI_CLI_CMD = os.environ.get("GEMINI_CLI_CMD", "gemini").strip()
 
 PROMPTS = Path(__file__).parent / "prompts"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -70,16 +71,16 @@ def resolve_codex_command() -> list[str]:
     print("   `codex`를 설치하거나, .env에 CODEX_CMD=실행명 형식으로 지정하세요.")
     sys.exit(1)
 
-def resolve_claude_command() -> list[str]:
-    parts = shlex.split(CLAUDE_CMD)
+def resolve_gemini_cli_command() -> list[str]:
+    parts = shlex.split(GEMINI_CLI_CMD)
     if parts and shutil.which(parts[0]):
         return parts
-    print(f"❌ Claude CLI를 찾을 수 없습니다: {CLAUDE_CMD}")
-    print("   `claude`를 설치하거나, .env에 CLAUDE_CMD=실행명 형식으로 지정하세요.")
+    print(f"❌ Gemini CLI를 찾을 수 없습니다: {GEMINI_CLI_CMD}")
+    print("   `gemini`를 설치하거나, .env에 GEMINI_CLI_CMD=실행명 형식으로 지정하세요.")
     sys.exit(1)
 
-def run_codex_fallback(prompt: str) -> str:
-    separator("💻 Fallback Coder — Codex")
+def run_codex_fallback(prompt: str, title: str = "💻 Fallback — Codex") -> str:
+    separator(title)
     codex_cmd = resolve_codex_command()
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".txt", delete=False) as f:
         output_path = f.name
@@ -109,19 +110,39 @@ def run_codex_fallback(prompt: str) -> str:
     if result.returncode != 0:
         print("❌ Codex 폴백 실행 실패")
         print(f"   종료 코드: {result.returncode}")
-        print(((result.stdout or "") + (("\n" + result.stderr) if result.stderr else "")).strip())
+        output = ((result.stdout or "") + (("\n" + result.stderr) if result.stderr else "")).strip()
+        if "/.codex/sessions" in output and "permission denied" in output.lower():
+            print("   원인: Codex 세션 디렉터리 권한 문제")
+            print("   해결: sudo chown -R $(whoami) ~/.codex")
+        print(output)
         sys.exit(1)
     output = final_output or result.stdout or result.stderr
     print(output)
     return output
+
+def planner_fallback(prompt: str, reason: str) -> str:
+    print(f"🔁 Planner를 Codex로 폴백합니다.")
+    print(f"   사유: {reason}")
+    return run_codex_fallback(prompt, "💻 Fallback Planner — Codex")
+
+def reviewer_fallback(prompt: str, reason: str) -> tuple[str, bool]:
+    print(f"🔁 Reviewer를 Codex로 폴백합니다.")
+    print(f"   사유: {reason}")
+    output = run_codex_fallback(prompt, "💻 Fallback Reviewer — Codex")
+    has_critical = "critical" in output.lower() and "없음" not in output.lower()
+    return output, has_critical
 
 # ── Planner (Gemini) ───────────────────────────────────────────
 def plan(task: str) -> str:
     from google import genai
 
     separator("🧠 Planner — Gemini")
-    client = genai.Client(api_key=require_env("GEMINI_API_KEY", "Planner"))
     prompt = read_prompt("planner") + f"\n\n## 태스크\n{task}"
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return planner_fallback(prompt, "GEMINI_API_KEY가 없어 Gemini Planner를 사용할 수 없습니다.")
+
+    client = genai.Client(api_key=api_key)
     models_to_try = [GEMINI_MODEL]
     if GEMINI_FALLBACK_MODEL and GEMINI_FALLBACK_MODEL != GEMINI_MODEL:
         models_to_try.append(GEMINI_FALLBACK_MODEL)
@@ -157,12 +178,16 @@ def plan(task: str) -> str:
                 if model_name == GEMINI_MODEL and len(models_to_try) > 1:
                     print(f"   다음 모델로 폴백합니다: {GEMINI_FALLBACK_MODEL}")
                     break
-                sys.exit(1)
+                return planner_fallback(prompt, f"Gemini 요청 실패: {exc}")
+            except httpx.ConnectError as exc:
+                return planner_fallback(prompt, f"Gemini API 네트워크 연결 실패: {exc}")
+            except httpx.RequestError as exc:
+                return planner_fallback(prompt, f"Gemini API 요청 오류: {exc}")
 
-    print("❌ Planner 실행 실패")
-    print(f"   시도한 모델: {', '.join(models_to_try)}")
-    print("   Gemini 고부하(503) 또는 모델 설정 문제로 Planner를 완료하지 못했습니다.")
-    sys.exit(1)
+    return planner_fallback(
+        prompt,
+        f"Gemini Planner 실행 실패. 시도한 모델: {', '.join(models_to_try)}"
+    )
 
 # ── Coder (Kimi CLI) ───────────────────────────────────────────
 def code(plan_result: str, task: str) -> str:
@@ -190,25 +215,29 @@ def code(plan_result: str, task: str) -> str:
     print(output)
     return output
 
-# ── Reviewer (Claude Code CLI) ────────────────────────────────
+# ── Reviewer (Gemini CLI) ─────────────────────────────────────
 def review(code_result: str) -> tuple[str, bool]:
-    separator("🔍 Reviewer — Claude Sonnet 4.6")
+    separator("🔍 Reviewer — Gemini")
     prompt = read_prompt("reviewer") + f"\n\n## 리뷰할 코드\n{code_result}"
-    claude_cmd = resolve_claude_command()
+    try:
+        gemini_cmd = resolve_gemini_cli_command()
+    except SystemExit:
+        return reviewer_fallback(prompt, "Gemini CLI를 찾을 수 없습니다.")
+
     result = subprocess.run(
-        [*claude_cmd, "-p", prompt],
+        [*gemini_cmd, "-p", prompt],
         capture_output=True,
         text=True,
         cwd=PROJECT_ROOT,
     )
     if result.returncode != 0:
-        print("❌ Claude 실행 실패")
+        print("❌ Gemini 실행 실패")
         print(f"   종료 코드: {result.returncode}")
         output = (result.stdout or "") + (("\n" + result.stderr) if result.stderr else "")
         if "not logged in" in output.lower() or "/login" in output.lower():
-            print("   원인: Claude Code CLI 로그인 필요")
+            print("   원인: Gemini CLI 로그인 필요")
         print(output.strip())
-        sys.exit(1)
+        return reviewer_fallback(prompt, f"Gemini CLI 실행 실패 (exit {result.returncode})")
     output = (result.stdout or result.stderr).strip()
     print(output)
     has_critical = "critical" in output.lower() and "없음" not in output.lower()
@@ -251,7 +280,7 @@ def pipeline(task: str, max_retry: int = 2):
     # 3. Playwright
     passed, test_output = test()
     if not passed:
-        separator("🔁 테스트 실패 → Claude 재리뷰")
+        separator("🔁 테스트 실패 → Gemini 재리뷰")
         review_result, _ = review(code_result + "\n\n## 테스트 실패 로그\n" + test_output)
 
     separator("🏁 파이프라인 완료")

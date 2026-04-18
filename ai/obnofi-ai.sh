@@ -32,15 +32,15 @@ print(response.text)
     ;;
 
   review)
-    echo "🔍 Reviewer: Claude"
-    claude -p "$TASK"
+    echo "🔍 Reviewer: Gemini"
+    gemini -p "$TASK"
     ;;
 
   test)
     echo "🧪 Playwright E2E 테스트"
     npx playwright test
     if [ $? -ne 0 ]; then
-      echo "❌ 테스트 실패 → Claude 재리뷰"
+      echo "❌ 테스트 실패 → Gemini 재리뷰"
       ./ai/obnofi-ai.sh "$(cat playwright-report/results.json)" review
     else
       echo "✅ 테스트 통과"
@@ -63,7 +63,7 @@ print(response.text)
     echo "  ./ai/obnofi-ai.sh [task] plan        → Gemini 설계"
     echo "  ./ai/obnofi-ai.sh [task] code-front  → Kimi 프론트 코딩"
     echo "  ./ai/obnofi-ai.sh [task] code-back   → Codex 백엔드 코딩"
-    echo "  ./ai/obnofi-ai.sh [task] review      → Claude 리뷰"
+    echo "  ./ai/obnofi-ai.sh [task] review      → Gemini 리뷰"
     echo "  ./ai/obnofi-ai.sh [task] test        → Playwright E2E"
     echo "  ./ai/obnofi-ai.sh [task] all         → 전체 파이프라인"
     ;;
