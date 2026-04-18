@@ -19,6 +19,8 @@ import {
 import "@xyflow/react/dist/style.css";
 import { ArrowLeft, Loader2, Orbit, Plus, Trash2 } from "lucide-react";
 import { CustomNoteNode } from "@/components/graph/CustomNoteNode";
+import { CustomDatabaseNode } from "@/components/graph/CustomDatabaseNode";
+import { DatabaseViewModal } from "@/components/database/DatabaseViewModal";
 import { Sidebar } from "@/components/sidebar/Sidebar";
 import { buildGraphData, type GraphEdge, type GraphNode } from "@/lib/graph-utils";
 import { Page } from "@/types";
@@ -29,6 +31,7 @@ interface WorkspaceGraphPageProps {
 
 const nodeTypes: NodeTypes = {
   customNote: CustomNoteNode,
+  customDatabase: CustomDatabaseNode,
 };
 
 function WorkspaceGraphCanvas({ workspaceId }: WorkspaceGraphPageProps) {
@@ -178,58 +181,61 @@ function WorkspaceGraphCanvas({ workspaceId }: WorkspaceGraphPageProps) {
               </div>
             </div>
           ) : (
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              nodeTypes={nodeTypes}
-              fitView
-              fitViewOptions={{ padding: 0.2 }}
-              minZoom={0.2}
-              maxZoom={1.5}
-              nodesDraggable
-              nodesConnectable
-              elementsSelectable
-              deleteKeyCode={["Backspace", "Delete"]}
-              connectionLineType={ConnectionLineType.SmoothStep}
-              defaultEdgeOptions={{
-                animated: false,
-                style: { stroke: "#94a3b8", strokeWidth: 1.25 },
-              }}
-              className="bg-[radial-gradient(circle_at_top,_rgba(46,125,69,0.08),_transparent_35%),linear-gradient(180deg,rgba(248,250,252,1)_0%,rgba(255,255,255,1)_100%)] dark:bg-[radial-gradient(circle_at_top,_rgba(46,125,69,0.12),_transparent_35%),linear-gradient(180deg,rgba(20,20,20,1)_0%,rgba(17,17,16,1)_100%)]"
-            >
-              <Panel
-                position="top-right"
-                className="m-3 flex items-center gap-2 rounded-xl border border-zinc-200 bg-white/90 p-2 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/90"
+            <>
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                nodeTypes={nodeTypes}
+                fitView
+                fitViewOptions={{ padding: 0.2 }}
+                minZoom={0.2}
+                maxZoom={1.5}
+                nodesDraggable
+                nodesConnectable
+                elementsSelectable
+                deleteKeyCode={["Backspace", "Delete"]}
+                connectionLineType={ConnectionLineType.SmoothStep}
+                defaultEdgeOptions={{
+                  animated: false,
+                  style: { stroke: "#94a3b8", strokeWidth: 1.25 },
+                }}
+                className="bg-[radial-gradient(circle_at_top,_rgba(46,125,69,0.08),_transparent_35%),linear-gradient(180deg,rgba(248,250,252,1)_0%,rgba(255,255,255,1)_100%)] dark:bg-[radial-gradient(circle_at_top,_rgba(46,125,69,0.12),_transparent_35%),linear-gradient(180deg,rgba(20,20,20,1)_0%,rgba(17,17,16,1)_100%)]"
               >
-                <button
-                  type="button"
-                  onClick={handleAutoLayout}
-                  className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                <Panel
+                  position="top-right"
+                  className="m-3 flex items-center gap-2 rounded-xl border border-zinc-200 bg-white/90 p-2 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/90"
                 >
-                  <Plus className="h-3.5 w-3.5" />
-                  Reset layout
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClearManualEdges}
-                  className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Clear manual links
-                </button>
-              </Panel>
-              <MiniMap
-                pannable
-                zoomable
-                className="!bg-white dark:!bg-zinc-900"
-                nodeColor={() => "#2E7D45"}
-              />
-              <Controls />
-              <Background gap={24} size={1} color="#d4d4d8" />
-            </ReactFlow>
+                  <button
+                    type="button"
+                    onClick={handleAutoLayout}
+                    className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Reset layout
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearManualEdges}
+                    className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Clear manual links
+                  </button>
+                </Panel>
+                <MiniMap
+                  pannable
+                  zoomable
+                  className="!bg-white dark:!bg-zinc-900"
+                  nodeColor={() => "#2E7D45"}
+                />
+                <Controls />
+                <Background gap={24} size={1} color="#d4d4d8" />
+              </ReactFlow>
+              <DatabaseViewModal />
+            </>
           )}
         </main>
       </div>

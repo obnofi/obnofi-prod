@@ -7,7 +7,15 @@ export interface CustomNoteNodeData extends Record<string, unknown> {
   pageId: string;
 }
 
-export type GraphNode = Node<CustomNoteNodeData, "customNote">;
+export interface CustomDatabaseNodeData extends Record<string, unknown> {
+  title: string;
+  path: string;
+  pageId: string;
+  databaseId: string | null | undefined;
+}
+
+export type GraphNode = Node<CustomNoteNodeData, "customNote"> | Node<CustomDatabaseNodeData, "customDatabase">;
+export type GraphDatabaseNode = Node<CustomDatabaseNodeData, "customDatabase">;
 
 export type GraphEdge = Edge;
 
@@ -56,10 +64,10 @@ export function extractLinks(content: object | null): string[] {
 }
 
 export function buildGraphData(pages: Page[]): {
-  nodes: GraphNode[];
+  nodes: Array<Node<CustomNoteNodeData, "customNote"> | Node<CustomDatabaseNodeData, "customDatabase">>;
   edges: GraphEdge[];
 } {
-  const nodes: GraphNode[] = [];
+  const nodes: Array<Node<CustomNoteNodeData, "customNote"> | Node<CustomDatabaseNodeData, "customDatabase">> = [];
   const edges: GraphEdge[] = [];
   const pageMap = new Map(pages.map((p) => [normalizeLinkTarget(p.title), p.id]));
 
@@ -69,19 +77,38 @@ export function buildGraphData(pages: Page[]): {
     const angle = (index / pages.length) * 2 * Math.PI;
     const radius = 300;
 
-    nodes.push({
-      id: page.id,
-      type: "customNote",
-      position: {
-        x: Math.cos(angle) * radius + 420,
-        y: Math.sin(angle) * radius + 320,
-      },
-      data: {
-        title: page.title,
-        path: `/workspace/${page.workspaceId}?page=${page.id}`,
-        pageId: page.id,
-      },
-    });
+    const isDatabase = page.type === "database";
+
+    if (isDatabase) {
+      nodes.push({
+        id: page.id,
+        type: "customDatabase",
+        position: {
+          x: Math.cos(angle) * radius + 420,
+          y: Math.sin(angle) * radius + 320,
+        },
+        data: {
+          title: page.title,
+          path: `/workspace/${page.workspaceId}?page=${page.id}`,
+          pageId: page.id,
+          databaseId: page.databaseId,
+        },
+      } as Node<CustomDatabaseNodeData, "customDatabase">);
+    } else {
+      nodes.push({
+        id: page.id,
+        type: "customNote",
+        position: {
+          x: Math.cos(angle) * radius + 420,
+          y: Math.sin(angle) * radius + 320,
+        },
+        data: {
+          title: page.title,
+          path: `/workspace/${page.workspaceId}?page=${page.id}`,
+          pageId: page.id,
+        },
+      } as Node<CustomNoteNodeData, "customNote">);
+    }
   });
 
   // Create edges from links
