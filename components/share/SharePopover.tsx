@@ -145,7 +145,7 @@ export function SharePopover({
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Enter password"
-                        className="flex-1 px-3 py-2 text-sm bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2E7D45]/20 focus:border-[#2E7D45]"
+                        className="flex-1 px-3 py-2 text-sm text-[#111110] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2E7D45]/20 focus:border-[#2E7D45] dark:text-zinc-100"
                       />
                       <button
                         onClick={handleToggleShare}

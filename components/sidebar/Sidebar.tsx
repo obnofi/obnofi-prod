@@ -13,12 +13,11 @@ import {
   Palette,
   Database,
   Orbit,
-  ChevronDown,
-  MoreHorizontal,
-  Trash2,
+  Clock,
 } from "lucide-react";
+import { SiteLogo } from "@/components/branding/SiteLogo";
 import { usePageStore, PageTreeNode } from "@/store/pageStore";
-import { Page, PageType } from "@/types";
+import { PageType } from "@/types";
 
 interface SidebarProps {
   workspaceId: string;
@@ -59,31 +58,31 @@ function PageTreeItem({
   return (
     <div>
       <div
-        className={`group flex items-center gap-1 px-2 py-1.5 rounded-md cursor-pointer transition-colors ${
+        className={`group flex items-center gap-1.5 py-1 rounded-md cursor-pointer transition-colors ${
           isActive
             ? "bg-zinc-100 dark:bg-zinc-800 text-[#111110] dark:text-zinc-100"
-            : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+            : "text-[#1a1a1a] dark:text-zinc-400 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
         }`}
-        style={{ paddingLeft: `${level * 12 + 8}px` }}
+        style={{ paddingLeft: `${level * 14 + 8}px`, paddingRight: "8px" }}
         onClick={() => onSelect(node.id)}
       >
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onToggle(node.id);
+            if (hasChildren) onToggle(node.id);
           }}
-          className={`p-0.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-transform ${
+          className={`p-0.5 rounded transition-transform shrink-0 ${
             hasChildren ? "opacity-100" : "opacity-0"
           } ${isExpanded ? "rotate-90" : ""}`}
         >
-          <ChevronRight className="w-3 h-3" />
+          <ChevronRight className="w-3 h-3 text-[#6b6b6b]" />
         </button>
 
-        <span className="text-zinc-400 dark:text-zinc-500">
+        <span className="text-[#6b6b6b] dark:text-zinc-500 shrink-0">
           {node.icon || typeIcons[node.type]}
         </span>
 
-        <span className="flex-1 text-sm truncate">{node.title || "Untitled"}</span>
+        <span className="flex-1 text-[13px] truncate">{node.title || "Untitled"}</span>
       </div>
 
       {isExpanded &&
@@ -115,6 +114,12 @@ export function Sidebar({ workspaceId, currentPageId }: SidebarProps) {
   }, [workspaceId, fetchPages]);
 
   const pageTree = getPageTree();
+  const recentPages = [...pages]
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    )
+    .slice(0, 4);
 
   const handleToggle = (pageId: string) => {
     setExpanded((prev) => {
@@ -132,7 +137,7 @@ export function Sidebar({ workspaceId, currentPageId }: SidebarProps) {
     router.push(`/workspace/${workspaceId}?page=${pageId}`);
   };
 
-  const handleCreatePage = async (type: PageType, parentId?: string) => {
+  const handleCreatePage = async (type: PageType) => {
     const titles: Record<PageType, string> = {
       document: "New Page",
       canvas: "New Canvas",
@@ -142,27 +147,24 @@ export function Sidebar({ workspaceId, currentPageId }: SidebarProps) {
     const newPage = await createPage({
       title: titles[type],
       type,
-      parentId: parentId || null,
+      parentId: null,
       workspaceId,
     });
 
     if (newPage) {
       setShowNewPageMenu(false);
-      if (parentId) {
-        setExpanded((prev) => new Set(prev).add(parentId));
-      }
       router.push(`/workspace/${workspaceId}?page=${newPage.id}`);
     }
   };
 
   if (isCollapsed) {
     return (
-      <div className="w-12 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#111110] flex flex-col items-center py-4 gap-4">
+      <div className="w-12 border-r border-[#e5e5e5] dark:border-zinc-800 bg-[#fbfbfa] dark:bg-[#111110] flex flex-col items-center py-3 gap-3">
         <button
           onClick={() => setIsCollapsed(false)}
-          className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+          className="p-2 hover:bg-zinc-200/70 dark:hover:bg-zinc-800 rounded-md transition-colors"
         >
-          <ChevronRight className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+          <ChevronRight className="w-4 h-4 text-[#6b6b6b] dark:text-zinc-400" />
         </button>
       </div>
     );
@@ -171,107 +173,128 @@ export function Sidebar({ workspaceId, currentPageId }: SidebarProps) {
   return (
     <div
       data-testid="workspace-sidebar"
-      className="w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#111110] flex flex-col h-full"
+      className="w-60 border-r border-[#e5e5e5] dark:border-zinc-800 bg-[#fbfbfa] dark:bg-[#111110] flex flex-col h-full overflow-hidden"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-[#2E7D45] flex items-center justify-center">
-            <span className="text-white text-xs font-bold">O</span>
-          </div>
-          <span className="font-medium text-sm text-[#111110] dark:text-zinc-100">
-            {workspaceId}
-          </span>
+      {/* Workspace Switcher */}
+      <div className="flex items-center gap-2 px-3 py-3">
+        <div className="w-[22px] h-[22px] bg-[#2e7d45] rounded-[4px] flex items-center justify-center shrink-0">
+          <span className="text-white text-[12px] font-semibold leading-none">A</span>
         </div>
+        <span className="flex-1 text-[14px] font-medium text-[#1a1a1a] dark:text-zinc-100 truncate">
+          obnofi
+        </span>
         <button
           onClick={() => setIsCollapsed(true)}
-          className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+          className="p-1 hover:bg-zinc-200/70 dark:hover:bg-zinc-800 rounded transition-colors shrink-0"
         >
-          <ChevronLeft className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+          <ChevronLeft className="w-4 h-4 text-[#6b6b6b] dark:text-zinc-400" />
         </button>
       </div>
 
-      {/* Search */}
-      <div className="px-3 py-2">
-        <div className="flex items-center gap-2 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-md">
-          <Search className="w-4 h-4 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search"
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-400 text-[#111110] dark:text-zinc-100"
-          />
+      {/* Quick Actions */}
+      <div className="px-2 flex flex-col">
+        <div className="flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer text-[#6b6b6b] dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/50 transition-colors">
+          <Search className="w-4 h-4 shrink-0" />
+          <span className="text-[13px]">Search</span>
         </div>
-      </div>
 
-      {/* Actions */}
-      <div className="px-3 pb-2">
-        <div className="mb-2">
-          <Link
-            href={`/workspace/${workspaceId}/graph`}
-            data-testid="graph-view-link"
-            className="flex w-full items-center gap-2 rounded-md border border-zinc-200 px-3 py-2 text-sm font-medium text-[#111110] transition hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-800"
-          >
-            <Orbit className="w-4 h-4 text-[#2E7D45]" />
-            Graph View
-          </Link>
-        </div>
+        <button className="flex items-center gap-2 px-2 py-1 rounded-md text-[#6b6b6b] dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/50 transition-colors w-full text-left">
+          <Settings className="w-4 h-4 shrink-0" />
+          <span className="text-[13px]">Settings</span>
+        </button>
 
         <div className="relative">
           <button
             onClick={() => setShowNewPageMenu(!showNewPageMenu)}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#2E7D45] hover:bg-[#256a3a] rounded-md transition-colors"
+            className="flex items-center gap-2 px-2 py-1 rounded-md text-[#6b6b6b] dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/50 transition-colors w-full text-left"
           >
-            <Plus className="w-4 h-4" />
-            New Page
+            <Plus className="w-4 h-4 shrink-0" />
+            <span className="text-[13px]">New page</span>
           </button>
 
           {showNewPageMenu && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-lg z-50 py-1">
-              {(["document", "canvas", "database"] as PageType[]).map(
-                (type) => (
-                  <button
-                    key={type}
-                    onClick={() => handleCreatePage(type)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                  >
-                    {typeIcons[type]}
-                    {typeLabels[type]}
-                  </button>
-                )
-              )}
+              {(["document", "database"] as PageType[]).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => handleCreatePage(type)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                >
+                  {typeIcons[type]}
+                  {typeLabels[type]}
+                </button>
+              ))}
             </div>
           )}
         </div>
+
+        <Link
+          href={`/workspace/${workspaceId}/graph`}
+          data-testid="graph-view-link"
+          className="flex items-center gap-2 px-2 py-1 rounded-md text-[#6b6b6b] dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/50 transition-colors"
+        >
+          <Orbit className="w-4 h-4 text-[#2E7D45] shrink-0" />
+          <span className="text-[13px]">Graph View</span>
+        </Link>
       </div>
 
+      {/* Divider */}
+      <div className="h-px bg-[#e5e5e5] dark:bg-zinc-800 mx-2 my-2" />
+
       {/* Page Tree */}
-      <div className="flex-1 overflow-y-auto px-2 py-2">
-        {pageTree.length === 0 ? (
-          <div className="text-center py-8 text-zinc-400 text-sm">
-            No pages yet
+      <div className="flex-1 overflow-y-auto px-2 min-h-0">
+        {pageTree.length > 0 ? (
+          <div>
+            <div className="flex items-center justify-between px-2 py-1 mb-0.5">
+              <span className="text-[11px] font-medium text-[#9b9b9b] uppercase tracking-wide">
+                Private
+              </span>
+              <button
+                onClick={() => setShowNewPageMenu(!showNewPageMenu)}
+                className="p-0.5 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-700 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5 text-[#9b9b9b]" />
+              </button>
+            </div>
+            {pageTree.map((node) => (
+              <PageTreeItem
+                key={node.id}
+                node={node}
+                level={0}
+                currentPageId={currentPageId}
+                onSelect={handleSelect}
+                onToggle={handleToggle}
+                expanded={expanded}
+              />
+            ))}
           </div>
         ) : (
-          pageTree.map((node) => (
-            <PageTreeItem
-              key={node.id}
-              node={node}
-              level={0}
-              currentPageId={currentPageId}
-              onSelect={handleSelect}
-              onToggle={handleToggle}
-              expanded={expanded}
-            />
-          ))
+          <div className="text-center py-8 text-[#9b9b9b] text-[13px]">
+            No pages yet
+          </div>
         )}
       </div>
 
-      {/* Footer */}
-      <div className="border-t border-zinc-200 dark:border-zinc-800 p-2">
-        <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors">
-          <Settings className="w-4 h-4" />
-          Settings
-        </button>
-      </div>
+      {/* Recent */}
+      {recentPages.length > 0 && (
+        <div className="border-t border-[#e5e5e5] dark:border-zinc-800 px-2 py-2 shrink-0">
+          <div className="px-2 py-1 mb-0.5">
+            <span className="text-[11px] font-medium text-[#9b9b9b] uppercase tracking-wide">
+              Recent
+            </span>
+          </div>
+          {recentPages.map((page) => (
+            <button
+              key={page.id}
+              onClick={() => handleSelect(page.id)}
+              className="flex items-center gap-2 px-2 py-1 rounded-md text-[#6b6b6b] dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/50 transition-colors w-full text-left"
+            >
+              <Clock className="w-3.5 h-3.5 shrink-0" />
+              <span className="text-[13px] truncate">{page.title || "Untitled"}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
