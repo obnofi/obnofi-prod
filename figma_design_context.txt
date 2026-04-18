@@ -1,0 +1,802 @@
+<frame id="182:855" name="Notion Workspace Demo" x="321" y="424" width="1440" height="3200">
+  <frame id="182:856" name="Sidebar" x="0" y="0" width="240" height="3613">
+    <frame id="182:857" name="Sidebar Top" x="8" y="12" width="224" height="373">
+      <frame id="182:858" name="Workspace Switcher" x="0" y="0" width="224" height="34">
+        <frame id="182:859" name="wsIcon" x="8" y="6" width="22" height="22">
+          <text id="182:860" name="wsLetter" x="6.5" y="3.5" width="9" height="15" />
+        </frame>
+        <text id="182:861" name="wsName" x="38" y="8.5" width="117" height="17" />
+        <frame id="182:862" name="wsChevron" x="163" y="9" width="16" height="16" />
+      </frame>
+      <frame id="182:864" name="Quick Actions" x="0" y="34" width="224" height="80">
+        <frame id="182:865" name="Search" x="0" y="4" width="224" height="24">
+          <frame id="182:866" name="searchIcon" x="8" y="4" width="16" height="16" />
+          <text id="182:869" name="searchText" x="32" y="4" width="43" height="16" />
+        </frame>
+        <frame id="182:870" name="Settings" x="0" y="28" width="224" height="24">
+          <frame id="182:871" name="settingsIcon" x="8" y="4" width="16" height="16" />
+          <text id="182:874" name="settingsText" x="32" y="4" width="51" height="16" />
+        </frame>
+        <frame id="182:875" name="New Page" x="0" y="52" width="224" height="24">
+          <frame id="182:876" name="newPageIcon" x="8" y="4" width="16" height="16" />
+          <text id="182:880" name="newPageText" x="32" y="4" width="63" height="16" />
+        </frame>
+      </frame>
+      <frame id="182:881" name="Favorites Section" x="0" y="114" width="224" height="105">
+        <frame id="182:882" name="favLabelWrap" x="0" y="8" width="224" height="17">
+          <text id="182:883" name="favLabel" x="8" y="0" width="49" height="13" />
+        </frame>
+        <frame id="182:884" name="Getting Started" x="0" y="25" width="224" height="24">
+          <frame id="182:885" name="fav1Icon" x="8" y="4" width="16" height="16" />
+          <text id="182:891" name="fav1Text" x="32" y="4" width="95" height="16" />
+        </frame>
+        <frame id="182:892" name="Meeting Notes" x="0" y="49" width="224" height="24">
+          <frame id="182:893" name="fav2Icon" x="8" y="4" width="16" height="16" />
+          <text id="182:899" name="fav2Text" x="32" y="4" width="91" height="16" />
+        </frame>
+        <frame id="182:900" name="Project Roadmap" x="0" y="73" width="224" height="24">
+          <frame id="182:901" name="fav3Icon" x="8" y="4" width="16" height="16" />
+          <text id="182:907" name="fav3Text" x="32" y="4" width="105" height="16" />
+        </frame>
+      </frame>
+      <frame id="182:908" name="Private Section" x="0" y="219" width="224" height="154">
+        <frame id="182:909" name="privLabelWrap" x="0" y="8" width="224" height="18">
+          <text id="182:910" name="privLabel" x="8" y="0.5" width="37" height="13" />
+          <frame id="182:911" name="privAdd" x="202" y="0" width="14" height="14" />
+        </frame>
+        <frame id="182:914" name="Task List" x="0" y="26" width="224" height="24">
+          <frame id="182:915" name="priv1Toggle" x="8" y="5" width="14" height="14" />
+          <frame id="182:917" name="priv1Icon" x="30" y="4" width="16" height="16" />
+          <text id="182:923" name="priv1Text" x="54" y="4" width="55" height="16" />
+        </frame>
+        <frame id="182:924" name="Task List Children" x="0" y="50" width="224" height="48">
+          <frame id="182:925" name="priv1c1" x="16" y="0" width="192" height="24">
+            <frame id="182:926" name="priv1c1Icon" x="8" y="4" width="16" height="16" />
+            <text id="182:932" name="priv1c1Text" x="32" y="4" width="93" height="16" />
+          </frame>
+          <frame id="182:933" name="priv1c2" x="16" y="24" width="192" height="24">
+            <frame id="182:934" name="priv1c2Icon" x="8" y="4" width="16" height="16" />
+            <text id="182:940" name="priv1c2Text" x="32" y="4" width="74" height="16" />
+          </frame>
+        </frame>
+        <frame id="182:941" name="Design System" x="0" y="98" width="224" height="24">
+          <frame id="182:942" name="priv2Toggle" x="8" y="5" width="14" height="14" />
+          <frame id="182:944" name="priv2Icon" x="30" y="4" width="16" height="16" />
+          <text id="182:950" name="priv2Text" x="54" y="4" width="92" height="16" />
+        </frame>
+        <frame id="182:951" name="Journal" x="0" y="122" width="224" height="24">
+          <frame id="182:952" name="priv3Toggle" x="8" y="5" width="14" height="14" />
+          <frame id="182:954" name="priv3Icon" x="30" y="4" width="16" height="16" />
+          <text id="182:957" name="priv3Text" x="54" y="4" width="46" height="16" />
+        </frame>
+      </frame>
+    </frame>
+    <frame id="182:958" name="Sidebar Bottom" x="8" y="389" width="224" height="614">
+      <frame id="182:959" name="spacer5" x="0" y="0" width="224" height="8" />
+      <frame id="182:960" name="tsLabel" x="0" y="12" width="224" height="21">
+        <text id="182:961" name="tsLabelTxt" x="8" y="4" width="61" height="13" />
+      </frame>
+      <frame id="182:962" name="Project A" x="0" y="37" width="224" height="28">
+        <frame id="182:963" name="ts1chev" x="10" y="8" width="12" height="12" />
+        <frame id="182:965" name="ts1icon" x="28" y="6" width="16" height="16" />
+        <text id="182:967" name="ts1txt" x="50" y="6" width="56" height="16" />
+      </frame>
+      <frame id="182:968" name="Overview" x="0" y="69" width="224" height="28">
+        <frame id="182:969" name="ts1aIcon" x="44" y="6" width="16" height="16" />
+        <text id="182:975" name="ts1aTxt" x="66" y="6" width="58" height="16" />
+      </frame>
+      <frame id="182:976" name="Milestones" x="0" y="101" width="224" height="28">
+        <frame id="182:977" name="ts1bChev" x="26" y="8" width="12" height="12" />
+        <frame id="182:979" name="ts1bIcon" x="44" y="6" width="16" height="16" />
+        <text id="182:983" name="ts1bTxt" x="66" y="6" width="67" height="16" />
+      </frame>
+      <frame id="182:984" name="Phase 1" x="0" y="133" width="224" height="28">
+        <frame id="182:985" name="ts1b1Icon" x="60" y="6" width="16" height="16" />
+        <text id="182:987" name="ts1b1Txt" x="82" y="6" width="48" height="16" />
+      </frame>
+      <frame id="182:988" name="Phase 2" x="0" y="165" width="224" height="28">
+        <frame id="182:989" name="ts1b2Icon" x="60" y="6" width="16" height="16" />
+        <text id="182:991" name="ts1b2Txt" x="82" y="6" width="50" height="16" />
+      </frame>
+      <frame id="182:992" name="Phase 3 (collapsed)" x="0" y="197" width="224" height="28">
+        <frame id="182:993" name="ts1b3Chev" x="42" y="8" width="12" height="12" />
+        <frame id="182:995" name="ts1b3Icon" x="60" y="6" width="16" height="16" />
+        <text id="182:997" name="ts1b3Txt" x="82" y="6" width="50" height="16" />
+      </frame>
+      <frame id="182:998" name="Resources" x="0" y="229" width="224" height="28">
+        <frame id="182:999" name="ts1cIcon" x="44" y="6" width="16" height="16" />
+        <text id="182:1002" name="ts1cTxt" x="66" y="6" width="65" height="16" />
+      </frame>
+      <frame id="182:1003" name="Docs" x="0" y="261" width="224" height="28">
+        <frame id="182:1004" name="ts2chev" x="10" y="8" width="12" height="12" />
+        <frame id="182:1006" name="ts2icon" x="28" y="6" width="16" height="16" />
+        <text id="182:1009" name="ts2txt" x="50" y="6" width="32" height="16" />
+      </frame>
+      <frame id="182:1010" name="API Reference" x="0" y="293" width="224" height="28">
+        <frame id="182:1011" name="ts2aChev" x="26" y="8" width="12" height="12" />
+        <frame id="182:1013" name="ts2aIcon" x="44" y="6" width="16" height="16" />
+        <text id="182:1016" name="ts2aTxt" x="66" y="6" width="87" height="16" />
+      </frame>
+      <frame id="182:1017" name="Endpoints" x="0" y="325" width="224" height="28">
+        <frame id="182:1018" name="ts2a1Icon" x="60" y="6" width="16" height="16" />
+        <text id="182:1022" name="ts2a1Txt" x="82" y="6" width="62" height="16" />
+      </frame>
+      <frame id="182:1023" name="Auth Guide" x="0" y="357" width="224" height="28">
+        <frame id="182:1024" name="ts2a2Icon" x="60" y="6" width="16" height="16" />
+        <text id="182:1026" name="ts2a2Txt" x="82" y="6" width="69" height="16" />
+      </frame>
+      <frame id="182:1027" name="Guidelines" x="0" y="389" width="224" height="28">
+        <frame id="182:1028" name="ts2bChev" x="26" y="8" width="12" height="12" />
+        <frame id="182:1030" name="ts2bIcon" x="44" y="6" width="16" height="16" />
+        <text id="182:1033" name="ts2bTxt" x="66" y="6" width="65" height="16" />
+      </frame>
+      <frame id="182:1034" name="Changelog" x="0" y="421" width="224" height="28">
+        <frame id="182:1035" name="ts2cIcon" x="44" y="6" width="16" height="16" />
+        <text id="182:1040" name="ts2cTxt" x="66" y="6" width="67" height="16" />
+      </frame>
+      <frame id="182:1041" name="spacer6" x="0" y="453" width="224" height="8" />
+      <frame id="182:1042" name="recLabel" x="0" y="465" width="224" height="21">
+        <text id="182:1043" name="recLabelTxt" x="8" y="4" width="37" height="13" />
+      </frame>
+      <frame id="182:1044" name="Meeting Notes" x="0" y="490" width="224" height="28">
+        <frame id="182:1045" name="rec1Icon" x="10" y="7" width="14" height="14" />
+        <frame id="182:1049" name="rec1PageIcon" x="30" y="7" width="14" height="14" />
+        <text id="182:1055" name="rec1Txt" x="50" y="6" width="91" height="16" />
+      </frame>
+      <frame id="182:1056" name="Q2 Roadmap" x="0" y="522" width="224" height="28">
+        <frame id="182:1057" name="rec2Icon" x="10" y="7" width="14" height="14" />
+        <frame id="182:1061" name="rec2PageIcon" x="30" y="7" width="14" height="14" />
+        <text id="182:1065" name="rec2Txt" x="50" y="6" width="80" height="16" />
+      </frame>
+      <frame id="182:1066" name="Design System" x="0" y="554" width="224" height="28">
+        <frame id="182:1067" name="rec3Icon" x="10" y="7" width="14" height="14" />
+        <frame id="182:1071" name="rec3PageIcon" x="30" y="7" width="14" height="14" />
+        <text id="182:1077" name="rec3Txt" x="50" y="6" width="92" height="16" />
+      </frame>
+      <frame id="182:1078" name="Sprint Planning" x="0" y="586" width="224" height="28">
+        <frame id="182:1079" name="rec4Icon" x="10" y="7" width="14" height="14" />
+        <frame id="182:1083" name="rec4PageIcon" x="30" y="7" width="14" height="14" />
+        <text id="182:1087" name="rec4Txt" x="50" y="6" width="93" height="16" />
+      </frame>
+    </frame>
+  </frame>
+  <frame id="182:1088" name="Right Area" x="240" y="0" width="1200" height="3613">
+    <frame id="182:1089" name="Top Bar" x="0" y="0" width="1200" height="48">
+      <frame id="182:1090" name="leftBread" x="16" y="0" width="146" height="48">
+        <frame id="182:1091" name="breadIcon" x="0" y="16" width="16" height="16" />
+        <text id="182:1094" name="breadTitle" x="22" y="15.5" width="124" height="17" />
+      </frame>
+      <frame id="182:1095" name="rightBtns" x="1064" y="0" width="120" height="48">
+        <frame id="182:1096" name="shareBtn" x="0" y="10" width="56" height="28">
+          <text id="182:1097" name="shareTxt" x="10" y="6" width="36" height="16" />
+        </frame>
+        <frame id="182:1098" name="settingsBtn" x="60" y="10" width="28" height="28">
+          <frame id="182:1099" name="settingsIcon" x="6" y="6" width="16" height="16" />
+        </frame>
+        <frame id="182:1102" name="aiBtn" x="92" y="10" width="28" height="28">
+          <frame id="182:1103" name="aiIcon" x="6" y="6" width="16" height="16" />
+        </frame>
+      </frame>
+    </frame>
+    <frame id="182:1108" name="Main Content" x="0" y="48" width="1200" height="3565">
+      <frame id="182:1109" name="Sections Top" x="48" y="32" width="1104" height="2450">
+        <frame id="182:1110" name="sec1" x="0" y="0" width="1104" height="247">
+          <text id="182:1111" name="heading" x="0" y="0" width="278" height="36" />
+          <text id="182:1112" name="para" x="0" y="52" width="1104" height="48" />
+          <frame id="182:1113" name="checklistWrap" x="0" y="116" width="1104" height="62">
+            <frame id="182:1114" name="check1" x="0" y="0" width="1104" height="28">
+              <frame id="182:1115" name="check1Icon" x="0" y="5" width="18" height="18" />
+              <text id="182:1118" name="check1Txt" x="26" y="5.5" width="145" height="17" />
+            </frame>
+            <frame id="182:1119" name="check2" x="0" y="34" width="1104" height="28">
+              <frame id="182:1120" name="check2Icon" x="0" y="5" width="18" height="18" />
+              <text id="182:1122" name="check2Txt" x="26" y="5.5" width="172" height="17" />
+            </frame>
+          </frame>
+          <frame id="182:1123" name="callout" x="0" y="194" width="1104" height="53">
+            <frame id="182:1124" name="calloutIcon" x="16" y="16" width="20" height="20" />
+            <text id="182:1128" name="calloutTxt" x="48" y="16" width="1040" height="21" />
+          </frame>
+        </frame>
+        <frame id="182:1129" name="sec2" x="0" y="287" width="1104" height="64">
+          <frame id="182:1130" name="toggleHeader" x="0" y="0" width="1104" height="36">
+            <frame id="182:1131" name="toggleArrow" x="0" y="9" width="18" height="18" />
+            <text id="182:1133" name="toggleTitle" x="26" y="9" width="111" height="18" />
+          </frame>
+          <frame id="182:1134" name="toggleHint" x="0" y="36" width="1104" height="28">
+            <text id="182:1135" name="toggleHintTxt" x="26" y="6" width="106" height="16" />
+          </frame>
+        </frame>
+        <frame id="182:1136" name="sec3" x="0" y="391" width="1104" height="223">
+          <frame id="182:1137" name="codeHeader" x="0" y="0" width="1104" height="36">
+            <text id="182:1138" name="codeLang" x="16" y="10" width="72" height="16" />
+            <frame id="182:1139" name="copyIcon" x="1074" y="11" width="14" height="14" />
+          </frame>
+          <frame id="182:1142" name="codeBody" x="0" y="36" width="1104" height="187">
+            <text id="182:1143" name="codeLine1" x="16" y="16" width="172" height="17" />
+            <text id="182:1144" name="codeLine2" x="16" y="37" width="281" height="17" />
+            <text id="182:1145" name="codeLine3" x="16" y="58" width="180" height="17" />
+            <text id="182:1146" name="codeLine4" x="16" y="79" width="133" height="17" />
+            <text id="182:1147" name="codeLine5" x="16" y="100" width="8" height="17" />
+            <frame id="182:1148" name="codeLine6" x="16" y="121" width="1072" height="8" />
+            <text id="182:1149" name="codeLine7" x="16" y="133" width="117" height="17" />
+            <text id="182:1150" name="codeLine8" x="16" y="154" width="141" height="17" />
+          </frame>
+        </frame>
+        <frame id="182:1151" name="sec4" x="0" y="654" width="1104" height="1405">
+          <frame id="182:1152" name="dbHeader" x="0" y="0" width="1104" height="40">
+            <frame id="182:1153" name="tabTable" x="12" y="6" width="70" height="28">
+              <frame id="182:1154" name="tabTableIcon" x="10" y="7" width="14" height="14" />
+              <text id="182:1159" name="tabTableTxt" x="28" y="6.5" width="32" height="15" />
+            </frame>
+            <frame id="182:1160" name="tabBoard" x="84" y="6" width="72" height="28">
+              <frame id="182:1161" name="tabBoardIcon" x="10" y="7" width="14" height="14" />
+              <text id="182:1165" name="tabBoardTxt" x="28" y="6.5" width="34" height="15" />
+            </frame>
+            <frame id="182:1166" name="tabCal" x="158" y="6" width="90" height="28">
+              <frame id="182:1167" name="tabCalIcon" x="10" y="7" width="14" height="14" />
+              <text id="182:1172" name="tabCalTxt" x="28" y="6.5" width="52" height="15" />
+            </frame>
+            <frame id="182:1173" name="tabGallery" x="250" y="6" width="78" height="28">
+              <frame id="182:1174" name="tabGalleryIcon" x="10" y="7" width="14" height="14" />
+              <text id="182:1179" name="tabGalleryTxt" x="28" y="6.5" width="40" height="15" />
+            </frame>
+            <frame id="182:1180" name="tabList" x="330" y="6" width="59" height="28">
+              <frame id="182:1181" name="tabListIcon" x="10" y="7" width="14" height="14" />
+              <text id="182:1188" name="tabListTxt" x="28" y="6.5" width="21" height="15" />
+            </frame>
+            <frame id="182:1189" name="tabTimeline" x="391" y="6" width="86" height="28">
+              <frame id="182:1190" name="tabTimelineIcon" x="10" y="7" width="14" height="14" />
+              <text id="182:1193" name="tabTimelineTxt" x="28" y="6.5" width="48" height="15" />
+            </frame>
+            <text id="182:1194" name="sameDataLabel" x="479" y="13.5" width="159" height="13" />
+          </frame>
+          <frame id="182:1195" name="tableHead" x="0" y="40" width="1104" height="32">
+            <text id="182:1196" name="thName" x="12" y="7.5" width="260" height="17" />
+            <text id="182:1197" name="thStatus" x="272" y="7.5" width="120" height="17" />
+            <text id="182:1198" name="thDate" x="392" y="7.5" width="140" height="17" />
+            <text id="182:1199" name="thTags" x="532" y="7.5" width="200" height="17" />
+          </frame>
+          <frame id="182:1200" name="row1" x="0" y="72" width="1104" height="36">
+            <text id="182:1201" name="r1name" x="12" y="9" width="260" height="18" />
+            <frame id="182:1202" name="r1tag" x="272" y="7" width="120" height="22">
+              <frame id="182:1203" name="r1tagPill" x="0" y="0" width="47" height="22">
+                <text id="182:1204" name="r1tagTxt" x="8" y="4.5" width="31" height="13" />
+              </frame>
+            </frame>
+            <text id="182:1205" name="r1date" x="392" y="9" width="140" height="18" />
+            <frame id="182:1206" name="r1tags" x="532" y="0" width="200" height="36">
+              <frame id="182:1207" name="r1t1" x="0" y="7" width="52" height="22">
+                <text id="182:1208" name="r1t1txt" x="8" y="4.5" width="36" height="13" />
+              </frame>
+              <frame id="182:1209" name="r1t2" x="56" y="7" width="52" height="22">
+                <text id="182:1210" name="r1t2txt" x="8" y="4.5" width="36" height="13" />
+              </frame>
+            </frame>
+          </frame>
+          <frame id="182:1211" name="row2" x="0" y="108" width="1104" height="36">
+            <text id="182:1212" name="r2name" x="12" y="9" width="260" height="18" />
+            <frame id="182:1213" name="r2tag" x="272" y="7" width="120" height="22">
+              <frame id="182:1214" name="r2tagPill" x="0" y="0" width="44" height="22">
+                <text id="182:1215" name="r2tagTxt" x="8" y="4.5" width="28" height="13" />
+              </frame>
+            </frame>
+            <text id="182:1216" name="r2date" x="392" y="9" width="140" height="18" />
+            <frame id="182:1217" name="r2tags" x="532" y="0" width="200" height="36">
+              <frame id="182:1218" name="r2t1" x="0" y="7" width="78" height="22">
+                <text id="182:1219" name="r2t1txt" x="8" y="4.5" width="62" height="13" />
+              </frame>
+            </frame>
+          </frame>
+          <frame id="182:1220" name="row3" x="0" y="144" width="1104" height="36">
+            <text id="182:1221" name="r3name" x="12" y="9" width="260" height="18" />
+            <frame id="182:1222" name="r3tag" x="272" y="7" width="120" height="22">
+              <frame id="182:1223" name="r3tagPill" x="0" y="0" width="43" height="22">
+                <text id="182:1224" name="r3tagTxt" x="8" y="4.5" width="27" height="13" />
+              </frame>
+            </frame>
+            <text id="182:1225" name="r3date" x="392" y="9" width="140" height="18" />
+            <frame id="182:1226" name="r3tags" x="532" y="0" width="200" height="36">
+              <frame id="182:1227" name="r3t1" x="0" y="7" width="65" height="22">
+                <text id="182:1228" name="r3t1txt" x="8" y="4.5" width="49" height="13" />
+              </frame>
+            </frame>
+          </frame>
+          <frame id="182:1229" name="row4" x="0" y="180" width="1104" height="36">
+            <text id="182:1230" name="r4name" x="12" y="9" width="260" height="18" />
+            <frame id="182:1231" name="r4tag" x="272" y="7" width="120" height="22">
+              <frame id="182:1232" name="r4tagPill" x="0" y="0" width="47" height="22">
+                <text id="182:1233" name="r4tagTxt" x="8" y="4.5" width="31" height="13" />
+              </frame>
+            </frame>
+            <text id="182:1234" name="r4date" x="392" y="9" width="140" height="18" />
+            <frame id="182:1235" name="r4tags" x="532" y="0" width="200" height="36">
+              <frame id="182:1236" name="r4t1" x="0" y="7" width="78" height="22">
+                <text id="182:1237" name="r4t1txt" x="8" y="4.5" width="62" height="13" />
+              </frame>
+              <frame id="182:1238" name="r4t2" x="82" y="7" width="61" height="22">
+                <text id="182:1239" name="r4t2txt" x="8" y="4.5" width="45" height="13" />
+              </frame>
+            </frame>
+          </frame>
+          <frame id="182:1240" name="row5" x="0" y="216" width="1104" height="36">
+            <text id="182:1241" name="r5name" x="12" y="9" width="260" height="18" />
+            <frame id="182:1242" name="r5tag" x="272" y="7" width="120" height="22">
+              <frame id="182:1243" name="r5tagPill" x="0" y="0" width="44" height="22">
+                <text id="182:1244" name="r5tagTxt" x="8" y="4.5" width="28" height="13" />
+              </frame>
+            </frame>
+            <text id="182:1245" name="r5date" x="392" y="9" width="140" height="18" />
+            <frame id="182:1246" name="r5tags" x="532" y="0" width="200" height="36">
+              <frame id="182:1247" name="r5t1" x="0" y="7" width="52" height="22">
+                <text id="182:1248" name="r5t1txt" x="8" y="4.5" width="36" height="13" />
+              </frame>
+              <frame id="182:1249" name="r5t2" x="56" y="7" width="32" height="22">
+                <text id="182:1250" name="r5t2txt" x="8" y="4.5" width="16" height="13" />
+              </frame>
+            </frame>
+          </frame>
+          <frame id="182:1251" name="viewsWrap" x="0" y="252" width="1104" height="1153">
+            <text id="182:1252" name="viewsLabel" x="16" y="20" width="208" height="19" />
+            <frame id="182:1253" name="boardView" x="16" y="63" width="1072" height="194">
+              <text id="182:1254" name="boardLabel" x="0" y="0" width="72" height="16" />
+              <frame id="182:1255" name="boardCols" x="0" y="26" width="1072" height="168">
+                <frame id="182:1256" name="colTodo" x="0" y="0" width="349.3333435058594" height="168">
+                  <frame id="182:1257" name="colTodoHead" x="0" y="0" width="349.3333435058594" height="28">
+                    <ellipse id="182:1258" name="colTodoDot" x="8" y="10" width="8" height="8" />
+                    <text id="182:1259" name="colTodoTxt" x="22" y="6.5" width="30" height="15" />
+                    <text id="182:1260" name="colTodoCnt" x="58" y="7.5" width="6" height="13" />
+                  </frame>
+                  <frame id="182:1261" name="card1" x="0" y="36" width="349.3333435058594" height="62">
+                    <text id="182:1262" name="card1name" x="10" y="10" width="90" height="16" />
+                    <frame id="182:1263" name="card1tag" x="10" y="32" width="56" height="20">
+                      <frame id="182:1264" name="card1t1" x="0" y="0" width="56" height="20">
+                        <text id="182:1265" name="card1t1t" x="6" y="4" width="44" height="12" />
+                      </frame>
+                    </frame>
+                  </frame>
+                </frame>
+                <frame id="182:1266" name="colDoing" x="361.3333435058594" y="0" width="349.33331298828125" height="168">
+                  <frame id="182:1267" name="colDoingHead" x="0" y="0" width="349.33331298828125" height="28">
+                    <ellipse id="182:1268" name="colDoingDot" x="8" y="10" width="8" height="8" />
+                    <text id="182:1269" name="colDoingTxt" x="22" y="6.5" width="34" height="15" />
+                    <text id="182:1270" name="colDoingCnt" x="62" y="7.5" width="7" height="13" />
+                  </frame>
+                  <frame id="182:1271" name="cardD1" x="0" y="36" width="349.33331298828125" height="62">
+                    <text id="182:1272" name="cardD1name" x="10" y="10" width="128" height="16" />
+                    <frame id="182:1273" name="cardD1tags" x="10" y="32" width="45" height="20">
+                      <frame id="182:1274" name="cardD1t1" x="0" y="0" width="45" height="20">
+                        <text id="182:1275" name="cardD1t1t" x="6" y="4" width="33" height="12" />
+                      </frame>
+                    </frame>
+                  </frame>
+                  <frame id="182:1276" name="cardD2" x="0" y="106" width="349.33331298828125" height="62">
+                    <text id="182:1277" name="cardD2name" x="10" y="10" width="115" height="16" />
+                    <frame id="182:1278" name="cardD2tags" x="10" y="32" width="68" height="20">
+                      <frame id="182:1279" name="cardD2t1" x="0" y="0" width="68" height="20">
+                        <text id="182:1280" name="cardD2t1t" x="6" y="4" width="56" height="12" />
+                      </frame>
+                    </frame>
+                  </frame>
+                </frame>
+                <frame id="182:1281" name="colDone" x="722.6666259765625" y="0" width="349.33331298828125" height="168">
+                  <frame id="182:1282" name="colDoneHead" x="0" y="0" width="349.33331298828125" height="28">
+                    <ellipse id="182:1283" name="colDoneDot" x="8" y="10" width="8" height="8" />
+                    <text id="182:1284" name="colDoneTxt" x="22" y="6.5" width="31" height="15" />
+                    <text id="182:1285" name="colDoneCnt" x="59" y="7.5" width="7" height="13" />
+                  </frame>
+                  <frame id="182:1286" name="cardDn1" x="0" y="36" width="138" height="36">
+                    <text id="182:1287" name="cardDn1name" x="10" y="10" width="118" height="16" />
+                  </frame>
+                  <frame id="182:1288" name="cardDn2" x="0" y="80" width="125" height="36">
+                    <text id="182:1289" name="cardDn2name" x="10" y="10" width="105" height="16" />
+                  </frame>
+                </frame>
+              </frame>
+            </frame>
+            <frame id="182:1290" name="calView" x="16" y="281" width="1072" height="174">
+              <text id="182:1291" name="calLabel" x="0" y="0" width="92" height="16" />
+              <frame id="182:1292" name="calGrid" x="0" y="26" width="1072" height="148">
+                <frame id="182:1293" name="calDays" x="0" y="0" width="1072" height="28">
+                  <text id="182:1294" name="calD1" x="0" y="7.5" width="214.39999389648438" height="13" />
+                  <text id="182:1295" name="calD2" x="214.39999389648438" y="7.5" width="214.39999389648438" height="13" />
+                  <text id="182:1296" name="calD3" x="428.79998779296875" y="7.5" width="214.3999786376953" height="13" />
+                  <text id="182:1297" name="calD4" x="643.199951171875" y="7.5" width="214.39999389648438" height="13" />
+                  <text id="182:1298" name="calD5" x="857.5999755859375" y="7.5" width="214.39999389648438" height="13" />
+                </frame>
+                <frame id="182:1299" name="calRow1" x="0" y="28" width="1072" height="60">
+                  <frame id="182:1300" name="c1" x="0" y="0" width="214.39999389648438" height="60">
+                    <text id="182:1301" name="c1num" x="4" y="4" width="13" height="13" />
+                  </frame>
+                  <frame id="182:1302" name="c2" x="214.39999389648438" y="0" width="214.39999389648438" height="60">
+                    <text id="182:1303" name="c2num" x="4" y="4" width="13" height="13" />
+                  </frame>
+                  <frame id="182:1304" name="c3" x="428.79998779296875" y="0" width="214.3999786376953" height="60">
+                    <text id="182:1305" name="c3num" x="4" y="4" width="13" height="13" />
+                    <frame id="182:1306" name="c3evt" x="4" y="19" width="206.3999786376953" height="16">
+                      <text id="182:1307" name="c3evtTxt" x="79.69998931884766" y="2.5" width="47" height="11" />
+                    </frame>
+                  </frame>
+                  <frame id="182:1308" name="c4" x="643.199951171875" y="0" width="214.39999389648438" height="60">
+                    <text id="182:1309" name="c4num" x="4" y="4" width="12" height="13" />
+                  </frame>
+                  <frame id="182:1310" name="c5" x="857.5999755859375" y="0" width="214.39999389648438" height="60">
+                    <text id="182:1311" name="c5num" x="4" y="4" width="12" height="13" />
+                  </frame>
+                </frame>
+                <frame id="182:1312" name="calRow2" x="0" y="88" width="1072" height="60">
+                  <frame id="182:1313" name="c6" x="0" y="0" width="214.39999389648438" height="60">
+                    <text id="182:1314" name="c6num" x="4" y="4" width="14" height="13" />
+                  </frame>
+                  <frame id="182:1315" name="c7" x="214.39999389648438" y="0" width="214.39999389648438" height="60">
+                    <text id="182:1316" name="c7num" x="4" y="4" width="12" height="13" />
+                    <frame id="182:1317" name="c7evt" x="4" y="19" width="206.39999389648438" height="16">
+                      <text id="182:1318" name="c7evtTxt" x="83.19999694824219" y="2.5" width="40" height="11" />
+                    </frame>
+                  </frame>
+                  <frame id="182:1319" name="c8" x="428.79998779296875" y="0" width="214.3999786376953" height="60">
+                    <text id="182:1320" name="c8num" x="4" y="4" width="14" height="13" />
+                  </frame>
+                  <frame id="182:1321" name="c9" x="643.199951171875" y="0" width="214.39999389648438" height="60">
+                    <text id="182:1322" name="c9num" x="4" y="4" width="14" height="13" />
+                  </frame>
+                  <frame id="182:1323" name="c10" x="857.5999755859375" y="0" width="214.39999389648438" height="60">
+                    <text id="182:1324" name="c10num" x="4" y="4" width="14" height="13" />
+                  </frame>
+                </frame>
+              </frame>
+            </frame>
+            <frame id="182:1325" name="galleryView" x="16" y="479" width="1072" height="186">
+              <text id="182:1326" name="galleryLabel" x="0" y="0" width="80" height="16" />
+              <frame id="182:1327" name="galleryGrid" x="0" y="26" width="1072" height="160">
+                <frame id="182:1328" name="gCard1" x="0" y="0" width="349.3333435058594" height="160">
+                  <frame id="182:1329" name="gCard1img" x="0" y="0" width="349.3333435058594" height="100" />
+                  <frame id="182:1330" name="gCard1body" x="0" y="100" width="349.3333435058594" height="60">
+                    <text id="182:1331" name="gCard1name" x="10" y="10" width="129" height="16" />
+                    <frame id="182:1332" name="gCard1tag" x="10" y="30" width="40" height="20">
+                      <frame id="182:1333" name="gCard1t1" x="0" y="0" width="40" height="20">
+                        <text id="182:1334" name="gCard1t1t" x="6" y="4" width="28" height="12" />
+                      </frame>
+                    </frame>
+                  </frame>
+                </frame>
+                <frame id="182:1335" name="gCard2" x="361.3333435058594" y="0" width="349.33331298828125" height="160">
+                  <frame id="182:1336" name="gCard2img" x="0" y="0" width="349.33331298828125" height="100" />
+                  <frame id="182:1337" name="gCard2body" x="0" y="100" width="349.33331298828125" height="60">
+                    <text id="182:1338" name="gCard2name" x="10" y="10" width="120" height="16" />
+                    <frame id="182:1339" name="gCard2tag" x="10" y="30" width="37" height="20">
+                      <frame id="182:1340" name="gCard2t1" x="0" y="0" width="37" height="20">
+                        <text id="182:1341" name="gCard2t1t" x="6" y="4" width="25" height="12" />
+                      </frame>
+                    </frame>
+                  </frame>
+                </frame>
+                <frame id="182:1342" name="gCard3" x="722.6666259765625" y="0" width="349.33331298828125" height="160">
+                  <frame id="182:1343" name="gCard3img" x="0" y="0" width="349.33331298828125" height="100" />
+                  <frame id="182:1344" name="gCard3body" x="0" y="100" width="349.33331298828125" height="60">
+                    <text id="182:1345" name="gCard3name" x="10" y="10" width="91" height="16" />
+                    <frame id="182:1346" name="gCard3tag" x="10" y="30" width="36" height="20">
+                      <frame id="182:1347" name="gCard3t1" x="0" y="0" width="36" height="20">
+                        <text id="182:1348" name="gCard3t1t" x="6" y="4" width="24" height="12" />
+                      </frame>
+                    </frame>
+                  </frame>
+                </frame>
+              </frame>
+            </frame>
+            <frame id="182:1349" name="listView" x="16" y="689" width="1072" height="206">
+              <text id="182:1350" name="listLabel" x="0" y="0" width="58" height="16" />
+              <frame id="182:1351" name="listItems" x="0" y="26" width="1072" height="180">
+                <frame id="182:1352" name="li1" x="0" y="0" width="1072" height="36">
+                  <frame id="182:1353" name="li1icon" x="12" y="10" width="16" height="16" />
+                  <text id="182:1359" name="li1txt" x="36" y="10" width="128" height="16" />
+                  <frame id="182:1360" name="li1status" x="172" y="8" width="40" height="20">
+                    <text id="182:1361" name="li1stxt" x="6" y="4" width="28" height="12" />
+                  </frame>
+                </frame>
+                <frame id="182:1362" name="li2" x="0" y="36" width="1072" height="36">
+                  <frame id="182:1363" name="li2icon" x="12" y="10" width="16" height="16" />
+                  <text id="182:1369" name="li2txt" x="36" y="10" width="118" height="16" />
+                  <frame id="182:1370" name="li2status" x="162" y="8" width="37" height="20">
+                    <text id="182:1371" name="li2stxt" x="6" y="4" width="25" height="12" />
+                  </frame>
+                </frame>
+                <frame id="182:1372" name="li3" x="0" y="72" width="1072" height="36">
+                  <frame id="182:1373" name="li3icon" x="12" y="10" width="16" height="16" />
+                  <text id="182:1379" name="li3txt" x="36" y="10" width="90" height="16" />
+                  <frame id="182:1380" name="li3status" x="134" y="8" width="36" height="20">
+                    <text id="182:1381" name="li3stxt" x="6" y="4" width="24" height="12" />
+                  </frame>
+                </frame>
+                <frame id="182:1382" name="li4" x="0" y="108" width="1072" height="36">
+                  <frame id="182:1383" name="li4icon" x="12" y="10" width="16" height="16" />
+                  <text id="182:1389" name="li4txt" x="36" y="10" width="115" height="16" />
+                  <frame id="182:1390" name="li4status" x="159" y="8" width="40" height="20">
+                    <text id="182:1391" name="li4stxt" x="6" y="4" width="28" height="12" />
+                  </frame>
+                </frame>
+                <frame id="182:1392" name="li5" x="0" y="144" width="1072" height="36">
+                  <frame id="182:1393" name="li5icon" x="12" y="10" width="16" height="16" />
+                  <text id="182:1399" name="li5txt" x="36" y="10" width="105" height="16" />
+                  <frame id="182:1400" name="li5status" x="149" y="8" width="37" height="20">
+                    <text id="182:1401" name="li5stxt" x="6" y="4" width="25" height="12" />
+                  </frame>
+                </frame>
+              </frame>
+            </frame>
+            <frame id="182:1402" name="tlView" x="16" y="919" width="1072" height="214">
+              <text id="182:1403" name="tlLabel" x="0" y="0" width="89" height="16" />
+              <frame id="182:1404" name="tlContainer" x="0" y="26" width="1072" height="188">
+                <frame id="182:1405" name="tlHeader" x="0" y="0" width="1072" height="28">
+                  <text id="182:1406" name="tlW1" x="0" y="8" width="268" height="12" />
+                  <text id="182:1407" name="tlW2" x="268" y="8" width="268" height="12" />
+                  <text id="182:1408" name="tlW3" x="536" y="8" width="268" height="12" />
+                  <text id="182:1409" name="tlW4" x="804" y="8" width="268" height="12" />
+                </frame>
+                <frame id="182:1410" name="tlBody" x="0" y="28" width="1072" height="160">
+                  <frame id="182:1411" name="tlRow1" x="12" y="8" width="1048" height="24">
+                    <text id="182:1412" name="tlRow1label" x="0" y="4" width="100" height="16" />
+                    <frame id="182:1413" name="tlRow1bar" x="108" y="3" width="940" height="18">
+                      <frame id="182:1414" name="tlRow1barInner" x="30" y="0" width="180" height="18">
+                        <text id="182:1415" name="tlRow1barTxt" x="77.5" y="3.5" width="25" height="11" />
+                      </frame>
+                    </frame>
+                  </frame>
+                  <frame id="182:1416" name="tlRow2" x="12" y="38" width="1048" height="24">
+                    <text id="182:1417" name="tlRow2label" x="0" y="4" width="100" height="16" />
+                    <frame id="182:1418" name="tlRow2bar" x="108" y="3" width="940" height="18">
+                      <frame id="182:1419" name="tlRow2barInner" x="0" y="0" width="120" height="18">
+                        <text id="182:1420" name="tlRow2barTxt" x="48.5" y="3.5" width="23" height="11" />
+                      </frame>
+                    </frame>
+                  </frame>
+                  <frame id="182:1421" name="tlRow3" x="12" y="68" width="1048" height="24">
+                    <text id="182:1422" name="tlRow3label" x="0" y="4" width="100" height="16" />
+                    <frame id="182:1423" name="tlRow3bar" x="108" y="3" width="940" height="18">
+                      <frame id="182:1424" name="tlRow3barInner" x="0" y="0" width="140" height="18">
+                        <text id="182:1425" name="tlRow3barTxt" x="59" y="3.5" width="22" height="11" />
+                      </frame>
+                    </frame>
+                  </frame>
+                  <frame id="182:1426" name="tlRow4" x="12" y="98" width="1048" height="24">
+                    <text id="182:1427" name="tlRow4label" x="0" y="4" width="100" height="16" />
+                    <frame id="182:1428" name="tlRow4bar" x="108" y="3" width="940" height="18">
+                      <frame id="182:1429" name="tlRow4barInner" x="40" y="0" width="200" height="18">
+                        <text id="182:1430" name="tlRow4barTxt" x="87.5" y="3.5" width="25" height="11" />
+                      </frame>
+                    </frame>
+                  </frame>
+                  <frame id="182:1431" name="tlRow5" x="12" y="128" width="1048" height="24">
+                    <text id="182:1432" name="tlRow5label" x="0" y="4" width="100" height="16" />
+                    <frame id="182:1433" name="tlRow5bar" x="108" y="3" width="940" height="18">
+                      <frame id="182:1434" name="tlRow5barInner" x="0" y="0" width="100" height="18">
+                        <text id="182:1435" name="tlRow5barTxt" x="38.5" y="3.5" width="23" height="11" />
+                      </frame>
+                    </frame>
+                  </frame>
+                </frame>
+              </frame>
+            </frame>
+          </frame>
+        </frame>
+        <frame id="182:1436" name="sec5" x="0" y="2099" width="1104" height="351">
+          <text id="182:1437" name="sec5title" x="0" y="0" width="144" height="22" />
+          <text id="182:1438" name="sec5desc" x="0" y="34" width="312" height="17" />
+          <frame id="182:1439" name="propList" x="0" y="63" width="320" height="288">
+            <frame id="182:1440" name="p1" x="0" y="0" width="320" height="36">
+              <frame id="182:1441" name="p1icon" x="12" y="10" width="16" height="16" />
+              <text id="182:1445" name="p1txt" x="38" y="10" width="27" height="16" />
+            </frame>
+            <frame id="182:1446" name="p2" x="0" y="36" width="320" height="36">
+              <frame id="182:1447" name="p2icon" x="12" y="10" width="16" height="16" />
+              <text id="182:1449" name="p2txt" x="38" y="10" width="39" height="16" />
+            </frame>
+            <frame id="182:1450" name="p3" x="0" y="72" width="320" height="36">
+              <frame id="182:1451" name="p3icon" x="12" y="10" width="16" height="16" />
+              <text id="182:1455" name="p3txt" x="38" y="10" width="73" height="16" />
+            </frame>
+            <frame id="182:1456" name="p4" x="0" y="108" width="320" height="36">
+              <frame id="182:1457" name="p4icon" x="12" y="10" width="16" height="16" />
+              <text id="182:1462" name="p4txt" x="38" y="10" width="29" height="16" />
+            </frame>
+            <frame id="182:1463" name="p5" x="0" y="144" width="320" height="36">
+              <frame id="182:1464" name="p5icon" x="12" y="10" width="16" height="16" />
+              <text id="182:1467" name="p5txt" x="38" y="10" width="62" height="16" />
+            </frame>
+            <frame id="182:1468" name="p6" x="0" y="180" width="320" height="36">
+              <frame id="182:1469" name="p6icon" x="12" y="10" width="16" height="16" />
+              <text id="182:1472" name="p6txt" x="38" y="10" width="50" height="16" />
+            </frame>
+            <frame id="182:1473" name="p7" x="0" y="216" width="320" height="36">
+              <frame id="182:1474" name="p7icon" x="12" y="10" width="16" height="16" />
+              <text id="182:1476" name="p7txt" x="38" y="10" width="38" height="16" />
+            </frame>
+            <frame id="182:1477" name="p8" x="0" y="252" width="320" height="36">
+              <frame id="182:1478" name="p8icon" x="12" y="10" width="16" height="16" />
+              <text id="182:1489" name="p8txt" x="38" y="10" width="49" height="16" />
+            </frame>
+          </frame>
+        </frame>
+      </frame>
+      <frame id="182:1490" name="Sections Bottom" x="48" y="2522" width="1104" height="1005">
+        <frame id="182:1491" name="Section 6 - Relation Example" x="0" y="0" width="1104" height="393">
+          <text id="182:1492" name="sec6title" x="0" y="0" width="319" height="27" />
+          <text id="182:1493" name="sec6desc" x="0" y="47" width="1104" height="21" />
+          <frame id="182:1494" name="Relation Databases" x="0" y="88" width="1104" height="184">
+            <frame id="182:1495" name="Tasks Database" x="0" y="0" width="540" height="184">
+              <frame id="182:1496" name="Tasks Header" x="0" y="0" width="540" height="40">
+                <frame id="182:1497" name="tIcon" x="12" y="12" width="16" height="16" />
+                <text id="182:1500" name="tTitle" x="28" y="11.5" width="40" height="17" />
+              </frame>
+              <frame id="182:1501" name="Task Row 1" x="0" y="40" width="540" height="36">
+                <text id="182:1502" name="tR1name" x="12" y="10" width="385" height="16" />
+                <frame id="182:1503" name="tR1rel" x="409" y="7" width="119" height="22">
+                  <text id="182:1504" name="tR1relTxt" x="6" y="4.5" width="107" height="13" />
+                </frame>
+              </frame>
+              <frame id="182:1505" name="Task Row 2" x="0" y="76" width="540" height="36">
+                <text id="182:1506" name="tR2name" x="12" y="10" width="414" height="16" />
+                <frame id="182:1507" name="tR2rel" x="438" y="7" width="90" height="22">
+                  <text id="182:1508" name="tR2relTxt" x="6" y="4.5" width="78" height="13" />
+                </frame>
+              </frame>
+              <frame id="182:1509" name="Task Row 3" x="0" y="112" width="540" height="36">
+                <text id="182:1510" name="tR3name" x="12" y="10" width="385" height="16" />
+                <frame id="182:1511" name="tR3rel" x="409" y="7" width="119" height="22">
+                  <text id="182:1512" name="tR3relTxt" x="6" y="4.5" width="107" height="13" />
+                </frame>
+              </frame>
+              <frame id="182:1513" name="Task Row 4" x="0" y="148" width="540" height="36">
+                <text id="182:1514" name="tR4name" x="12" y="10" width="414" height="16" />
+                <frame id="182:1515" name="tR4rel" x="438" y="7" width="90" height="22">
+                  <text id="182:1516" name="tR4relTxt" x="6" y="4.5" width="78" height="13" />
+                </frame>
+              </frame>
+            </frame>
+            <frame id="182:1517" name="Projects Database" x="564" y="0" width="540" height="184">
+              <frame id="182:1518" name="Projects Header" x="0" y="0" width="540" height="40">
+                <frame id="182:1519" name="pIcon" x="12" y="12" width="16" height="16" />
+                <text id="182:1521" name="pTitle" x="36" y="11.5" width="56" height="17" />
+              </frame>
+              <frame id="182:1522" name="Projects Col Header" x="0" y="40" width="540" height="32">
+                <text id="182:1523" name="pColName" x="12" y="9.5" width="312" height="13" />
+                <text id="182:1524" name="pColTasks" x="336" y="8" width="100" height="16" />
+                <text id="182:1525" name="pColStatus" x="448" y="8" width="80" height="16" />
+              </frame>
+              <frame id="182:1526" name="Project Row 1" x="0" y="72" width="540" height="36">
+                <text id="182:1527" name="pR1name" x="12" y="10" width="312" height="16" />
+                <frame id="182:1528" name="pR1count" x="336" y="7" width="100" height="22">
+                  <frame id="182:1529" name="pR1badge" x="0" y="1" width="50" height="20">
+                    <text id="182:1530" name="pR1badgeTxt" x="6" y="3.5" width="38" height="13" />
+                  </frame>
+                </frame>
+                <frame id="182:1531" name="pR1status" x="448" y="7" width="80" height="22">
+                  <text id="182:1532" name="pR1statusTxt" x="23.5" y="4.5" width="33" height="13" />
+                </frame>
+              </frame>
+              <frame id="182:1533" name="Project Row 2" x="0" y="108" width="540" height="36">
+                <text id="182:1534" name="pR2name" x="12" y="10" width="312" height="16" />
+                <frame id="182:1535" name="pR2count" x="336" y="7" width="100" height="22">
+                  <frame id="182:1536" name="pR2badge" x="0" y="1" width="50" height="20">
+                    <text id="182:1537" name="pR2badgeTxt" x="6" y="3.5" width="38" height="13" />
+                  </frame>
+                </frame>
+                <frame id="182:1538" name="pR2status" x="448" y="7" width="80" height="22">
+                  <text id="182:1539" name="pR2statusTxt" x="23.5" y="4.5" width="33" height="13" />
+                </frame>
+              </frame>
+            </frame>
+          </frame>
+          <frame id="182:1540" name="Relation Indicator" x="0" y="292" width="1104" height="41">
+            <frame id="182:1541" name="relIcon" x="16" y="12.5" width="16" height="16" />
+            <text id="182:1544" name="relText" x="42" y="12" width="1046" height="17" />
+          </frame>
+          <frame id="182:1545" name="Arrow Visual" x="0" y="353" width="1104" height="40">
+            <text id="182:1546" name="arrowLeft" x="419.5" y="12" width="37" height="16" />
+            <frame id="182:1547" name="arrowLine" x="468.5" y="19" width="120" height="2" />
+            <frame id="182:1548" name="arrowIcon" x="600.5" y="10" width="20" height="20" />
+            <text id="182:1551" name="arrowRight" x="632.5" y="12" width="52" height="16" />
+          </frame>
+        </frame>
+        <frame id="182:1552" name="Section 7 - Collaboration UI" x="0" y="433" width="1104" height="274">
+          <text id="182:1553" name="sec7title" x="0" y="0" width="257" height="27" />
+          <text id="182:1554" name="sec7desc" x="0" y="47" width="1104" height="21" />
+          <frame id="182:1555" name="Collab Cards" x="0" y="88" width="1104" height="186">
+            <frame id="182:1556" name="Comment Bubble" x="0" y="0" width="357.3333435058594" height="186">
+              <frame id="182:1557" name="commentHeader" x="16" y="16" width="325.3333435058594" height="32">
+                <ellipse id="182:1558" name="commentAvatar" x="0" y="0" width="32" height="32" />
+                <text id="182:1559" name="commentAvatarLetter" x="42" y="8" width="78" height="16" />
+              </frame>
+              <frame id="182:1560" name="commentBody" x="16" y="60" width="325.3333435058594" height="92">
+                <frame id="182:1561" name="commentUser" x="12" y="10" width="301.3333435058594" height="24">
+                  <ellipse id="182:1562" name="commentUserAvatar" x="0" y="0" width="24" height="24" />
+                  <text id="182:1563" name="commentUserName" x="32" y="4.5" width="82" height="15" />
+                  <text id="182:1564" name="commentTime" x="122" y="5.5" width="51" height="13" />
+                </frame>
+                <text id="182:1565" name="commentText" x="12" y="42" width="301.3333435058594" height="40" />
+              </frame>
+            </frame>
+            <frame id="182:1566" name="User Presence" x="373.3333435058594" y="0" width="357.33331298828125" height="186">
+              <text id="182:1567" name="avHeader" x="16" y="16" width="97" height="16" />
+              <frame id="182:1568" name="avRow" x="16" y="44" width="325.33331298828125" height="32">
+                <frame id="182:1569" name="avStack" x="0" y="0" width="128" height="32">
+                  <ellipse id="182:1570" name="av1" x="0" y="0" width="32" height="32" />
+                  <ellipse id="182:1571" name="av2" x="24" y="0" width="32" height="32" />
+                  <ellipse id="182:1572" name="av3" x="48" y="0" width="32" height="32" />
+                  <ellipse id="182:1573" name="av4" x="72" y="0" width="32" height="32" />
+                </frame>
+                <text id="182:1574" name="avCount" x="140" y="0" width="72" height="15" />
+              </frame>
+              <frame id="182:1575" name="avList" x="16" y="88" width="325.33331298828125" height="61">
+                <frame id="182:1576" name="avUser1" x="0" y="0" width="325.33331298828125" height="15">
+                  <ellipse id="182:1577" name="avU1dot" x="0" y="3.5" width="8" height="8" />
+                  <text id="182:1578" name="avU1name" x="16" y="0" width="143" height="15" />
+                </frame>
+                <frame id="182:1579" name="avUser2" x="0" y="23" width="325.33331298828125" height="15">
+                  <ellipse id="182:1580" name="avU2dot" x="0" y="3.5" width="8" height="8" />
+                  <text id="182:1581" name="avU2name" x="16" y="0" width="142" height="15" />
+                </frame>
+                <frame id="182:1582" name="avUser3" x="0" y="46" width="325.33331298828125" height="15">
+                  <ellipse id="182:1583" name="avU3dot" x="0" y="3.5" width="8" height="8" />
+                  <text id="182:1584" name="avU3name" x="16" y="0" width="79" height="15" />
+                </frame>
+              </frame>
+            </frame>
+            <frame id="182:1585" name="Mention Example" x="746.6666259765625" y="0" width="357.33331298828125" height="186">
+              <text id="182:1586" name="mentionHeader" x="16" y="16" width="75" height="16" />
+              <text id="182:1587" name="mentionDesc" x="16" y="44" width="325.33331298828125" height="17" />
+              <frame id="182:1588" name="mentionExample" x="16" y="73" width="325.33331298828125" height="70">
+                <frame id="182:1589" name="mentionLine1" x="12" y="10" width="301.33331298828125" height="22">
+                  <text id="182:1590" name="mText1" x="0" y="3" width="25" height="16" />
+                  <frame id="182:1591" name="mTag1" x="29" y="0" width="52" height="22">
+                    <text id="182:1592" name="mTag1Txt" x="6" y="3.5" width="40" height="15" />
+                  </frame>
+                  <text id="182:1593" name="mText2" x="85" y="3" width="100" height="16" />
+                </frame>
+                <frame id="182:1594" name="mentionLine2" x="12" y="38" width="301.33331298828125" height="22">
+                  <text id="182:1595" name="mText3" x="0" y="3" width="102" height="16" />
+                  <frame id="182:1596" name="mTag2" x="106" y="0" width="47" height="22">
+                    <text id="182:1597" name="mTag2Txt" x="6" y="3.5" width="35" height="15" />
+                  </frame>
+                  <text id="182:1598" name="mText4" x="157" y="3" width="59" height="16" />
+                </frame>
+              </frame>
+              <text id="182:1599" name="mentionNote" x="16" y="155" width="325.33331298828125" height="15" />
+            </frame>
+          </frame>
+        </frame>
+        <frame id="182:1600" name="Section 8 - Buttons &amp; Templates" x="0" y="747" width="1104" height="258">
+          <text id="182:1601" name="sec8title" x="0" y="0" width="336" height="27" />
+          <text id="182:1602" name="sec8desc" x="0" y="47" width="1104" height="21" />
+          <frame id="182:1603" name="Button Row" x="0" y="88" width="1104" height="40">
+            <frame id="182:1604" name="Add Task Button" x="0" y="0" width="127" height="40">
+              <frame id="182:1605" name="addTaskIcon" x="20" y="12" width="16" height="16" />
+              <text id="182:1608" name="addTaskLabel" x="44" y="11.5" width="63" height="17" />
+            </frame>
+            <frame id="182:1609" name="New Template Button" x="143" y="0" width="160" height="40">
+              <frame id="182:1610" name="newTemplIcon" x="20" y="12" width="16" height="16" />
+              <text id="182:1615" name="newTemplLabel" x="44" y="11.5" width="96" height="17" />
+            </frame>
+          </frame>
+          <frame id="182:1616" name="Template Cards" x="0" y="148" width="1104" height="110">
+            <frame id="182:1617" name="Template 1" x="0" y="0" width="357.3333435058594" height="110">
+              <frame id="182:1618" name="tmpl1icon" x="16" y="16" width="24" height="24" />
+              <text id="182:1622" name="tmpl1title" x="16" y="50" width="100" height="17" />
+              <text id="182:1623" name="tmpl1desc" x="16" y="77" width="325.3333435058594" height="17" />
+            </frame>
+            <frame id="182:1624" name="Template 2" x="373.3333435058594" y="0" width="357.33331298828125" height="110">
+              <frame id="182:1625" name="tmpl2icon" x="16" y="16" width="24" height="24" />
+              <text id="182:1631" name="tmpl2title" x="16" y="50" width="84" height="17" />
+              <text id="182:1632" name="tmpl2desc" x="16" y="77" width="325.33331298828125" height="17" />
+            </frame>
+            <frame id="182:1633" name="Template 3" x="746.6666259765625" y="0" width="357.33331298828125" height="110">
+              <frame id="182:1634" name="tmpl3icon" x="16" y="16" width="24" height="24" />
+              <text id="182:1639" name="tmpl3title" x="16" y="50" width="105" height="17" />
+              <text id="182:1640" name="tmpl3desc" x="16" y="77" width="325.33331298828125" height="17" />
+            </frame>
+          </frame>
+        </frame>
+      </frame>
+    </frame>
+  </frame>
+</frame>
