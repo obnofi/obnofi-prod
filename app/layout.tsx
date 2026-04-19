@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const inter = Inter({
@@ -18,7 +19,32 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${inter.variable} h-full antialiased`}
+    >
+      <head>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`
+            (() => {
+              const root = document.documentElement;
+              const media = window.matchMedia("(prefers-color-scheme: dark)");
+              const applyTheme = (isDark) => {
+                root.classList.toggle("dark", isDark);
+                root.style.colorScheme = isDark ? "dark" : "light";
+              };
+              applyTheme(media.matches);
+              const onChange = (event) => applyTheme(event.matches);
+              if (typeof media.addEventListener === "function") {
+                media.addEventListener("change", onChange);
+              } else if (typeof media.addListener === "function") {
+                media.addListener(onChange);
+              }
+            })();
+          `}
+        </Script>
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

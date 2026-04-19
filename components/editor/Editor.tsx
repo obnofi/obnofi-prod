@@ -111,13 +111,13 @@ export function Editor({
     <>
       <div
         data-testid="workspace-editor"
-        className={`editor prose prose-zinc dark:prose-invert max-w-none ${
+        className={`editor prose max-w-none text-[#111110] dark:prose-invert dark:text-zinc-100 ${
           editable ? "cursor-text" : ""
         }`}
       >
         <EditorContent
           editor={editor}
-          className="[&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[200px] [&_.ProseMirror-focused]:outline-none [&_.ProseMirror-placeholder]:text-zinc-400 [&_.ProseMirror-placeholder]:before:content-[attr(data-placeholder)] [&_.ProseMirror-placeholder]:before:pointer-events-none"
+          className="[&_.ProseMirror]:min-h-[200px] [&_.ProseMirror]:text-[#111110] [&_.ProseMirror]:outline-none dark:[&_.ProseMirror]:text-zinc-100 [&_.ProseMirror-focused]:outline-none [&_.ProseMirror-placeholder]:text-zinc-400 [&_.ProseMirror-placeholder]:before:content-[attr(data-placeholder)] [&_.ProseMirror-placeholder]:before:pointer-events-none"
         />
       </div>
 

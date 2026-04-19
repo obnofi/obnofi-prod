@@ -4,6 +4,7 @@
 :root {
   --background: #ffffff;
   --foreground: #111110;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -12,11 +13,10 @@
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #111110;
-    --foreground: #ededed;
-  }
+html.dark {
+  --background: #111110;
+  --foreground: #ededed;
+  color-scheme: dark;
 }
 
 body {
@@ -28,6 +28,30 @@ body {
 /* Tiptap editor styles */
 .ProseMirror {
   outline: none;
+}
+
+.editor .ProseMirror,
+.editor .ProseMirror p,
+.editor .ProseMirror li,
+.editor .ProseMirror ul,
+.editor .ProseMirror ol,
+.editor .ProseMirror blockquote,
+.editor .ProseMirror strong,
+.editor .ProseMirror em,
+.editor .ProseMirror span {
+  color: #111110 !important;
+}
+
+html.dark .editor .ProseMirror,
+html.dark .editor .ProseMirror p,
+html.dark .editor .ProseMirror li,
+html.dark .editor .ProseMirror ul,
+html.dark .editor .ProseMirror ol,
+html.dark .editor .ProseMirror blockquote,
+html.dark .editor .ProseMirror strong,
+html.dark .editor .ProseMirror em,
+html.dark .editor .ProseMirror span {
+  color: #ededed !important;
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {
@@ -42,6 +66,7 @@ body {
   background-color: transparent;
   border: 0;
   box-shadow: none;
+  z-index: 100000 !important;
 }
 
 .tippy-box[data-theme~="slash-command"] > .tippy-content {
@@ -62,6 +87,10 @@ body {
 }
 
 /* Prose styles for content */
+.prose {
+  color: var(--foreground);
+}
+
 .prose h1 {
   font-size: 2.25rem;
   font-weight: 700;
@@ -80,14 +109,17 @@ body {
 .prose p {
   margin-bottom: 0.75rem;
   line-height: 1.75;
+  color: var(--foreground);
 }
 
 .prose ul {
   list-style-type: disc;
   padding-left: 1.5rem;
   margin-bottom: 1rem;
+  color: var(--foreground);
 }
 
 .prose li {
   margin-bottom: 0.25rem;
+  color: var(--foreground);
 }
