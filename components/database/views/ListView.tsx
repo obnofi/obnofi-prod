@@ -1,33 +1,105 @@
 "use client";
 
-import type { Task } from "@/types/database";
-import { formatTaskDay, getStatusClasses } from "@/lib/task-view-utils";
+import { Plus } from "lucide-react";
+import { Property, Page, SelectOption } from "@/types";
+import { getOptionBgColor, getOptionTextColor } from "@/lib/property-utils";
 
 interface ListViewProps {
-  tasks: Task[];
+  properties: Property[];
+  rows: Page[];
+  onCreateRow?: () => void;
+  onOpenRow?: (rowId: string) => void;
 }
 
-export function ListView({ tasks }: ListViewProps) {
+function getVal(row: Page, propId: string) {
+  return row.propertyValues?.find(
+    (pv) => pv.propertyId === propId || pv.columnId === propId
+  )?.value;
+}
+
+export function ListView({ properties, rows, onCreateRow, onOpenRow }: ListViewProps) {
+  const statusProp = properties.find((p) => p.type === "select" || p.type === "status");
+  const dateProp = properties.find((p) => p.type === "date");
+  const tagProp = properties.find((p) => p.type === "multi_select");
+
+  const fmtDate = (d: string) =>
+    new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-      {tasks.map((task) => (
-        <div
-          key={task.id}
-          className="flex items-center gap-4 border-b border-zinc-100 px-4 py-4 last:border-b-0"
-        >
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-[#111110]">{task.name}</p>
-            <p className="mt-1 text-xs text-zinc-500">
-              {task.tags.join(" · ")} · {formatTaskDay(task.date)}
-            </p>
-          </div>
-          <span
-            className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${getStatusClasses(task.status)}`}
+    <div className="flex h-full flex-col overflow-auto">
+      {rows.map((row) => {
+        const statusVal = statusProp ? getVal(row, statusProp.id) : undefined;
+        const tagVal = tagProp ? getVal(row, tagProp.id) : undefined;
+        const dateVal = dateProp ? getVal(row, dateProp.id) : undefined;
+
+        const statusOptionId =
+          statusVal && (statusVal.type === "select" || statusVal.type === "status")
+            ? statusVal.optionId
+            : null;
+        const statusOption = statusOptionId
+          ? statusProp?.options?.find((o) => o.id === statusOptionId)
+          : null;
+
+        const tagIds = tagVal?.type === "multi_select" ? tagVal.optionIds : [];
+        const tags = tagIds
+          .map((id) => tagProp?.options?.find((o) => o.id === id))
+          .filter(Boolean) as SelectOption[];
+
+        const dateStr = dateVal?.type === "date" ? dateVal.value : null;
+
+        return (
+          <div
+            key={row.id}
+            className="flex items-center gap-3 border-b border-[var(--color-border)] px-4 py-3 transition hover:bg-[var(--color-hover)]"
           >
-            {task.status}
-          </span>
-        </div>
-      ))}
+            <div className="min-w-0 flex-1">
+              <span className="text-[13px] font-medium text-[var(--color-text-primary)]">
+                {row.title || "Untitled"}
+              </span>
+              {tags.length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium"
+                      style={{
+                        backgroundColor: getOptionBgColor(tag.color),
+                        color: getOptionTextColor(tag.color),
+                      }}
+                    >
+                      {tag.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {dateStr && (
+                <span className="text-xs text-[var(--color-text-secondary)]">{fmtDate(dateStr)}</span>
+              )}
+              {statusOption && (
+                <span
+                  className="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium"
+                  style={{
+                    backgroundColor: getOptionBgColor(statusOption.color),
+                    color: getOptionTextColor(statusOption.color),
+                  }}
+                >
+                  {statusOption.label}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+      <button
+        type="button"
+        onClick={onCreateRow}
+        className="flex items-center gap-1.5 px-4 py-3 text-[13px] text-[var(--color-text-secondary)] transition hover:text-[var(--color-text-primary)]"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        New
+      </button>
     </div>
   );
 }

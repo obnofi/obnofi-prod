@@ -1,6 +1,6 @@
 "use client";
 
-import type { Page } from "@/types";
+import type { Page, PropertyType, ViewType } from "@/types";
 import { DatabaseTableCard } from "@/components/database/DatabaseTableCard";
 import { useDatabasePage } from "@/hooks/useDatabasePage";
 
@@ -26,6 +26,16 @@ interface DatabasePageCardProps {
   maxContentHeightClass?: string;
   state?: "loading" | "ready" | "creating" | "empty";
   editableTitle?: boolean;
+  viewType?: Extract<ViewType, "table" | "gallery" | "board" | "calendar">;
+  onViewTypeChange?: (
+    viewType: Extract<ViewType, "table" | "gallery" | "board" | "calendar">
+  ) => void;
+  onSurfaceStateChange?: (snapshot: {
+    columns: Array<{ id: string; name: string; type: PropertyType; width?: number }>;
+    rows: string[];
+    filters: Array<{ id: string; value: unknown }>;
+    sorts: Array<{ id: string; desc: boolean }>;
+  }) => void;
 }
 
 export function DatabasePageCard({
@@ -43,12 +53,18 @@ export function DatabasePageCard({
   maxContentHeightClass,
   state,
   editableTitle = false,
+  viewType,
+  onViewTypeChange,
+  onSurfaceStateChange,
 }: DatabasePageCardProps) {
   const {
     databasePage,
     isLoading,
     setDatabasePage,
     updateDatabaseTitle,
+    createRow,
+    createProperty,
+    updatePropertyValue,
   } = useDatabasePage(pageId);
 
   return (
@@ -61,7 +77,13 @@ export function DatabasePageCard({
       isLoading={isLoading}
       onDatabaseChange={setDatabasePage}
       onOpenRow={onOpenRow}
+      onCreateRow={createRow}
+      onCreateProperty={(name, type) => createProperty({ name, type })}
+      onUpdatePropertyValue={updatePropertyValue}
       onTitleChange={editableTitle ? updateDatabaseTitle : undefined}
+      viewType={viewType}
+      onViewTypeChange={onViewTypeChange}
+      onSurfaceStateChange={onSurfaceStateChange}
       selection={selection}
       headerLabel={headerLabel}
       onOpenDatabase={onOpenDatabase}

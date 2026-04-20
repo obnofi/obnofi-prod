@@ -1,36 +1,43 @@
 "use client";
 
-import type { Task } from "@/types/database";
+import { Property, Page } from "@/types";
 import { useDatabaseViewStore } from "@/store/useDatabaseViewStore";
+import { useGroveTable } from "@/hooks/useGroveTable";
 import { BoardView } from "@/components/database/views/BoardView";
 import { CalendarView } from "@/components/database/views/CalendarView";
 import { GalleryView } from "@/components/database/views/GalleryView";
-import { ListView } from "@/components/database/views/ListView";
-import { TaskTableView } from "@/components/database/views/TableView";
-import { TimelineView } from "@/components/database/views/TimelineView";
 
 interface DatabaseViewRendererProps {
-  tasks: Task[];
+  properties: Property[];
+  rows: Page[];
 }
 
 export function DatabaseViewRenderer({
-  tasks,
+  properties,
+  rows,
 }: DatabaseViewRendererProps) {
   const activeView = useDatabaseViewStore((state) => state.activeView);
+  const scopeId = `renderer:${properties[0]?.databaseId ?? "default"}`;
+  const { table, queryState } = useGroveTable({
+    scopeId,
+    properties,
+    rows,
+  });
 
   switch (activeView) {
     case "board":
-      return <BoardView tasks={tasks} />;
+      return (
+        <BoardView
+          table={table}
+          properties={properties}
+          groupByPropertyId={queryState.grouping[0]}
+        />
+      );
     case "calendar":
-      return <CalendarView tasks={tasks} />;
+      return <CalendarView table={table} properties={properties} />;
     case "gallery":
-      return <GalleryView tasks={tasks} />;
-    case "list":
-      return <ListView tasks={tasks} />;
-    case "timeline":
-      return <TimelineView tasks={tasks} />;
-    case "table":
+      return <GalleryView table={table} properties={properties} />;
     default:
-      return <TaskTableView tasks={tasks} />;
+      return null;
   }
 }

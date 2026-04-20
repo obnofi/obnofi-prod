@@ -6,6 +6,12 @@ import {
   Property,
 } from "@/types";
 
+export interface DefaultColumnDefinition {
+  name: string;
+  type: PropertyType;
+  options?: SelectOption[];
+}
+
 // All available property types
 export const ALL_PROPERTY_TYPES: PropertyType[] = [
   "text",
@@ -46,6 +52,80 @@ export const BASIC_PROPERTY_TYPES: PropertyType[] = [
 
 // Legacy export for backward compatibility
 export const DATABASE_COLUMN_TYPES = BASIC_PROPERTY_TYPES;
+
+const DEFAULT_STATUS_OPTIONS: SelectOption[] = [
+  { id: "status-todo", label: "To Do", color: "gray" },
+  { id: "status-in-progress", label: "In Progress", color: "yellow" },
+  { id: "status-done", label: "Done", color: "green" },
+];
+
+const DEFAULT_PRIORITY_OPTIONS: SelectOption[] = [
+  { id: "priority-low", label: "Low", color: "gray" },
+  { id: "priority-medium", label: "Medium", color: "yellow" },
+  { id: "priority-high", label: "High", color: "red" },
+];
+
+export function getExampleDatabaseColumns(): DefaultColumnDefinition[] {
+  return [
+    {
+      name: "Status",
+      type: "status",
+      options: DEFAULT_STATUS_OPTIONS,
+    },
+    {
+      name: "Priority",
+      type: "select",
+      options: DEFAULT_PRIORITY_OPTIONS,
+    },
+    {
+      name: "Due Date",
+      type: "date",
+    },
+    {
+      name: "Assignee",
+      type: "person",
+    },
+  ];
+}
+
+export function getDefaultOptionsForProperty(
+  type: PropertyType,
+  name?: string
+): SelectOption[] | undefined {
+  if (type === "status") {
+    return DEFAULT_STATUS_OPTIONS.map((option) => ({ ...option }));
+  }
+
+  if (type === "select") {
+    if (name?.trim().toLowerCase() === "priority") {
+      return DEFAULT_PRIORITY_OPTIONS.map((option) => ({ ...option }));
+    }
+
+    return [
+      { id: `${name ?? "option"}-option-1`, label: "Option 1", color: "gray" },
+      { id: `${name ?? "option"}-option-2`, label: "Option 2", color: "blue" },
+      { id: `${name ?? "option"}-option-3`, label: "Option 3", color: "green" },
+    ];
+  }
+
+  return undefined;
+}
+
+export function normalizePropertyOptions(
+  type: PropertyType,
+  name: string,
+  options?: SelectOption[]
+): SelectOption[] | undefined {
+  if (type !== "select" && type !== "multi_select" && type !== "status") {
+    return undefined;
+  }
+
+  if (options && options.length > 0) {
+    return options;
+  }
+
+  return getDefaultOptionsForProperty(type, name);
+}
 
 // Get display label for property type
 export function getPropertyTypeLabel(type: PropertyType): string {

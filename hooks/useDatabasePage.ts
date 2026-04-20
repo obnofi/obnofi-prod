@@ -1,12 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import type {
   DatabasePage,
   PropertyType,
   PropertyValueData,
   SelectOption,
 } from "@/types";
+import {
+  fetchGroveCatalogPage,
+  patchGroveCell,
+  patchGroveTitle,
+  plantGroveSeed,
+  pruneGroveProperty,
+  renameGroveSeed,
+  reshapeGroveProperty,
+  sproutGroveProperty,
+} from "@/lib/groveCatalogApi";
+import { useGroveCatalogStore } from "@/store/useGroveCatalogStore";
 
 interface CreatePropertyInput {
   name: string;
@@ -21,32 +32,62 @@ interface UpdatePropertyInput {
 }
 
 export function useDatabasePage(pageId: string | null | undefined) {
-  const [databasePage, setDatabasePage] = useState<DatabasePage | null>(null);
-  const [isLoading, setIsLoading] = useState(Boolean(pageId));
+  const databasePage = useGroveCatalogStore((state) =>
+    pageId ? state.grovePages[pageId] ?? null : null
+  );
+  const isLoading = useGroveCatalogStore((state) =>
+    pageId ? Boolean(state.groveLoading[pageId]) : false
+  );
+  const setGrovePage = useGroveCatalogStore((state) => state.setGrovePage);
+  const setGroveLoading = useGroveCatalogStore((state) => state.setGroveLoading);
+  const patchGrovePageTitle = useGroveCatalogStore(
+    (state) => state.patchGrovePageTitle
+  );
+  const replaceGroveProperty = useGroveCatalogStore(
+    (state) => state.replaceGroveProperty
+  );
+  const removeGroveProperty = useGroveCatalogStore(
+    (state) => state.removeGroveProperty
+  );
+  const patchGroveSeedTitle = useGroveCatalogStore(
+    (state) => state.patchGroveSeedTitle
+  );
+  const patchGroveCellValue = useGroveCatalogStore(
+    (state) => state.patchGroveCellValue
+  );
 
   const loadDatabasePage = useCallback(async () => {
     if (!pageId) {
-      setDatabasePage(null);
-      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    const response = await fetch(`/api/pages/${pageId}?view=full`);
-    if (!response.ok) {
-      setDatabasePage(null);
-      setIsLoading(false);
-      return;
+    setGroveLoading(pageId, true);
+    try {
+      const page = await fetchGroveCatalogPage(pageId);
+      setGrovePage(pageId, page);
+    } catch {
+      setGrovePage(pageId, null);
+    } finally {
+      setGroveLoading(pageId, false);
     }
-
-    const page = (await response.json()) as DatabasePage;
-    setDatabasePage(page);
-    setIsLoading(false);
-  }, [pageId]);
+  }, [pageId, setGroveLoading, setGrovePage]);
 
   useEffect(() => {
     void loadDatabasePage();
   }, [loadDatabasePage]);
+
+  const setDatabasePage = useCallback(
+    (nextPage: DatabasePage | null | ((current: DatabasePage | null) => DatabasePage | null)) => {
+      if (!pageId) {
+        return;
+      }
+
+      const resolvedPage =
+        typeof nextPage === "function" ? nextPage(databasePage) : nextPage;
+      setGrovePage(pageId, resolvedPage);
+    },
+    [databasePage, pageId, setGrovePage]
+  );
 
   const updateDatabaseTitle = useCallback(
     async (title: string) => {
@@ -54,17 +95,14 @@ export function useDatabasePage(pageId: string | null | undefined) {
         return;
       }
 
-      await fetch(`/api/pages/${pageId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title }),
-      });
-
-      setDatabasePage((current) =>
-        current ? { ...current, title } : current
-      );
+      patchGrovePageTitle(pageId, title);
+      try {
+        await patchGroveTitle(pageId, title);
+      } catch {
+        await loadDatabasePage();
+      }
     },
-    [pageId]
+    [loadDatabasePage, pageId, patchGrovePageTitle]
   );
 
   const createRow = useCallback(async () => {
@@ -72,12 +110,7 @@ export function useDatabasePage(pageId: string | null | undefined) {
       return;
     }
 
-    await fetch(`/api/databases/${databasePage.database.id}/rows`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: "Untitled" }),
-    });
-
+    await plantGroveSeed(databasePage.database.id, "Untitled");
     await loadDatabasePage();
   }, [databasePage, loadDatabasePage]);
 
@@ -87,164 +120,67 @@ export function useDatabasePage(pageId: string | null | undefined) {
         return;
       }
 
-      await fetch(`/api/databases/${databasePage.database.id}/columns`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      });
-
-      await loadDatabasePage();
+      const property = await sproutGroveProperty(databasePage.database.id, input);
+      if (pageId) {
+        replaceGroveProperty(pageId, property);
+      }
     },
-    [databasePage, loadDatabasePage]
+    [databasePage, pageId, replaceGroveProperty]
   );
 
   const updateProperty = useCallback(
     async (propertyId: string, input: UpdatePropertyInput) => {
-      const response = await fetch(`/api/columns/${propertyId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      });
-
-      if (!response.ok) {
+      if (!pageId) {
         return;
       }
 
-      const updatedProperty = await response.json();
-
-      setDatabasePage((current) => {
-        if (!current) {
-          return current;
-        }
-
-        const nextProperties = current.database.properties.map((property) =>
-          property.id === propertyId ? updatedProperty : property
-        );
-
-        return {
-          ...current,
-          database: {
-            ...current.database,
-            properties: nextProperties,
-            columns: nextProperties,
-          },
-        };
-      });
+      const updatedProperty = await reshapeGroveProperty(propertyId, input);
+      replaceGroveProperty(pageId, updatedProperty);
     },
-    []
+    [pageId, replaceGroveProperty]
   );
 
   const deleteProperty = useCallback(async (propertyId: string) => {
-    const response = await fetch(`/api/columns/${propertyId}`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
+    if (!pageId) {
       return;
     }
 
-    setDatabasePage((current) => {
-      if (!current) {
-        return current;
-      }
-
-      const nextProperties = current.database.properties.filter(
-        (property) => property.id !== propertyId
-      );
-
-      return {
-        ...current,
-        database: {
-          ...current.database,
-          properties: nextProperties,
-          columns: nextProperties,
-        },
-      };
-    });
-  }, []);
+    removeGroveProperty(pageId, propertyId);
+    try {
+      await pruneGroveProperty(propertyId);
+    } catch {
+      await loadDatabasePage();
+    }
+  }, [loadDatabasePage, pageId, removeGroveProperty]);
 
   const updateRowTitle = useCallback(async (rowId: string, title: string) => {
-    await fetch(`/api/pages/${rowId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
-    });
+    if (!pageId) {
+      return;
+    }
 
-    setDatabasePage((current) => {
-      if (!current) {
-        return current;
-      }
-
-      return {
-        ...current,
-        database: {
-          ...current.database,
-          rows: current.database.rows.map((row) =>
-            row.id === rowId ? { ...row, title } : row
-          ),
-        },
-      };
-    });
-  }, []);
+    patchGroveSeedTitle(pageId, rowId, title);
+    try {
+      await renameGroveSeed(rowId, title);
+    } catch {
+      await loadDatabasePage();
+    }
+  }, [loadDatabasePage, pageId, patchGroveSeedTitle]);
 
   const updatePropertyValue = useCallback(
     async (rowId: string, propertyId: string, value: PropertyValueData) => {
-      const response = await fetch("/api/property-values", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pageId: rowId,
-          columnId: propertyId,
-          value,
-        }),
-      });
-
-      if (!response.ok) {
+      if (!pageId) {
         return;
       }
 
-      const updatedPropertyValue = await response.json();
-
-      setDatabasePage((current) => {
-        if (!current) {
-          return current;
-        }
-
-        return {
-          ...current,
-          database: {
-            ...current.database,
-            rows: current.database.rows.map((row) => {
-              if (row.id !== rowId) {
-                return row;
-              }
-
-              const propertyValues = row.propertyValues ?? [];
-              const existingIndex = propertyValues.findIndex(
-                (propertyValue) =>
-                  propertyValue.propertyId === propertyId ||
-                  propertyValue.columnId === propertyId
-              );
-
-              if (existingIndex === -1) {
-                return {
-                  ...row,
-                  propertyValues: [...propertyValues, updatedPropertyValue],
-                };
-              }
-
-              return {
-                ...row,
-                propertyValues: propertyValues.map((propertyValue, index) =>
-                  index === existingIndex ? updatedPropertyValue : propertyValue
-                ),
-              };
-            }),
-          },
-        };
-      });
+      patchGroveCellValue(pageId, rowId, propertyId, value);
+      try {
+        const updatedPropertyValue = await patchGroveCell(rowId, propertyId, value);
+        patchGroveCellValue(pageId, rowId, propertyId, updatedPropertyValue);
+      } catch {
+        await loadDatabasePage();
+      }
     },
-    []
+    [loadDatabasePage, pageId, patchGroveCellValue]
   );
 
   return {

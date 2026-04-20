@@ -10,324 +10,166 @@ import {
 } from "@/types";
 import { ViewType } from "@/types/database";
 
-const mockPages: Map<string, Page> = new Map([
-  [
-    "page-1",
-    {
-      id: "page-1",
-      title: "Getting Started",
-      content: {
-        type: "doc",
-        content: [
-          {
-            type: "heading",
-            attrs: { level: 1 },
-            content: [{ type: "text", text: "Welcome to Obnofi" }],
-          },
-              {
-                type: "paragraph",
-                content: [
-                  {
-                    type: "text",
-                    text: "This is a simple page to demonstrate the publishing feature. Link out to [[Child Page]] and [[Task 1]] to see the graph view populate.",
-                  },
-                ],
-              },
-          {
-            type: "heading",
-            attrs: { level: 2 },
-            content: [{ type: "text", text: "Features" }],
-          },
-          {
-            type: "bulletList",
-            content: [
-              {
-                type: "listItem",
-                content: [
-                  {
-                    type: "paragraph",
-                    content: [{ type: "text", text: "Create and edit pages" }],
-                  },
-                ],
-              },
-              {
-                type: "listItem",
-                content: [
-                  {
-                    type: "paragraph",
-                    content: [
-                      { type: "text", text: "Publish pages with unique URLs" },
-                    ],
-                  },
-                ],
-              },
-              {
-                type: "listItem",
-                content: [
-                  {
-                    type: "paragraph",
-                    content: [
-                      {
-                        type: "text",
-                        text: "Password protection for sensitive content",
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      type: "document",
-      icon: null,
-      parentId: null,
-      workspaceId: "ws-1",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isPublic: false,
-      shareId: null,
-      sharePassword: null,
-    },
-  ],
-  [
-    "page-2",
-    {
-      id: "page-2",
-      title: "Project Canvas",
-      content: null,
-      type: "canvas",
-      icon: null,
-      parentId: null,
-      workspaceId: "ws-1",
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      updatedAt: new Date(Date.now() - 86400000).toISOString(),
-      isPublic: false,
-      shareId: null,
-      sharePassword: null,
-    },
-  ],
-  [
-    "page-3",
-    {
-      id: "page-3",
-      title: "Tasks Database",
-      content: null,
-      type: "database",
-      icon: null,
-      parentId: null,
-      workspaceId: "ws-1",
-      createdAt: new Date(Date.now() - 172800000).toISOString(),
-      updatedAt: new Date(Date.now() - 172800000).toISOString(),
-      isPublic: false,
-      shareId: null,
-      sharePassword: null,
-    },
-  ],
-  [
-    "page-4",
-    {
-      id: "page-4",
-      title: "Child Page",
-      content: {
-        type: "doc",
-        content: [
-          {
-            type: "paragraph",
-            content: [
-              {
-                type: "text",
-                text: "This is a child page under Getting Started. It also points back to [[Getting Started]].",
-              },
-            ],
-          },
-        ],
-      },
-      type: "document",
-      icon: null,
-      parentId: "page-1",
-      workspaceId: "ws-1",
-      createdAt: new Date(Date.now() - 100000).toISOString(),
-      updatedAt: new Date(Date.now() - 100000).toISOString(),
-      isPublic: false,
-      shareId: null,
-      sharePassword: null,
-    },
-  ],
-  [
-    "page-5",
-    {
-      id: "page-5",
-      title: "Task 1",
-      content: {
-        type: "doc",
-        content: [
-          {
-            type: "paragraph",
-            content: [
-              {
-                type: "text",
-                text: "First task in the database. Related note: [[Getting Started]].",
-              },
-            ],
-          },
-        ],
-      },
-      type: "document",
-      icon: null,
-      parentId: "page-3",
-      workspaceId: "ws-1",
-      databaseId: "db-1",
-      parentDatabaseId: "db-1",
-      createdAt: new Date(Date.now() - 200000).toISOString(),
-      updatedAt: new Date(Date.now() - 200000).toISOString(),
-      isPublic: false,
-      shareId: null,
-      sharePassword: null,
-    },
-  ],
-  [
-    "page-6",
-    {
-      id: "page-6",
-      title: "Task 2",
-      content: {
-        type: "doc",
-        content: [
-          {
-            type: "paragraph",
-            content: [{ type: "text", text: "Second task in the database." }],
-          },
-        ],
-      },
-      type: "document",
-      icon: null,
-      parentId: "page-3",
-      workspaceId: "ws-1",
-      databaseId: "db-1",
-      parentDatabaseId: "db-1",
-      createdAt: new Date(Date.now() - 300000).toISOString(),
-      updatedAt: new Date(Date.now() - 300000).toISOString(),
-      isPublic: false,
-      shareId: null,
-      sharePassword: null,
-    },
-  ],
-]);
+interface MockDbStore {
+  pages: Map<string, Page>;
+  databases: Map<string, Database>;
+  views: Map<string, View>;
+  columns: Map<string, Column>;
+  propertyValues: Map<string, PropertyValue>;
+  seeded: boolean;
+}
 
-// Mock Database Storage
-const mockDatabases: Map<string, Database> = new Map([
-  [
-    "db-1",
-    {
-      id: "db-1",
-      pageId: "page-3",
-      columns: [],
-      properties: [],
-      rows: [],
-      views: [],
-    },
-  ],
-]);
+const globalMockDb = globalThis as typeof globalThis & {
+  __obnofiMockDbStore?: MockDbStore;
+};
 
-// Mock Views Storage
-const mockViews: Map<string, View> = new Map([]);
+function createInitialStore(): MockDbStore {
+  return {
+    pages: new Map([
+      ["page-1", {
+        id: "page-1", title: "Getting Started",
+        content: { type: "doc", content: [
+          { type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: "Welcome to Obnofi" }] },
+          { type: "paragraph", content: [{ type: "text", text: "Link out to [[Child Page]] to see the graph view populate." }] },
+          { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Features" }] },
+          { type: "bulletList", content: [
+            { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "Block-based markdown editor" }] }] },
+            { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "Database views (Table, Board, Calendar, Gallery)" }] }] },
+            { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "Canvas & infinite whiteboard" }] }] },
+          ]},
+        ]},
+        type: "document", icon: "📝", parentId: null, workspaceId: "ws-1",
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+        isPublic: false, shareId: null, sharePassword: null,
+      }],
+      ["page-2", {
+        id: "page-2", title: "Project Canvas", content: null, type: "canvas", icon: "🎨",
+        parentId: null, workspaceId: "ws-1",
+        createdAt: new Date(Date.now() - 86400000).toISOString(),
+        updatedAt: new Date(Date.now() - 86400000).toISOString(),
+        isPublic: false, shareId: null, sharePassword: null,
+      }],
+      ["page-3", {
+        id: "page-3", title: "Tasks", content: null, type: "database", icon: "📋",
+        parentId: null, workspaceId: "ws-1", databaseId: "db-1",
+        createdAt: new Date(Date.now() - 172800000).toISOString(),
+        updatedAt: new Date(Date.now() - 172800000).toISOString(),
+        isPublic: false, shareId: null, sharePassword: null,
+      }],
+      ["page-4", {
+        id: "page-4", title: "Child Page",
+        content: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "This is a child page under Getting Started. Points back to [[Getting Started]]." }] }] },
+        type: "document", icon: null, parentId: "page-1", workspaceId: "ws-1",
+        createdAt: new Date(Date.now() - 100000).toISOString(),
+        updatedAt: new Date(Date.now() - 100000).toISOString(),
+        isPublic: false, shareId: null, sharePassword: null,
+      }],
+      // Database rows
+      ["row-1", {
+        id: "row-1", title: "Homepage Redesign", content: null, type: "document", icon: null,
+        parentId: "page-3", workspaceId: "ws-1", databaseId: "db-1", parentDatabaseId: "db-1",
+        createdAt: new Date("2026-04-10").toISOString(), updatedAt: new Date("2026-04-10").toISOString(),
+        isPublic: false, shareId: null, sharePassword: null,
+      }],
+      ["row-2", {
+        id: "row-2", title: "API Documentation", content: null, type: "document", icon: null,
+        parentId: "page-3", workspaceId: "ws-1", databaseId: "db-1", parentDatabaseId: "db-1",
+        createdAt: new Date("2026-04-12").toISOString(), updatedAt: new Date("2026-04-12").toISOString(),
+        isPublic: false, shareId: null, sharePassword: null,
+      }],
+      ["row-3", {
+        id: "row-3", title: "User Research", content: null, type: "document", icon: null,
+        parentId: "page-3", workspaceId: "ws-1", databaseId: "db-1", parentDatabaseId: "db-1",
+        createdAt: new Date("2026-04-14").toISOString(), updatedAt: new Date("2026-04-14").toISOString(),
+        isPublic: false, shareId: null, sharePassword: null,
+      }],
+      ["row-4", {
+        id: "row-4", title: "Backend Migration", content: null, type: "document", icon: null,
+        parentId: "page-3", workspaceId: "ws-1", databaseId: "db-1", parentDatabaseId: "db-1",
+        createdAt: new Date("2026-04-06").toISOString(), updatedAt: new Date("2026-04-06").toISOString(),
+        isPublic: false, shareId: null, sharePassword: null,
+      }],
+      ["row-5", {
+        id: "row-5", title: "Onboarding Flow", content: null, type: "document", icon: null,
+        parentId: "page-3", workspaceId: "ws-1", databaseId: "db-1", parentDatabaseId: "db-1",
+        createdAt: new Date("2026-04-05").toISOString(), updatedAt: new Date("2026-04-05").toISOString(),
+        isPublic: false, shareId: null, sharePassword: null,
+      }],
+    ]),
 
-const mockColumns: Map<string, Column> = new Map([
-  [
-    "col-1",
-    {
-      id: "col-1",
-      databaseId: "db-1",
-      name: "Status",
-      type: "select",
-      order: 0,
-      options: [
-        { id: "opt-1", label: "To Do", color: "gray" },
-        { id: "opt-2", label: "In Progress", color: "yellow" },
-        { id: "opt-3", label: "Done", color: "green" },
-      ],
-    },
-  ],
-  [
-    "col-2",
-    {
-      id: "col-2",
-      databaseId: "db-1",
-      name: "Priority",
-      type: "select",
-      order: 1,
-      options: [
-        { id: "opt-4", label: "Low", color: "gray" },
-        { id: "opt-5", label: "Medium", color: "yellow" },
-        { id: "opt-6", label: "High", color: "red" },
-      ],
-    },
-  ],
-  [
-    "col-3",
-    {
-      id: "col-3",
-      databaseId: "db-1",
-      name: "Due Date",
-      type: "date",
-      order: 2,
-    },
-  ],
-  [
-    "col-4",
-    {
-      id: "col-4",
-      databaseId: "db-1",
-      name: "Assignee",
-      type: "person",
-      order: 3,
-    },
-  ],
-]);
+    databases: new Map([
+      ["db-1", { id: "db-1", pageId: "page-3", columns: [], properties: [], rows: [], views: [] }],
+    ]),
 
-const mockPropertyValues: Map<string, PropertyValue> = new Map([
-  [
-    "pv-1",
-    {
-      id: "pv-1",
-      pageId: "page-5",
-      columnId: "col-1",
-      propertyId: "col-1",
-      value: { type: "select", optionId: "opt-2" },
-    },
-  ],
-  [
-    "pv-2",
-    {
-      id: "pv-2",
-      pageId: "page-5",
-      columnId: "col-2",
-      propertyId: "col-2",
-      value: { type: "select", optionId: "opt-6" },
-    },
-  ],
-  [
-    "pv-3",
-    {
-      id: "pv-3",
-      pageId: "page-6",
-      columnId: "col-1",
-      propertyId: "col-1",
-      value: { type: "select", optionId: "opt-1" },
-    },
-  ],
-  [
-    "pv-4",
-    {
-      id: "pv-4",
-      pageId: "page-6",
-      columnId: "col-2",
-      propertyId: "col-2",
-      value: { type: "select", optionId: "opt-5" },
-    },
-  ],
-]);
+    views: new Map([
+      ["view-table",    { id: "view-table",    databaseId: "db-1", name: "Table",    type: "table"    as ViewType, config: { visibleProperties: [], propertyWidths: {}, sorts: [], filters: [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
+      ["view-board",    { id: "view-board",    databaseId: "db-1", name: "Board",    type: "board"    as ViewType, config: { visibleProperties: [], propertyWidths: {}, sorts: [], filters: [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
+      ["view-calendar", { id: "view-calendar", databaseId: "db-1", name: "Calendar", type: "calendar" as ViewType, config: { visibleProperties: [], propertyWidths: {}, sorts: [], filters: [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
+      ["view-gallery",  { id: "view-gallery",  databaseId: "db-1", name: "Gallery",  type: "gallery"  as ViewType, config: { visibleProperties: [], propertyWidths: {}, sorts: [], filters: [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
+      ["view-list",     { id: "view-list",     databaseId: "db-1", name: "List",     type: "list"     as ViewType, config: { visibleProperties: [], propertyWidths: {}, sorts: [], filters: [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
+      ["view-timeline", { id: "view-timeline", databaseId: "db-1", name: "Timeline", type: "timeline" as ViewType, config: { visibleProperties: [], propertyWidths: {}, sorts: [], filters: [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
+    ]),
+
+    columns: new Map([
+      ["col-status", {
+        id: "col-status", databaseId: "db-1", name: "Status", type: "select", order: 0,
+        options: [
+          { id: "opt-design", label: "Design",  color: "blue"  },
+          { id: "opt-todo",   label: "Todo",    color: "gray"  },
+          { id: "opt-done",   label: "Done",    color: "green" },
+        ],
+      }],
+      ["col-date", {
+        id: "col-date", databaseId: "db-1", name: "Date", type: "date", order: 1,
+      }],
+      ["col-tags", {
+        id: "col-tags", databaseId: "db-1", name: "Tags", type: "multi_select", order: 2,
+        options: [
+          { id: "tag-eng",     label: "Engineering", color: "blue"   },
+          { id: "tag-design",  label: "Design",      color: "purple" },
+          { id: "tag-product", label: "Product",     color: "orange" },
+        ],
+      }],
+    ]),
+
+    propertyValues: new Map([
+      // row-1: Homepage Redesign — Design / Apr 15 / Design + Engineering
+      ["pv-r1-status", { id: "pv-r1-status", pageId: "row-1", columnId: "col-status", propertyId: "col-status", value: { type: "select", optionId: "opt-design" } }],
+      ["pv-r1-date",   { id: "pv-r1-date",   pageId: "row-1", columnId: "col-date",   propertyId: "col-date",   value: { type: "date", value: "2026-04-15", endValue: null } }],
+      ["pv-r1-tags",   { id: "pv-r1-tags",   pageId: "row-1", columnId: "col-tags",   propertyId: "col-tags",   value: { type: "multi_select", optionIds: ["tag-design", "tag-eng"] } }],
+
+      // row-2: API Documentation — Done / Apr 20 / Engineering
+      ["pv-r2-status", { id: "pv-r2-status", pageId: "row-2", columnId: "col-status", propertyId: "col-status", value: { type: "select", optionId: "opt-done" } }],
+      ["pv-r2-date",   { id: "pv-r2-date",   pageId: "row-2", columnId: "col-date",   propertyId: "col-date",   value: { type: "date", value: "2026-04-20", endValue: null } }],
+      ["pv-r2-tags",   { id: "pv-r2-tags",   pageId: "row-2", columnId: "col-tags",   propertyId: "col-tags",   value: { type: "multi_select", optionIds: ["tag-eng"] } }],
+
+      // row-3: User Research — Todo / Apr 25 / Design + Product
+      ["pv-r3-status", { id: "pv-r3-status", pageId: "row-3", columnId: "col-status", propertyId: "col-status", value: { type: "select", optionId: "opt-todo" } }],
+      ["pv-r3-date",   { id: "pv-r3-date",   pageId: "row-3", columnId: "col-date",   propertyId: "col-date",   value: { type: "date", value: "2026-04-25", endValue: null } }],
+      ["pv-r3-tags",   { id: "pv-r3-tags",   pageId: "row-3", columnId: "col-tags",   propertyId: "col-tags",   value: { type: "multi_select", optionIds: ["tag-design", "tag-product"] } }],
+
+      // row-4: Backend Migration — Done / Apr 18 / Engineering + Product
+      ["pv-r4-status", { id: "pv-r4-status", pageId: "row-4", columnId: "col-status", propertyId: "col-status", value: { type: "select", optionId: "opt-done" } }],
+      ["pv-r4-date",   { id: "pv-r4-date",   pageId: "row-4", columnId: "col-date",   propertyId: "col-date",   value: { type: "date", value: "2026-04-18", endValue: null } }],
+      ["pv-r4-tags",   { id: "pv-r4-tags",   pageId: "row-4", columnId: "col-tags",   propertyId: "col-tags",   value: { type: "multi_select", optionIds: ["tag-eng", "tag-product"] } }],
+
+      // row-5: Onboarding Flow — Done / Apr 8 / Design + Engineering
+      ["pv-r5-status", { id: "pv-r5-status", pageId: "row-5", columnId: "col-status", propertyId: "col-status", value: { type: "select", optionId: "opt-done" } }],
+      ["pv-r5-date",   { id: "pv-r5-date",   pageId: "row-5", columnId: "col-date",   propertyId: "col-date",   value: { type: "date", value: "2026-04-08", endValue: null } }],
+      ["pv-r5-tags",   { id: "pv-r5-tags",   pageId: "row-5", columnId: "col-tags",   propertyId: "col-tags",   value: { type: "multi_select", optionIds: ["tag-design", "tag-eng"] } }],
+    ]),
+    seeded: false,
+  };
+}
+
+const store = globalMockDb.__obnofiMockDbStore ?? createInitialStore();
+globalMockDb.__obnofiMockDbStore = store;
+
+const mockPages = store.pages;
+const mockDatabases = store.databases;
+const mockViews = store.views;
+const mockColumns = store.columns;
+const mockPropertyValues = store.propertyValues;
 
 function createDefaultColumns(databaseId: string) {
   mockDb.columns.create({
@@ -354,7 +196,7 @@ export const mockDb = {
     getAll: (): Page[] => Array.from(mockPages.values()),
     getByWorkspace: (workspaceId: string): Page[] => {
       return Array.from(mockPages.values()).filter(
-        (p) => p.workspaceId === workspaceId
+        (p) => p.workspaceId === workspaceId && !p.parentDatabaseId
       );
     },
     create: (data: Omit<Page, "id" | "createdAt" | "updatedAt">): Page => {
@@ -605,7 +447,10 @@ export const mockDb = {
   },
 };
 
-const seededDatabase = mockDb.databases.get("db-1");
-if (seededDatabase && seededDatabase.columns.length === 0) {
-  createDefaultColumns(seededDatabase.id);
+if (!store.seeded) {
+  const seededDatabase = mockDb.databases.get("db-1");
+  if (seededDatabase && seededDatabase.columns.length === 0) {
+    createDefaultColumns(seededDatabase.id);
+  }
+  store.seeded = true;
 }

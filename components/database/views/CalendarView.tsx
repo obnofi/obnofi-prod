@@ -1,82 +1,78 @@
 "use client";
 
-import { useMemo } from "react";
-import type { Task } from "@/types/database";
-import {
-  buildTasksByDate,
-  formatTaskMonth,
-  parseTaskDate,
-  toTaskDateKey,
-} from "@/lib/task-view-utils";
+import dynamic from "next/dynamic";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import type { Table } from "@tanstack/react-table";
+import { Plus } from "lucide-react";
+import { Page, Property } from "@/types";
+import { getPropertyValueData } from "@/hooks/useGroveTable";
+
+const FullCalendar = dynamic(() => import("@fullcalendar/react"), { ssr: false });
 
 interface CalendarViewProps {
-  tasks: Task[];
+  table: Table<Page>;
+  properties: Property[];
+  onCreateRow?: () => void;
+  onOpenRow?: (rowId: string) => void;
 }
 
-const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+export function CalendarView({
+  table,
+  properties,
+  onCreateRow,
+  onOpenRow,
+}: CalendarViewProps) {
+  const dateProperty = properties.find((property) => property.type === "date");
 
-export function CalendarView({ tasks }: CalendarViewProps) {
-  const tasksByDate = useMemo(() => buildTasksByDate(tasks), [tasks]);
+  if (!dateProperty) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center text-[var(--color-text-secondary)]">
+        <p className="text-sm">Calendar view needs a date field mapping.</p>
+        <button
+          type="button"
+          onClick={onCreateRow}
+          className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-3 py-2 text-sm font-medium text-white"
+        >
+          <Plus className="h-4 w-4" />
+          Plant Seed
+        </button>
+      </div>
+    );
+  }
 
-  const { monthLabel, cells } = useMemo(() => {
-    const anchor = tasks[0]?.date ?? new Date().toISOString().slice(0, 10);
-    const monthStart = parseTaskDate(anchor);
-    monthStart.setDate(1);
+  const events = table.getPreGroupedRowModel().rows.flatMap((rowModel) => {
+    const row = rowModel.original;
+    const value = getPropertyValueData(row, dateProperty.id);
+    if (!value || value.type !== "date" || !value.value) {
+      return [];
+    }
 
-    const year = monthStart.getFullYear();
-    const month = monthStart.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDayOffset = (monthStart.getDay() + 6) % 7;
-    const totalCells = Math.ceil((firstDayOffset + daysInMonth) / 7) * 7;
-
-    return {
-      monthLabel: formatTaskMonth(anchor),
-      cells: Array.from({ length: totalCells }, (_, index) => {
-        const day = index - firstDayOffset + 1;
-
-        if (day < 1 || day > daysInMonth) {
-          return null;
-        }
-
-        const date = toTaskDateKey(new Date(year, month, day));
-        return { date, day };
-      }),
-    };
-  }, [tasks]);
+    return [
+      {
+        id: row.id,
+        title: row.title || "Untitled",
+        start: value.value,
+        end: value.endValue ?? undefined,
+        allDay: !value.includeTime,
+      },
+    ];
+  });
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-      <h3 className="mb-4 text-sm font-semibold text-[#111110]">{monthLabel}</h3>
-      <div className="grid grid-cols-7 gap-2 text-center text-xs font-medium text-zinc-500">
-        {weekdays.map((day) => (
-          <div key={day} className="py-2">
-            {day}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-2">
-        {cells.map((cell, index) => (
-          <div
-            key={cell?.date ?? `empty-${index}`}
-            className="min-h-28 rounded-2xl border border-zinc-100 bg-zinc-50 p-2"
-          >
-            {cell ? (
-              <>
-                <div className="text-xs font-medium text-zinc-500">{cell.day}</div>
-                <div className="mt-2 space-y-1.5">
-                  {tasksByDate.get(cell.date)?.map((task) => (
-                    <div
-                      key={task.id}
-                      className="truncate rounded-lg bg-white px-2 py-1 text-[11px] text-zinc-700 shadow-sm"
-                    >
-                      {task.name}
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : null}
-          </div>
-        ))}
+    <div className="h-full overflow-auto p-4">
+      <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-3">
+        <FullCalendar
+          plugins={[dayGridPlugin]}
+          initialView="dayGridMonth"
+          height="auto"
+          events={events}
+          eventClick={(info) => onOpenRow?.(info.event.id)}
+          headerToolbar={{
+            left: "prev,next today",
+            center: "title",
+            right: "",
+          }}
+        />
       </div>
     </div>
   );

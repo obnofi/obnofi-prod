@@ -1,19 +1,20 @@
 "use client";
 
-import type { Task } from "@/types/database";
+import { Property, Page } from "@/types";
 import { DatabaseViewRenderer } from "@/components/database/DatabaseViewRenderer";
 import { DatabaseViewTabs } from "@/components/database/DatabaseViewTabs";
 
 interface DatabaseContainerProps {
-  tasks: Task[];
+  properties: Property[];
+  rows: Page[];
 }
 
-export function DatabaseContainer({ tasks }: DatabaseContainerProps) {
+export function DatabaseContainer({ properties, rows }: DatabaseContainerProps) {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white">
+    <div className="flex h-full flex-col overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-background)]">
       <DatabaseViewTabs />
       <div className="flex-1 overflow-auto p-6">
-        <DatabaseViewRenderer tasks={tasks} />
+        <DatabaseViewRenderer properties={properties} rows={rows} />
       </div>
     </div>
   );
