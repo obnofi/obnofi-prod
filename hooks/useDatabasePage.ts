@@ -107,11 +107,12 @@ export function useDatabasePage(pageId: string | null | undefined) {
 
   const createRow = useCallback(async () => {
     if (!databasePage) {
-      return;
+      return undefined;
     }
 
-    await plantGroveSeed(databasePage.database.id, "Untitled");
+    const plantedSeed = await plantGroveSeed(databasePage.database.id, "Untitled");
     await loadDatabasePage();
+    return plantedSeed.id;
   }, [databasePage, loadDatabasePage]);
 
   const createProperty = useCallback(
@@ -175,7 +176,9 @@ export function useDatabasePage(pageId: string | null | undefined) {
       patchGroveCellValue(pageId, rowId, propertyId, value);
       try {
         const updatedPropertyValue = await patchGroveCell(rowId, propertyId, value);
-        patchGroveCellValue(pageId, rowId, propertyId, updatedPropertyValue);
+        if (updatedPropertyValue) {
+          patchGroveCellValue(pageId, rowId, propertyId, updatedPropertyValue);
+        }
       } catch {
         await loadDatabasePage();
       }

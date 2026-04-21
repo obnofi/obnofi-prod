@@ -23,7 +23,7 @@ interface DatabaseTableCardProps {
   isLoading: boolean;
   onDatabaseChange: (databasePage: DatabasePage) => void;
   onOpenRow: (rowId: string) => void;
-  onCreateRow?: () => void;
+  onCreateRow?: () => void | Promise<string | undefined>;
   onCreateProperty?: (name: string, type: PropertyType) => void;
   onUpdatePropertyValue?: (
     rowId: string,
@@ -82,7 +82,7 @@ export function DatabaseTableCard({
   const selectionMenuRef = useRef<HTMLDivElement>(null);
   const showTopBar = Boolean(selection || headerLabel || onOpenDatabase);
   const currentState =
-    state ?? (isLoading ? "loading" : databasePage ? "ready" : "empty");
+    state ?? (!databasePage && isLoading ? "loading" : databasePage ? "ready" : "empty");
 
   useEffect(() => {
     if (!isSelectionOpen) {

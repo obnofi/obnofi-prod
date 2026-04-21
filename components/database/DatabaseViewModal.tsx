@@ -7,7 +7,7 @@ import { DatabasePage } from "@/types";
 import { ViewTabs } from "./ViewTabs";
 
 export function DatabaseViewModal() {
-  const { databaseModal, closeDatabaseModal } = useUIStore();
+  const { databaseModal, closeDatabaseModal, openGrovePageSideTab } = useUIStore();
   const { isOpen, databaseId, pageTitle } = databaseModal;
   const [databasePage, setDatabasePage] = useState<DatabasePage | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -125,10 +125,9 @@ export function DatabaseViewModal() {
             <ViewTabs
               databasePage={databasePage}
               onDatabaseChange={setDatabasePage}
-              onOpenRow={(rowId) => {
-                // Open row in new tab
-                window.open(`/workspace/${databasePage.workspaceId || ""}?page=${rowId}`, "_blank");
-              }}
+              onOpenRow={(rowId) =>
+                openGrovePageSideTab(rowId, databasePage.workspaceId)
+              }
             />
           ) : (
             <div className="flex h-full items-center justify-center text-zinc-500 dark:text-zinc-400">

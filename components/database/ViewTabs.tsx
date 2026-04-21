@@ -7,7 +7,7 @@ interface ViewTabsProps {
   databasePage: DatabasePage;
   onDatabaseChange: (databasePage: DatabasePage) => void;
   onOpenRow?: (rowId: string) => void;
-  onCreateRow?: () => void;
+  onCreateRow?: () => void | Promise<string | undefined>;
   onCreateProperty?: (name: string, type: PropertyType) => void;
   compact?: boolean;
 }

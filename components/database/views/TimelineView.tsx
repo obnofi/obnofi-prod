@@ -8,7 +8,7 @@ import { getOptionBgColor, getOptionTextColor } from "@/lib/property-utils";
 interface TimelineViewProps {
   properties: Property[];
   rows: Page[];
-  onCreateRow?: () => void;
+  onCreateRow?: () => void | Promise<void>;
   onOpenRow?: (rowId: string) => void;
 }
 
@@ -145,7 +145,7 @@ export function TimelineView({ properties, rows, onCreateRow }: TimelineViewProp
         })}
         <button
           type="button"
-          onClick={onCreateRow}
+          onClick={() => void onCreateRow?.()}
           className="mt-1 flex items-center gap-1.5 text-[13px] text-[var(--color-text-secondary)] transition hover:text-[var(--color-text-primary)]"
         >
           <Plus className="h-3.5 w-3.5" />

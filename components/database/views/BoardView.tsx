@@ -25,7 +25,7 @@ interface BoardViewProps {
   table: Table<Page>;
   properties: Property[];
   groupByPropertyId?: string | null;
-  onCreateRow?: () => void;
+  onCreateRow?: () => void | Promise<void>;
   onOpenRow?: (rowId: string) => void;
   onUpdatePropertyValue?: (
     rowId: string,
@@ -216,7 +216,7 @@ export function BoardView({
             </SortableContext>
             <button
               type="button"
-              onClick={onCreateRow}
+              onClick={() => void onCreateRow?.()}
               className="mt-3 inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-[var(--color-text-secondary)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-text-primary)]"
             >
               <Plus className="h-4 w-4" />

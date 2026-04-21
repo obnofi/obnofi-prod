@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Database, Loader2 } from "lucide-react";
+import { useUIStore } from "@/store/useUIStore";
 import { DatabasePage } from "@/types";
 import { ViewTabs } from "./ViewTabs";
 
@@ -16,6 +17,7 @@ export function InlineDatabaseView({
   pageTitle,
   className = "",
 }: InlineDatabaseViewProps) {
+  const openGrovePageSideTab = useUIStore((state) => state.openGrovePageSideTab);
   const [databasePage, setDatabasePage] = useState<DatabasePage | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -109,10 +111,9 @@ export function InlineDatabaseView({
         <ViewTabs
           databasePage={databasePage}
           onDatabaseChange={setDatabasePage}
-          onOpenRow={(rowId) => {
-            // Open row in new tab
-            window.open(`/workspace/${databasePage.workspaceId || ""}?page=${rowId}`, "_blank");
-          }}
+          onOpenRow={(rowId) =>
+            openGrovePageSideTab(rowId, databasePage.workspaceId)
+          }
         />
       </div>
     </div>

@@ -7,7 +7,7 @@ import { getOptionBgColor, getOptionTextColor } from "@/lib/property-utils";
 interface ListViewProps {
   properties: Property[];
   rows: Page[];
-  onCreateRow?: () => void;
+  onCreateRow?: () => void | Promise<void>;
   onOpenRow?: (rowId: string) => void;
 }
 
@@ -94,7 +94,7 @@ export function ListView({ properties, rows, onCreateRow, onOpenRow }: ListViewP
       })}
       <button
         type="button"
-        onClick={onCreateRow}
+        onClick={() => void onCreateRow?.()}
         className="flex items-center gap-1.5 px-4 py-3 text-[13px] text-[var(--color-text-secondary)] transition hover:text-[var(--color-text-primary)]"
       >
         <Plus className="h-3.5 w-3.5" />

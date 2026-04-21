@@ -8,7 +8,7 @@ import { getPropertyValueData } from "@/hooks/useGroveTable";
 interface GalleryViewProps {
   table: Table<Page>;
   properties: Property[];
-  onCreateRow?: () => void;
+  onCreateRow?: () => void | Promise<void>;
   onOpenRow?: (rowId: string) => void;
 }
 
@@ -109,7 +109,7 @@ export function GalleryView({
       })}
       <button
         type="button"
-        onClick={onCreateRow}
+        onClick={() => void onCreateRow?.()}
         className="flex min-h-[280px] items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--color-border)] text-sm text-[var(--color-text-secondary)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-text-primary)]"
       >
         <Plus className="h-4 w-4" />

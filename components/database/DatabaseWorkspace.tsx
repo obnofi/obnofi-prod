@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { DatabasePageCard } from "@/components/database/DatabasePageCard";
+import { useUIStore } from "@/store/useUIStore";
 
 interface DatabaseWorkspaceProps {
   pageId: string;
@@ -9,7 +9,7 @@ interface DatabaseWorkspaceProps {
 }
 
 export function DatabaseWorkspace({ pageId, workspaceId }: DatabaseWorkspaceProps) {
-  const router = useRouter();
+  const openGrovePageSideTab = useUIStore((state) => state.openGrovePageSideTab);
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-white px-12 pb-6 pt-8">
@@ -20,7 +20,7 @@ export function DatabaseWorkspace({ pageId, workspaceId }: DatabaseWorkspaceProp
           loadingTestId="workspace-database-loading"
           readyTestId="workspace-database-ready"
           emptyTestId="workspace-database-empty"
-          onOpenRow={(rowId) => router.push(`/workspace/${workspaceId}?page=${rowId}`)}
+          onOpenRow={(rowId) => openGrovePageSideTab(rowId, workspaceId)}
           emptyMessage="Database not found"
           compact={true}
           maxContentHeightClass="h-full"

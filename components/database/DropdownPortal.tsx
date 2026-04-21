@@ -20,6 +20,7 @@ export function DropdownPortal({
 }: DropdownPortalProps) {
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const [mounted, setMounted] = useState(false);
+  const portalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -38,6 +39,7 @@ export function DropdownPortal({
     if (!isOpen) return;
     const handleClick = (e: MouseEvent) => {
       if (triggerRef.current?.contains(e.target as Node)) return;
+      if (portalRef.current?.contains(e.target as Node)) return;
       onClose();
     };
     const handleKey = (e: KeyboardEvent) => {
@@ -53,13 +55,32 @@ export function DropdownPortal({
 
   if (!mounted || !isOpen) return null;
 
+  const portalZIndex = 100100;
   const style: React.CSSProperties =
     align === "right"
-      ? { position: "fixed", top: coords.top, right: window.innerWidth - coords.left, zIndex: 99999 }
-      : { position: "fixed", top: coords.top, left: coords.left, zIndex: 99999 };
+      ? {
+          position: "fixed",
+          top: coords.top,
+          right: window.innerWidth - coords.left,
+          zIndex: portalZIndex,
+        }
+      : {
+          position: "fixed",
+          top: coords.top,
+          left: coords.left,
+          zIndex: portalZIndex,
+        };
 
   return createPortal(
-    <div style={style}>{children}</div>,
+    <div
+      ref={portalRef}
+      data-grove-dropdown-portal="true"
+      style={style}
+      onMouseDown={(event) => event.stopPropagation()}
+      onClick={(event) => event.stopPropagation()}
+    >
+      {children}
+    </div>,
     document.body
   );
 }

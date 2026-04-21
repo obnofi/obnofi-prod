@@ -9,3 +9,4 @@ export { PropertyHeader } from "./PropertyHeader";
 export { PropertyTypeSelector } from "./PropertyTypeSelector";
 export { PropertyOptionsEditor } from "./PropertyOptionsEditor";
 export * from "./cells";
+export * from "./task";
