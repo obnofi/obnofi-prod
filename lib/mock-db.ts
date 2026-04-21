@@ -35,7 +35,7 @@ function createInitialStore(): MockDbStore {
           { type: "bulletList", content: [
             { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "Block-based markdown editor" }] }] },
             { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "Database views (Table, Board, Calendar, Gallery)" }] }] },
-            { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "Canvas & infinite whiteboard" }] }] },
+            { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "Clearing blocks with infinite whiteboard collaboration" }] }] },
           ]},
         ]},
         type: "document", icon: "📝", parentId: null, workspaceId: "ws-1",
@@ -43,7 +43,7 @@ function createInitialStore(): MockDbStore {
         isPublic: false, shareId: null, sharePassword: null,
       }],
       ["page-2", {
-        id: "page-2", title: "Project Canvas", content: null, type: "canvas", icon: "🎨",
+        id: "page-2", title: "Project Clearing", content: null, type: "canvas", icon: "🎨",
         parentId: null, workspaceId: "ws-1",
         createdAt: new Date(Date.now() - 86400000).toISOString(),
         updatedAt: new Date(Date.now() - 86400000).toISOString(),
@@ -102,12 +102,7 @@ function createInitialStore(): MockDbStore {
     ]),
 
     views: new Map([
-      ["view-table",    { id: "view-table",    databaseId: "db-1", name: "Table",    type: "table"    as ViewType, config: { visibleProperties: [], propertyWidths: {}, sorts: [], filters: [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-      ["view-board",    { id: "view-board",    databaseId: "db-1", name: "Board",    type: "board"    as ViewType, config: { visibleProperties: [], propertyWidths: {}, sorts: [], filters: [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-      ["view-calendar", { id: "view-calendar", databaseId: "db-1", name: "Calendar", type: "calendar" as ViewType, config: { visibleProperties: [], propertyWidths: {}, sorts: [], filters: [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-      ["view-gallery",  { id: "view-gallery",  databaseId: "db-1", name: "Gallery",  type: "gallery"  as ViewType, config: { visibleProperties: [], propertyWidths: {}, sorts: [], filters: [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-      ["view-list",     { id: "view-list",     databaseId: "db-1", name: "List",     type: "list"     as ViewType, config: { visibleProperties: [], propertyWidths: {}, sorts: [], filters: [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-      ["view-timeline", { id: "view-timeline", databaseId: "db-1", name: "Timeline", type: "timeline" as ViewType, config: { visibleProperties: [], propertyWidths: {}, sorts: [], filters: [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
+      ["view-table", { id: "view-table", databaseId: "db-1", name: "Table", type: "table" as ViewType, config: { visibleProperties: [], propertyWidths: {}, sorts: [], filters: [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
     ]),
 
     columns: new Map([
@@ -253,6 +248,33 @@ export const mockDb = {
         database,
       };
     },
+    getAncestors: (pageId: string): Array<{ id: string; title: string; icon?: string | null }> => {
+      const ancestors: Array<{ id: string; title: string; icon?: string | null }> = [];
+      const visited = new Set<string>();
+      let currentId: string | null = pageId;
+
+      while (currentId) {
+        if (visited.has(currentId)) break;
+        visited.add(currentId);
+
+        const page = mockPages.get(currentId);
+        if (!page) break;
+
+        if (page.parentId) {
+          const parent = mockPages.get(page.parentId);
+          if (parent) {
+            ancestors.unshift({ id: parent.id, title: parent.title, icon: parent.icon });
+            currentId = parent.id;
+          } else {
+            break;
+          }
+        } else {
+          break;
+        }
+      }
+
+      return ancestors;
+    },
   },
 
   databases: {
@@ -293,6 +315,11 @@ export const mockDb = {
         rows: [],
       };
       mockDatabases.set(id, database);
+      mockDb.views.create({
+        databaseId: id,
+        name: "Table",
+        type: "table" as ViewType,
+      });
       const page = mockDb.pages.get(pageId);
       if (page) {
         mockDb.pages.update(pageId, {

@@ -15,6 +15,8 @@ export async function GET(
       if (databasePage) {
         return NextResponse.json(databasePage);
       }
+
+      return NextResponse.json({ error: "Not a database page" }, { status: 404 });
     }
 
     const page = mockDb.pages.get(pageId);

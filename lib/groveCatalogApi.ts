@@ -7,6 +7,8 @@ import type {
   PropertyValue,
   PropertyValueData,
   SelectOption,
+  View,
+  ViewType,
 } from "@/types";
 
 interface CreateGrovePropertyInput {
@@ -110,5 +112,16 @@ export async function patchGroveCell(
       columnId: propertyId,
       value,
     }),
+  });
+}
+
+export async function sproutGroveView(
+  databaseId: string,
+  input: { name: string; type: ViewType }
+) {
+  return groveRequest<View>(`/api/databases/${databaseId}/views`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
   });
 }
