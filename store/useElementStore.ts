@@ -36,14 +36,21 @@ export type CreateStickyNoteInput = {
   roomId?: string;
 };
 
+const MAX_HISTORY = 5;
+
 type ElementState = {
   elements: Element[];
   stickyNotes: StickyNoteItem[];
+  past: Element[][];
+  future: Element[][];
   setElements: (elements: Element[]) => void;
   addElement: (element: Element) => void;
   updateElement: (elementId: string, patch: Partial<Element>) => void;
   removeElement: (elementId: string) => void;
   upsertElement: (element: Element) => void;
+  pushHistory: (snapshot?: Element[]) => void;
+  undo: () => void;
+  redo: () => void;
   createStickyNote: (input: CreateStickyNoteInput) => StickyNoteItem;
   setStickyNotes: (stickyNotes: StickyNoteItem[]) => void;
   updateStickyNote: (stickyId: string, patch: Partial<StickyNoteItem>) => void;
@@ -55,14 +62,43 @@ type ElementState = {
 export const useElementStore = create<ElementState>((set) => ({
   elements: [],
   stickyNotes: [],
+  past: [],
+  future: [],
   setElements: (elements) =>
     set({
       elements: [...elements].sort((left, right) => left.zIndex - right.zIndex),
+      past: [],
+      future: [],
     }),
   addElement: (element) =>
     set((state) => ({
       elements: [...state.elements, element].sort((left, right) => left.zIndex - right.zIndex),
     })),
+  pushHistory: (snapshot) =>
+    set((state) => ({
+      past: [...state.past.slice(-(MAX_HISTORY - 1)), snapshot ?? state.elements],
+      future: [],
+    })),
+  undo: () =>
+    set((state) => {
+      if (state.past.length === 0) return state;
+      const prev = state.past[state.past.length - 1];
+      return {
+        elements: prev,
+        past: state.past.slice(0, -1),
+        future: [state.elements, ...state.future].slice(0, MAX_HISTORY),
+      };
+    }),
+  redo: () =>
+    set((state) => {
+      if (state.future.length === 0) return state;
+      const next = state.future[0];
+      return {
+        elements: next,
+        past: [...state.past, state.elements].slice(-MAX_HISTORY),
+        future: state.future.slice(1),
+      };
+    }),
   updateElement: (elementId, patch) =>
     set((state) => {
       const nextElements: Element[] = state.elements.map((element) =>

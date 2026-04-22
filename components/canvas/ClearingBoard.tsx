@@ -45,6 +45,8 @@ type DragState = {
   offsetX: number;
   offsetY: number;
   groupOrigin: Record<string, { x: number; y: number }>;
+  sectionChildOrigins?: Record<string, { x: number; y: number }>;
+  preDragSnapshot: Element[];
 } | null;
 
 type PanState = {
@@ -372,12 +374,19 @@ export function ClearingBoard({
   } = useCanvasStore();
   const {
     elements,
+    past,
+    future,
     setElements,
     addElement,
     updateElement,
     removeElement,
     upsertElement,
+    pushHistory,
+    undo,
+    redo,
   } = useElementStore();
+  const canUndo = past.length > 0;
+  const canRedo = future.length > 0;
   const {
     clearSelection,
     selectedIds,
@@ -710,6 +719,7 @@ export function ClearingBoard({
       return;
     }
 
+    pushHistory();
     const nextElement = buildElement(kind, activeRoom.id, activeUser.id, elements.length + 1, elements);
     addElement(nextElement);
     selectSingle(nextElement.id);
@@ -718,6 +728,7 @@ export function ClearingBoard({
   };
 
   const handlePathCreated = async (element: Element) => {
+    pushHistory();
     addElement(element);
     selectSingle(element.id);
     setSelectedElement(element.id);
@@ -845,6 +856,7 @@ export function ClearingBoard({
         zIndex: elements.length + 1,
       });
 
+      pushHistory();
       addElement(nextElement);
       selectSingle(nextElement.id);
       setSelectedElement(nextElement.id);
@@ -874,6 +886,7 @@ export function ClearingBoard({
       return;
     }
 
+    pushHistory();
     addElement(nextElement);
     selectSingle(nextElement.id);
     setSelectedElement(nextElement.id);
@@ -892,18 +905,19 @@ export function ClearingBoard({
     }
 
     // Check if a connector is selected and we're clicking on another element to connect
+    // Only works when in select tool mode
     const selectedConnector = selectedElementId ? elementLookup[selectedElementId] : null;
-    if (selectedConnector?.type === "connector" && elementId !== selectedElementId) {
+    if (tool === "select" && selectedConnector?.type === "connector" && elementId !== selectedElementId) {
       event.stopPropagation();
       // Connect the selected connector to this element
       const connector = selectedConnector;
       const targetElement = element;
-      
+
       // Determine if we're connecting the start or end point
       // If fromElementId is not set, connect start. If toElementId is not set, connect end.
       // Otherwise, default to connecting the end point.
       const updates: Partial<Element> = {};
-      
+
       if (!connector.content.fromElementId) {
         // Connect start point to this element
         updates.content = {
@@ -917,7 +931,7 @@ export function ClearingBoard({
           toElementId: elementId,
         };
       }
-      
+
       updateElement(connector.id, updates);
       persistElement({ ...connector, ...updates } as Element);
       return;
@@ -933,7 +947,9 @@ export function ClearingBoard({
       return;
     }
 
-    event.stopPropagation();
+    // Don't stop propagation - let board handle pointer move/up for dragging
+    // event.stopPropagation();
+
     const rect = boardRef.current.getBoundingClientRect();
     const scenePoint = getScenePoint(
       event.clientX,
@@ -955,6 +971,35 @@ export function ClearingBoard({
       setSelectedElement(elementId);
     }
 
+    // If dragging a section, also store the original positions of elements inside it
+    const sectionChildOrigins: Record<string, { x: number; y: number }> = {};
+    const movingSectionIds = dragTargets.filter((t) => t.type === "section").map((t) => t.id);
+
+    if (movingSectionIds.length > 0) {
+      elements.forEach((candidate) => {
+        if (candidate.type === "section" || dragTargets.some((t) => t.id === candidate.id)) {
+          return;
+        }
+        // Check if element is inside any of the moving sections
+        for (const sectionId of movingSectionIds) {
+          const section = elementLookup[sectionId];
+          if (!section) continue;
+
+          const centerX = candidate.x + candidate.width / 2;
+          const centerY = candidate.y + candidate.height / 2;
+          if (
+            centerX >= section.x &&
+            centerX <= section.x + section.width &&
+            centerY >= section.y &&
+            centerY <= section.y + section.height
+          ) {
+            sectionChildOrigins[candidate.id] = { x: candidate.x, y: candidate.y };
+            break;
+          }
+        }
+      });
+    }
+
     dragStateRef.current = {
       elementId,
       pointerId: event.pointerId,
@@ -963,6 +1008,8 @@ export function ClearingBoard({
       groupOrigin: Object.fromEntries(
         dragTargets.map((item) => [item.id, { x: item.x, y: item.y }])
       ),
+      sectionChildOrigins: Object.keys(sectionChildOrigins).length > 0 ? sectionChildOrigins : undefined,
+      preDragSnapshot: [...elements],
     };
   };
 
@@ -972,13 +1019,15 @@ export function ClearingBoard({
     }
 
     setContextMenu(null);
+
+    // If click originated from a child element, let the element handler manage selection/drag
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
     if (!event.shiftKey) {
       clearSelection();
       setSelectedElement(null);
-    }
-
-    if (event.target !== event.currentTarget) {
-      return;
     }
 
     const rect = boardRef.current.getBoundingClientRect();
@@ -995,6 +1044,7 @@ export function ClearingBoard({
     const activeUser = currentUserRef.current;
 
     if (tool === "connector" && activeRoom && activeUser) {
+      pushHistory();
       const hasArrow = lineStyle === "arrow";
       const nextElement: Element = {
         id: crypto.randomUUID(),
@@ -1036,6 +1086,7 @@ export function ClearingBoard({
     }
 
     if ((tool === "shape-rectangle" || tool === "shape-ellipse" || tool === "shape-diamond" || tool === "shape-triangle") && activeRoom && activeUser) {
+      pushHistory();
       const shapeName =
         tool === "shape-ellipse"
           ? "ellipse"
@@ -1083,6 +1134,7 @@ export function ClearingBoard({
     }
 
     if (tool === "text" && activeRoom && activeUser) {
+      pushHistory();
       const nextElement: Element = {
         id: crypto.randomUUID(),
         roomId: activeRoom.id,
@@ -1151,6 +1203,7 @@ export function ClearingBoard({
     }
 
     if (tool === "section" && activeRoom && activeUser) {
+      pushHistory();
       const nextSection: Element = {
         id: crypto.randomUUID(),
         roomId: activeRoom.id,
@@ -1248,34 +1301,16 @@ export function ClearingBoard({
         });
       });
 
-      movingSectionIds.forEach((sectionId) => {
-        const section = elementLookup[sectionId];
-        const origin = activeDrag.groupOrigin[sectionId];
-        if (!section || section.type !== "section" || !origin) {
-          return;
-        }
-        const dx = deltaX;
-        const dy = deltaY;
-        elements.forEach((candidate) => {
-          if (movingIds.includes(candidate.id) || candidate.type === "section") {
-            return;
-          }
-          const centerX = candidate.x + candidate.width / 2;
-          const centerY = candidate.y + candidate.height / 2;
-          const isInside =
-            centerX >= origin.x &&
-            centerX <= origin.x + section.width &&
-            centerY >= origin.y &&
-            centerY <= origin.y + section.height;
-          if (isInside) {
-            updateElement(candidate.id, {
-              x: candidate.x + dx,
-              y: candidate.y + dy,
-              updatedAt: new Date().toISOString(),
-            });
-          }
+      // Move elements inside the dragged sections using pre-calculated origins
+      if (activeDrag.sectionChildOrigins) {
+        Object.entries(activeDrag.sectionChildOrigins).forEach(([childId, origin]) => {
+          updateElement(childId, {
+            x: origin.x + deltaX,
+            y: origin.y + deltaY,
+            updatedAt: new Date().toISOString(),
+          });
         });
-      });
+      }
     }
 
     if (drawStateRef.current) {
@@ -1366,6 +1401,13 @@ export function ClearingBoard({
 
   const handleBoardPointerUp = async () => {
     if (dragStateRef.current) {
+      const didMove = Object.entries(dragStateRef.current.groupOrigin).some(([id, origin]) => {
+        const el = elementLookup[id];
+        return el && (Math.abs(el.x - origin.x) > 1 || Math.abs(el.y - origin.y) > 1);
+      });
+      if (didMove) {
+        pushHistory(dragStateRef.current.preDragSnapshot);
+      }
       await Promise.all(
         Object.keys(dragStateRef.current.groupOrigin).map(async (id) => {
           const movedElement = elementLookup[id];
@@ -1437,6 +1479,7 @@ export function ClearingBoard({
       if (selectedIds.length === 0) {
         return;
       }
+      pushHistory();
       selectedIds.forEach((id) => removeElement(id));
       clearSelection();
       setSelectedElement(null);
@@ -1444,7 +1487,26 @@ export function ClearingBoard({
 
     window.addEventListener("keydown", handleDelete);
     return () => window.removeEventListener("keydown", handleDelete);
-  }, [clearSelection, removeElement, selectedIds, setSelectedElement]);
+  }, [clearSelection, pushHistory, removeElement, selectedIds, setSelectedElement]);
+
+  useEffect(() => {
+    const handleUndoRedo = (event: KeyboardEvent) => {
+      if (!event.metaKey && !event.ctrlKey) return;
+      const active = document.activeElement as HTMLElement | null;
+      if (active?.closest("input, textarea, [contenteditable='true']")) return;
+
+      if (event.key === "z" && !event.shiftKey) {
+        event.preventDefault();
+        undo();
+      } else if ((event.key === "z" && event.shiftKey) || event.key === "y") {
+        event.preventDefault();
+        redo();
+      }
+    };
+
+    window.addEventListener("keydown", handleUndoRedo);
+    return () => window.removeEventListener("keydown", handleUndoRedo);
+  }, [undo, redo]);
 
   useEffect(() => {
     const handlePaste = (event: ClipboardEvent) => {
@@ -1520,7 +1582,7 @@ export function ClearingBoard({
   return (
     <div
       className={`flex flex-col bg-[var(--color-background)] text-[var(--color-text-primary)] ${
-        embedded ? "h-full min-h-[680px]" : "min-h-screen"
+        embedded ? "h-full" : "min-h-screen"
       }`}
     >
       {!embedded ? (
@@ -1623,17 +1685,22 @@ export function ClearingBoard({
               }}
             />
 
-            <PenTool
-              activeTool={tool === "pen" || tool === "marker" ? tool : null}
-              boardRef={boardRef}
-              color={drawingColor}
-              currentUserId={currentUserRef.current?.id ?? null}
-              roomId={currentRoomRef.current?.id ?? null}
-              strokeWidth={tool === "marker" ? Math.max(drawingStrokeWidth, 16) : drawingStrokeWidth}
-              viewport={viewport}
-              zIndex={elements.length + 1}
-              onPathCreated={handlePathCreated}
-            />
+            {/* PenTool layer - only active when pen/marker selected */}
+            {(tool === "pen" || tool === "marker") && (
+              <div className="absolute inset-0 z-20 pointer-events-auto">
+                <PenTool
+                  activeTool={tool}
+                  boardRef={boardRef}
+                  color={drawingColor}
+                  currentUserId={currentUserRef.current?.id ?? null}
+                  roomId={currentRoomRef.current?.id ?? null}
+                  strokeWidth={tool === "marker" ? Math.max(drawingStrokeWidth, 16) : drawingStrokeWidth}
+                  viewport={viewport}
+                  zIndex={elements.length + 1}
+                  onPathCreated={handlePathCreated}
+                />
+              </div>
+            )}
 
             <div
               className="pointer-events-none relative"
@@ -1644,18 +1711,32 @@ export function ClearingBoard({
                 transformOrigin: "top left",
               }}
             >
-              {renderedElements.map((element) => (
-                <BoardElementRenderer
-                  key={element.id}
-                  commentCount={comments.filter((comment) => comment.elementId === element.id).length}
-                  element={element}
-                  isSelected={selectedIds.includes(element.id)}
-                  linkedElements={elementLookup}
-                  onPointerDown={handleElementPointerDown}
-                  onVote={handleVote}
-                  scale={viewport.scale}
-                />
-              ))}
+              {renderedElements.map((element) => {
+                // Find if this element is inside any section
+                const containingSection = elements.find((e) =>
+                  e.type === "section" &&
+                  e.id !== element.id &&
+                  element.x >= e.x &&
+                  element.x + element.width <= e.x + e.width &&
+                  element.y >= e.y &&
+                  element.y + element.height <= e.y + e.height
+                );
+
+                return (
+                  <BoardElementRenderer
+                    key={element.id}
+                    commentCount={comments.filter((comment) => comment.elementId === element.id).length}
+                    containingSectionId={containingSection?.id}
+                    element={element}
+                    isSectionSelected={containingSection ? selectedIds.includes(containingSection.id) : false}
+                    isSelected={selectedIds.includes(element.id)}
+                    linkedElements={elementLookup}
+                    onPointerDown={handleElementPointerDown}
+                    onVote={handleVote}
+                    scale={viewport.scale}
+                  />
+                );
+              })}
 
               <SelectionBox bounds={selectionFrame} scale={viewport.scale} />
 
@@ -1707,6 +1788,8 @@ export function ClearingBoard({
             <div className="pointer-events-none absolute bottom-4 left-1/2 z-30 -translate-x-1/2">
               <ClearingToolbar
                 activeTool={tool}
+                canRedo={canRedo}
+                canUndo={canUndo}
                 compact={embedded}
                 isUploadingImage={uploadingImage}
                 lineStyle={lineStyle}
@@ -1716,9 +1799,11 @@ export function ClearingBoard({
                 onEmojiStampSelect={setActiveEmojiStamp}
                 onLineStyleChange={useCanvasStore.getState().setLineStyle}
                 onOpenImagePicker={() => fileInputRef.current?.click()}
+                onRedo={redo}
                 onResetViewport={resetViewport}
                 onSetTool={setTool}
                 onStrokeWidthChange={setDrawingStrokeWidth}
+                onUndo={undo}
                 strokeColor={drawingColor}
                 strokeWidth={drawingStrokeWidth}
               />
@@ -1757,6 +1842,7 @@ export function ClearingBoard({
             setContextMenu(null);
           }}
           onDelete={() => {
+            pushHistory();
             selectedIds.forEach((id) => removeElement(id));
             clearSelection();
             setContextMenu(null);

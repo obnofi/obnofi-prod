@@ -9,6 +9,7 @@ import { StickyTool } from "@/components/elements/StickyTool";
 import { TextTool } from "@/components/elements/TextTool";
 import { VoteBadge } from "@/components/elements/VoteBadge";
 import type { Element, StickyElement } from "@/types/clearing";
+import { useElementStore } from "@/store/useElementStore";
 
 const PALETTE = {
   ink: "var(--color-text-primary)",
@@ -69,6 +70,8 @@ export function BoardElementRenderer({
   onPointerDown,
   onVote,
   scale,
+  containingSectionId,
+  isSectionSelected,
 }: {
   element: Element;
   isSelected: boolean;
@@ -77,7 +80,10 @@ export function BoardElementRenderer({
   onPointerDown: (event: React.PointerEvent<HTMLDivElement>, elementId: string) => void;
   onVote: (elementId: string) => void;
   scale: number;
+  containingSectionId?: string | null;
+  isSectionSelected?: boolean;
 }) {
+  const { updateElement } = useElementStore();
   if (element.type === "connector") {
     const points = getConnectorPoints(element, linkedElements);
     if (!points) {
@@ -183,9 +189,13 @@ export function BoardElementRenderer({
     );
   }
 
+  // Check if element is inside a section that is being dragged
+  const isInsideSelectedSection = isSectionSelected && containingSectionId && !isSelected;
+
   const sharedProps = {
-    className:
-      "pointer-events-auto group absolute cursor-grab active:cursor-grabbing",
+    className: `pointer-events-auto group absolute cursor-grab active:cursor-grabbing ${
+      isInsideSelectedSection ? "ring-2 ring-[var(--color-accent)]/50 ring-offset-2" : ""
+    }`,
     onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => onPointerDown(event, element.id),
     style: {
       left: element.x,
@@ -214,6 +224,12 @@ export function BoardElementRenderer({
           element={element}
           isSelected={isSelected}
           onPointerDown={onPointerDown}
+          onResize={(elementId, updates) => {
+            updateElement(elementId, {
+              ...updates,
+              updatedAt: new Date().toISOString(),
+            });
+          }}
         />
       ) : null}
 
