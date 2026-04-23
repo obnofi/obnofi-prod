@@ -1,0 +1,25 @@
+{
+  "name": "@obnofi/ws-server",
+  "version": "0.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@fastify/websocket": "^11.0.1",
+    "@obnofi/db": "workspace:*",
+    "@obnofi/types": "workspace:*",
+    "fastify": "^5.1.0",
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.20"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
