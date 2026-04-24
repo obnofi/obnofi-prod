@@ -9,6 +9,7 @@ import { patchGroveCell } from "@/lib/groveCatalogApi";
 import { useGroveCatalogStore } from "@/store/useGroveCatalogStore";
 import { usePageStore } from "@/store/pageStore";
 import { useUIStore } from "@/store/useUIStore";
+import { PageTitleBlock } from "@/components/workspace/PageTitleBlock";
 import type { Database, Page, Property, PropertyValue, PropertyValueData } from "@obnofi/types";
 
 interface SideTabTask {
@@ -287,12 +288,11 @@ export function GroveSideTab({ workspaceId }: { workspaceId: string }) {
                       ))}
                     </nav>
                   )}
-                  <input
-                    type="text"
+                  <PageTitleBlock
                     value={page.title}
-                    onChange={(event) => void handlePageTitleChange(event.target.value)}
+                    onChange={(nextTitle) => void handlePageTitleChange(nextTitle)}
                     placeholder="Untitled"
-                    className="mb-6 w-full border-none bg-transparent text-[34px] font-bold text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-placeholder)]"
+                    size="side-tab"
                   />
                   {page.type === "database" ? (
                     <DatabasePageCard

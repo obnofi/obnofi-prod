@@ -18,6 +18,7 @@ import {
 import { usePageStore, PageTreeNode } from "@/store/pageStore";
 import { Page, PageType } from "@obnofi/types";
 import { useUIStore } from "@/store/useUIStore";
+import { PageTitleBlock } from "@/components/workspace/PageTitleBlock";
 
 // Dynamically import heavy components
 const Editor = dynamic(() => import("@/components/editor/Editor").then(mod => mod.Editor), {
@@ -296,13 +297,12 @@ export function WorkspacePage({
           <div className="h-full overflow-y-auto">
             <div className="max-w-4xl mx-auto px-12 py-8">
               {/* Title */}
-              <input
-                data-testid="workspace-page-title"
-                type="text"
+              <PageTitleBlock
                 value={title}
-                onChange={(e) => handleTitleChange(e.target.value)}
+                onChange={(nextTitle) => void handleTitleChange(nextTitle)}
                 placeholder="Untitled"
-                className="mb-6 w-full border-none bg-transparent text-[40px] font-bold text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-placeholder)]"
+                size="page"
+                testId="workspace-page-title"
               />
 
               {/* Mobile Add Buttons */}
