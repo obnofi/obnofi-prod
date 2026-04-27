@@ -18,6 +18,13 @@ import { Page, PageType } from "@obnofi/types";
 import { useUIStore } from "@/store/useUIStore";
 import { GrovePageCanopy } from "@/components/workspace/GrovePageCanopy";
 import { PageTitleBlock } from "@/components/workspace/PageTitleBlock";
+import { TableOfContents } from "@/components/workspace/TableOfContents";
+import {
+  creatablePageDescriptions,
+  creatablePageLabels,
+  creatablePageTypes,
+  createPageTitles,
+} from "@/lib/pageCreation";
 
 // Dynamically import heavy components
 const Editor = dynamic(() => import("@/components/editor/Editor").then(mod => mod.Editor), {
@@ -86,6 +93,7 @@ export function WorkspacePage({
   const [isLoading, setIsLoading] = useState(!initialPage);
   const [pendingChildType, setPendingChildType] = useState<PageType | null>(null);
   const [expandedPages, setExpandedPages] = useState<Set<string>>(new Set());
+  const [groveContentElement, setGroveContentElement] = useState<HTMLDivElement | null>(null);
 
   // Initialize store with pre-fetched data
   useEffect(() => {
@@ -98,20 +106,20 @@ export function WorkspacePage({
   }, [initialPage, initialPages, setCurrentPage, setPages]);
 
   useEffect(() => {
-    fetchPages(workspaceId);
-  }, [workspaceId, fetchPages]);
+    // initialPages가 없을 때만 fetch (SSR로 이미 받은 경우 중복 방지)
+    if (!initialPages) fetchPages(workspaceId);
+  }, [workspaceId, fetchPages, initialPages]);
 
   useEffect(() => {
+    if (initialPage?.id === pageId) return;
+
     const loadPage = async () => {
-      // If we don't have initialPage or the pageId changed, we need to fetch
-      if (!initialPage || currentPage?.id !== pageId) {
-        setIsLoading(true);
-        await fetchPage(pageId);
-        setIsLoading(false);
-      }
+      setIsLoading(true);
+      await fetchPage(pageId);
+      setIsLoading(false);
     };
     loadPage();
-  }, [pageId, fetchPage, initialPage, currentPage?.id]);
+  }, [pageId, fetchPage, initialPage]);
 
   useEffect(() => {
     if (currentPage) {
@@ -175,16 +183,10 @@ export function WorkspacePage({
   }, [pageId, pages]);
 
   const handleCreateChildPage = async (type: PageType) => {
-    const titles: Record<PageType, string> = {
-      document: "New Page",
-      canvas: "New Clearing",
-      database: "New Database",
-    };
-
     setPendingChildType(type);
 
     const newPage = await createPage({
-      title: titles[type],
+      title: createPageTitles[type],
       type,
       parentId: pageId,
       workspaceId,
@@ -197,13 +199,15 @@ export function WorkspacePage({
     }
   };
 
-  // Get recent pages
-  const recentPages = [...pages]
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 4);
+  const recentPages = useMemo(
+    () =>
+      [...pages]
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .slice(0, 4),
+    [pages]
+  );
 
-  // Get page tree
-  const pageTree = getPageTree();
+  const pageTree = useMemo(() => getPageTree(), [pages]); // eslint-disable-line react-hooks/exhaustive-deps
   const pageTrail = useMemo(() => {
     if (!currentPage) {
       return [];
@@ -329,25 +333,33 @@ export function WorkspacePage({
                   <Plus className="h-3.5 w-3.5" />Add to doc
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { type: "database" as const, label: "Database", description: "Table with rows", icon: <Database className="h-4 w-4" /> },
-                  ].map((action) => {
-                    const isPending = pendingChildType === action.type;
+                  {creatablePageTypes.map((type) => {
+                    const icon =
+                      type === "document" ? (
+                        <FileText className="h-4 w-4" />
+                      ) : (
+                        <Database className="h-4 w-4" />
+                      );
+                    const isPending = pendingChildType === type;
                     return (
                       <button
-                        key={action.type}
+                        key={type}
                         type="button"
-                        onClick={() => void handleCreateChildPage(action.type)}
+                        onClick={() => void handleCreateChildPage(type)}
                         disabled={pendingChildType !== null}
                         className="flex min-h-24 flex-col items-start justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-background)] p-3 text-left transition hover:border-[#2E7D45] hover:bg-[var(--color-accent-subtle)] disabled:cursor-wait disabled:opacity-60"
                       >
                         <div className="flex w-full items-center justify-between text-[#2E7D45]">
-                          <span className="rounded-lg bg-[#E8F3EC] p-2">{action.icon}</span>
+                          <span className="rounded-lg bg-[#E8F3EC] p-2">{icon}</span>
                           {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                         </div>
                         <div>
-                          <div className="text-sm font-semibold text-[var(--color-text-primary)]">{action.label}</div>
-                          <div className="mt-1 text-xs text-[var(--color-text-secondary)]">{action.description}</div>
+                          <div className="text-sm font-semibold text-[var(--color-text-primary)]">
+                            {creatablePageLabels[type]}
+                          </div>
+                          <div className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                            {creatablePageDescriptions[type]}
+                          </div>
                         </div>
                       </button>
                     );
@@ -364,8 +376,10 @@ export function WorkspacePage({
                 placeholder="Type something..."
                 workspaceId={workspaceId}
                 pageId={pageId}
+                onContentContainerReady={setGroveContentElement}
               />
             </div>
+            <TableOfContents container={groveContentElement} />
           </div>
         )}
 

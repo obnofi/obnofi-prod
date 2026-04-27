@@ -17,7 +17,13 @@ import {
   MoreHorizontal,
   Trash2,
 } from "lucide-react";
+import { UserAvatar } from "@/components/auth/UserAvatar";
 import { usePageStore, PageTreeNode } from "@/store/pageStore";
+import {
+  creatablePageLabels,
+  creatablePageTypes,
+  createPageTitles,
+} from "@/lib/pageCreation";
 import { PageType } from "@obnofi/types";
 
 interface WorkspaceLayoutProps {
@@ -249,14 +255,8 @@ function WorkspaceLayoutInner({ children }: WorkspaceLayoutProps) {
   };
 
   const handleCreatePage = async (type: PageType) => {
-    const titles: Record<PageType, string> = {
-      document: "New Page",
-      canvas: "New Clearing",
-      database: "New Database",
-    };
-
     const newPage = await createPage({
-      title: titles[type],
+      title: createPageTitles[type],
       type,
       parentId: null,
       workspaceId,
@@ -276,14 +276,8 @@ function WorkspaceLayoutInner({ children }: WorkspaceLayoutProps) {
   };
 
   const handleCreateChildPage = async (parentId: string, type: PageType) => {
-    const titles: Record<PageType, string> = {
-      document: "New Page",
-      canvas: "New Clearing",
-      database: "New Database",
-    };
-
     const newPage = await createPage({
-      title: titles[type],
+      title: createPageTitles[type],
       type,
       parentId,
       workspaceId,
@@ -302,9 +296,7 @@ function WorkspaceLayoutInner({ children }: WorkspaceLayoutProps) {
       <aside className="w-60 border-r border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col h-full overflow-hidden">
         {/* Workspace Switcher */}
         <div className="flex items-center gap-2 px-3 py-3">
-          <div className="w-[22px] h-[22px] bg-[#2e7d45] rounded flex items-center justify-center shrink-0">
-            <span className="text-white text-[12px] font-semibold">W</span>
-          </div>
+          <UserAvatar size={22} shape="square" className="shrink-0" />
           <span className="flex-1 text-[14px] font-medium text-[var(--color-text-primary)] truncate">Workspace</span>
           <ChevronDown className="w-4 h-4 text-[var(--color-text-secondary)]" />
         </div>
@@ -326,14 +318,14 @@ function WorkspaceLayoutInner({ children }: WorkspaceLayoutProps) {
             </button>
             {showNewPageMenu && (
               <div className="absolute top-full left-0 right-0 z-[99999] mt-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] py-1 shadow-lg">
-                {(["document", "database"] as PageType[]).map((type) => (
+                {creatablePageTypes.map((type) => (
                   <button
                     key={type}
                     onClick={() => handleCreatePage(type)}
                     className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-[var(--color-text-primary)] hover:bg-[var(--color-hover)] transition-colors"
                   >
                     {typeIcons[type]}
-                    <span className="capitalize">{type}</span>
+                    <span>{creatablePageLabels[type]}</span>
                   </button>
                 ))}
               </div>
