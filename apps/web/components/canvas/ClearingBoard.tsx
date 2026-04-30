@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Waypoints } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { CursorChat } from "@/components/canvas/CursorChat";
 import { PenTool } from "@/components/canvas/PenTool";
 import { TimerWidget } from "@/components/canvas/TimerWidget";
@@ -70,6 +71,14 @@ type LassoState = {
   currentY: number;
 } | null;
 
+type LocalClearingSnapshot = {
+  room: Room;
+  elements: Element[];
+  comments: Comment[];
+};
+
+type ClearingSaveStatus = "saved" | "saving" | "unsaved" | "error";
+
 function clampZoom(zoom: number) {
   return Math.min(2.4, Math.max(0.35, zoom));
 }
@@ -87,6 +96,33 @@ function getLocalUser() {
   const nextUser = createDemoUser();
   window.localStorage.setItem("obnofi-clearing-user", JSON.stringify(nextUser));
   return nextUser;
+}
+
+function resolvePresenceColor(seed: string) {
+  const colors = ["fern", "sun", "rose", "sky"] as const;
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+  }
+  return colors[hash % colors.length];
+}
+
+function buildSessionUserProfile(sessionUser: {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+}) {
+  const seed = sessionUser.email ?? sessionUser.id ?? sessionUser.name ?? "obnofi";
+  return {
+    id: sessionUser.id,
+    name: sessionUser.name ?? sessionUser.email ?? "Anonymous",
+    email: sessionUser.email ?? null,
+    avatarUrl: sessionUser.image ?? null,
+    color: resolvePresenceColor(seed),
+    connectedAt: new Date().toISOString(),
+    lastSeenAt: new Date().toISOString(),
+  } satisfies User;
 }
 
 function getScenePoint(
@@ -317,6 +353,58 @@ function buildElement(kind: Element["type"], roomId: string, userId: string, ind
   return buildConnectorElement(roomId, userId, elements, index);
 }
 
+function logClearingPersistenceError(scope: string, error: unknown) {
+  console.error(`[ClearingBoard] ${scope}`, error);
+}
+
+function getClearingSaveLabel(status: ClearingSaveStatus, isSupabaseLive: boolean) {
+  const modeLabel = isSupabaseLive ? "원격" : "로컬";
+
+  switch (status) {
+    case "saving":
+      return `${modeLabel} 저장 중`;
+    case "unsaved":
+      return `${modeLabel} 수정됨`;
+    case "error":
+      return `${modeLabel} 저장 실패`;
+    case "saved":
+    default:
+      return `${modeLabel} 저장됨`;
+  }
+}
+
+function getLocalClearingStorageKey(roomSlug: string) {
+  return `obnofi-clearing-room:${roomSlug}`;
+}
+
+function loadLocalClearingSnapshot(roomSlug: string): LocalClearingSnapshot | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem(getLocalClearingStorageKey(roomSlug));
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as LocalClearingSnapshot;
+  } catch {
+    return null;
+  }
+}
+
+function saveLocalClearingSnapshot(roomSlug: string, snapshot: LocalClearingSnapshot) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(
+    getLocalClearingStorageKey(roomSlug),
+    JSON.stringify(snapshot)
+  );
+}
+
 export function ClearingBoard({
   embedded = false,
   roomSlug,
@@ -326,6 +414,7 @@ export function ClearingBoard({
   roomSlug: string;
   title?: string;
 }) {
+  const { data: session } = useSession();
   const boardRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragStateRef = useRef<DragState>(null);
@@ -340,6 +429,7 @@ export function ClearingBoard({
   const [comments, setComments] = useState<Comment[]>([]);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [isSupabaseLive, setIsSupabaseLive] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<ClearingSaveStatus>("saved");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [drawingColor, setDrawingColor] = useState("#2E7D45");
   const [drawingStrokeWidth, setDrawingStrokeWidth] = useState(2);
@@ -361,6 +451,12 @@ export function ClearingBoard({
   const [connectorCursor, setConnectorCursor] = useState<{ x: number; y: number } | null>(null);
   const sharedTimerRef = useRef(sharedTimer);
   const cursorChatTimeoutRef = useRef<number | null>(null);
+  const previousElementsRef = useRef<Element[]>([]);
+  const suppressPersistenceRef = useRef(false);
+  const latestCommentsRef = useRef<Comment[]>([]);
+  const persistTimerRef = useRef<number | null>(null);
+  const pendingUpsertsRef = useRef<Map<string, Element>>(new Map());
+  const pendingDeletesRef = useRef<Set<string>>(new Set());
 
   const {
     viewport,
@@ -427,10 +523,21 @@ export function ClearingBoard({
   }, [elements, selectedIds]);
 
   useEffect(() => {
-    const localUser = getLocalUser();
+    const localUser = session?.user
+      ? buildSessionUserProfile(session.user)
+      : getLocalUser();
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("obnofi-clearing-user", JSON.stringify(localUser));
+    }
+
     currentUserRef.current = localUser;
     setCurrentUser(localUser);
-  }, [setCurrentUser]);
+  }, [session, setCurrentUser]);
+
+  useEffect(() => {
+    latestCommentsRef.current = comments;
+  }, [comments]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -442,9 +549,15 @@ export function ClearingBoard({
     setIsSupabaseLive(supabaseEnabled);
 
     const bootstrap = async () => {
-      const fallbackRoom = createDemoRoom(currentUser.id);
-      const fallbackElements = createDemoElements(fallbackRoom.id, currentUser.id);
-      const fallbackComments = [createDemoComment(fallbackRoom.id, fallbackElements[0]?.id ?? null, currentUser.id)];
+      const localSnapshot = loadLocalClearingSnapshot(roomSlug);
+      const fallbackRoom =
+        localSnapshot?.room ?? createDemoRoom(currentUser.id);
+      const fallbackElements =
+        localSnapshot?.elements ??
+        createDemoElements(fallbackRoom.id, currentUser.id);
+      const fallbackComments =
+        localSnapshot?.comments ??
+        [createDemoComment(fallbackRoom.id, fallbackElements[0]?.id ?? null, currentUser.id)];
 
       if (!supabaseEnabled) {
         if (!isMounted) {
@@ -452,10 +565,15 @@ export function ClearingBoard({
         }
         currentRoomRef.current = fallbackRoom;
         setRoom(fallbackRoom);
+        suppressPersistenceRef.current = true;
         setElements(fallbackElements);
         setComments(fallbackComments);
         setPresenceUsers([currentUser]);
+        setSaveStatus("saved");
         setIsBootstrapping(false);
+        queueMicrotask(() => {
+          suppressPersistenceRef.current = false;
+        });
         return;
       }
 
@@ -585,8 +703,13 @@ export function ClearingBoard({
         }
 
         setRoom(activeRoom);
+        suppressPersistenceRef.current = true;
         setElements(nextElements);
         setComments(nextComments);
+        setSaveStatus("saved");
+        queueMicrotask(() => {
+          suppressPersistenceRef.current = false;
+        });
 
         const channel = supabase
           .channel(`clearing-room:${activeRoom.id}`, {
@@ -619,7 +742,11 @@ export function ClearingBoard({
             },
             (payload) => {
               if (payload.eventType === "DELETE") {
+                suppressPersistenceRef.current = true;
                 removeElement(payload.old.id as string);
+                queueMicrotask(() => {
+                  suppressPersistenceRef.current = false;
+                });
                 return;
               }
 
@@ -628,7 +755,11 @@ export function ClearingBoard({
                 return;
               }
 
+              suppressPersistenceRef.current = true;
               upsertElement(toElement(nextRecord));
+              queueMicrotask(() => {
+                suppressPersistenceRef.current = false;
+              });
             }
           )
           .on(
@@ -667,16 +798,18 @@ export function ClearingBoard({
             await channel.track(currentUser);
           }
         });
-      } catch {
+      } catch (error) {
         if (!isMounted) {
           return;
         }
+        logClearingPersistenceError("bootstrap failed, switching to local mode", error);
         currentRoomRef.current = fallbackRoom;
         setRoom(fallbackRoom);
         setElements(fallbackElements);
         setComments(fallbackComments);
         setPresenceUsers([currentUser]);
         setIsSupabaseLive(false);
+        setSaveStatus("saved");
       } finally {
         if (isMounted) {
           setIsBootstrapping(false);
@@ -707,10 +840,141 @@ export function ClearingBoard({
         },
         { onConflict: "id" }
       );
-    } catch {
-      setIsSupabaseLive(false);
+    } catch (error) {
+      logClearingPersistenceError("persistElement failed", error);
+      throw error;
     }
   };
+
+  const removePersistedElement = async (elementId: string) => {
+    if (!isSupabaseLive) {
+      return;
+    }
+
+    try {
+      const supabase = createBrowserSupabaseClient();
+      await supabase.from("elements").delete().eq("id", elementId);
+    } catch (error) {
+      logClearingPersistenceError("removePersistedElement failed", error);
+      throw error;
+    }
+  };
+
+  const flushCanvasPersistence = useCallback(async () => {
+    persistTimerRef.current = null;
+
+    if (!room || isBootstrapping) {
+      return;
+    }
+
+    const pendingUpserts = Array.from(pendingUpsertsRef.current.values());
+    const pendingDeletes = Array.from(pendingDeletesRef.current.values());
+
+    if (pendingUpserts.length === 0 && pendingDeletes.length === 0) {
+      if (!isSupabaseLive) {
+        saveLocalClearingSnapshot(roomSlug, {
+          room,
+          elements,
+          comments: latestCommentsRef.current,
+        });
+        setSaveStatus("saved");
+      }
+      return;
+    }
+
+    setSaveStatus("saving");
+
+    if (!isSupabaseLive) {
+      saveLocalClearingSnapshot(roomSlug, {
+        room,
+        elements,
+        comments: latestCommentsRef.current,
+      });
+      pendingUpsertsRef.current.clear();
+      pendingDeletesRef.current.clear();
+      setSaveStatus("saved");
+      return;
+    }
+
+    try {
+      await Promise.all([
+        ...pendingUpserts.map((element) => persistElement(element)),
+        ...pendingDeletes.map((elementId) => removePersistedElement(elementId)),
+      ]);
+      pendingUpsertsRef.current.clear();
+      pendingDeletesRef.current.clear();
+      setSaveStatus("saved");
+    } catch (error) {
+      logClearingPersistenceError("flushCanvasPersistence failed", error);
+      setSaveStatus("error");
+    }
+  }, [comments, elements, isBootstrapping, isSupabaseLive, room, roomSlug]);
+
+  const scheduleCanvasPersistence = useCallback(() => {
+    setSaveStatus("unsaved");
+    if (persistTimerRef.current) {
+      window.clearTimeout(persistTimerRef.current);
+    }
+    persistTimerRef.current = window.setTimeout(() => {
+      void flushCanvasPersistence();
+    }, 800);
+  }, [flushCanvasPersistence]);
+
+  useEffect(() => {
+    if (isBootstrapping) {
+      previousElementsRef.current = elements;
+      return;
+    }
+
+    if (suppressPersistenceRef.current) {
+      previousElementsRef.current = elements;
+      return;
+    }
+
+    const previousById = new Map(
+      previousElementsRef.current.map((element) => [element.id, element])
+    );
+    const nextById = new Map(elements.map((element) => [element.id, element]));
+
+    for (const element of elements) {
+      const previous = previousById.get(element.id);
+      if (!previous || JSON.stringify(previous) !== JSON.stringify(element)) {
+        pendingUpsertsRef.current.set(element.id, element);
+        pendingDeletesRef.current.delete(element.id);
+      }
+    }
+
+    for (const previous of previousElementsRef.current) {
+      if (!nextById.has(previous.id)) {
+        pendingUpsertsRef.current.delete(previous.id);
+        pendingDeletesRef.current.add(previous.id);
+      }
+    }
+
+    if (
+      pendingUpsertsRef.current.size > 0 ||
+      pendingDeletesRef.current.size > 0
+    ) {
+      scheduleCanvasPersistence();
+    }
+
+    previousElementsRef.current = elements;
+  }, [elements, isBootstrapping, isSupabaseLive, scheduleCanvasPersistence]);
+
+  useEffect(() => {
+    if (isBootstrapping || isSupabaseLive || !room) {
+      return;
+    }
+    scheduleCanvasPersistence();
+  }, [comments, isBootstrapping, isSupabaseLive, room, scheduleCanvasPersistence]);
+
+  useEffect(() => {
+    return () => {
+      if (persistTimerRef.current) {
+        window.clearTimeout(persistTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleCreateElement = async (kind: "sticky" | "connector") => {
     const activeRoom = currentRoomRef.current;
@@ -783,8 +1047,8 @@ export function ClearingBoard({
         created_at: nextComment.createdAt,
         updated_at: nextComment.updatedAt,
       });
-    } catch {
-      setIsSupabaseLive(false);
+    } catch (error) {
+      logClearingPersistenceError("submitComment failed", error);
     }
   };
 
@@ -822,8 +1086,8 @@ export function ClearingBoard({
         .from("comments")
         .update({ resolved: true, resolved_at: new Date().toISOString() })
         .in("id", ids);
-    } catch {
-      setIsSupabaseLive(false);
+    } catch (error) {
+      logClearingPersistenceError("resolveThread failed", error);
     }
   };
 
@@ -841,8 +1105,8 @@ export function ClearingBoard({
       if (isSupabaseLive) {
         try {
           assetUrl = await uploadImageToBoard(file, activeRoom.id);
-        } catch {
-          setIsSupabaseLive(false);
+        } catch (error) {
+          logClearingPersistenceError("uploadImageToBoard failed", error);
         }
       }
       const nextElement = await createImageElement({
@@ -1620,20 +1884,47 @@ export function ClearingBoard({
               : "rounded-[24px] shadow-[0_18px_60px_rgba(15,23,42,0.08)]"
           }`}
         >
+          <div className="absolute right-4 top-4 z-30 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/90 px-3 py-1 text-[11px] text-[var(--color-text-secondary)] backdrop-blur">
+            {getClearingSaveLabel(saveStatus, isSupabaseLive)}
+          </div>
 
           <div className="absolute bottom-4 left-4 z-20 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/90 px-4 py-3 text-sm backdrop-blur">
             <p className="font-medium text-[var(--color-text-primary)]">Presence</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {currentUser && (
-                <span className="rounded-full bg-[var(--color-accent-subtle)] px-3 py-1 text-xs font-medium text-[var(--color-accent)]">
+                <span className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent-subtle)] px-3 py-1 text-xs font-medium text-[var(--color-accent)]">
+                  <span className="inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-[var(--color-accent)] text-[9px] font-semibold text-white">
+                    {currentUser.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        alt={currentUser.name}
+                        className="h-full w-full object-cover"
+                        src={currentUser.avatarUrl}
+                      />
+                    ) : (
+                      currentUser.name.charAt(0).toUpperCase()
+                    )}
+                  </span>
                   {currentUser.name}
                 </span>
               )}
               {others.map((user) => (
                 <span
                   key={user.id}
-                  className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs"
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] px-3 py-1 text-xs"
                 >
+                  <span className="inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-[var(--color-surface)] text-[9px] font-semibold text-[var(--color-text-primary)]">
+                    {user.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        alt={user.name}
+                        className="h-full w-full object-cover"
+                        src={user.avatarUrl}
+                      />
+                    ) : (
+                      user.name.charAt(0).toUpperCase()
+                    )}
+                  </span>
                   {user.name}
                 </span>
               ))}
@@ -1777,10 +2068,27 @@ export function ClearingBoard({
                       top: user.cursor?.y ?? 0,
                     }}
                   >
-                    <div className="h-4 w-4 rotate-[-18deg] rounded-[4px] bg-[var(--color-accent)]" />
-                    <span className="mt-2 inline-flex rounded-full bg-[var(--color-text-primary)] px-2 py-1 text-[10px] font-semibold text-[var(--color-background)]">
-                      {user.name}
-                    </span>
+                    <div
+                      className="h-4 w-4 rotate-[-18deg] rounded-[4px]"
+                      style={{ backgroundColor: "var(--color-accent)" }}
+                    />
+                    <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-[var(--color-surface)]/95 px-2 py-1 shadow-sm ring-1 ring-[var(--color-border)] backdrop-blur">
+                      <span className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-[var(--color-accent-subtle)] text-[10px] font-semibold text-[var(--color-accent)]">
+                        {user.avatarUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            alt={user.name}
+                            className="h-full w-full object-cover"
+                            src={user.avatarUrl}
+                          />
+                        ) : (
+                          user.name.charAt(0).toUpperCase()
+                        )}
+                      </span>
+                      <span className="text-[10px] font-semibold text-[var(--color-text-primary)]">
+                        {user.name}
+                      </span>
+                    </div>
                   </div>
                 ))}
             </div>
