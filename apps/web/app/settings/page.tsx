@@ -114,7 +114,11 @@ export default function AccountSettingsPage() {
 
         setProfile(data);
         setDraftName(data.name ?? "");
-        setSelectedImage(data.image ?? null);
+        setSelectedImage(
+          data.image && profileImagePresets.includes(data.image)
+            ? data.image
+            : profileImagePresets[0]
+        );
       } catch (error) {
         if (!isMounted) {
           return;
@@ -136,10 +140,7 @@ export default function AccountSettingsPage() {
     };
   }, [status]);
 
-  const imageOptions =
-    selectedImage && !profileImagePresets.includes(selectedImage)
-      ? [selectedImage, ...profileImagePresets]
-      : profileImagePresets;
+  const imageOptions = profileImagePresets;
 
   const trimmedName = draftName.trim();
   const canSave =
@@ -176,7 +177,11 @@ export default function AccountSettingsPage() {
 
       setProfile(data);
       setDraftName(data.name ?? "");
-      setSelectedImage(data.image ?? null);
+      setSelectedImage(
+        data.image && profileImagePresets.includes(data.image)
+          ? data.image
+          : profileImagePresets[0]
+      );
       setSuccessMessage("프로필을 저장했습니다.");
       await update({
         name: data.name ?? undefined,
@@ -265,8 +270,6 @@ export default function AccountSettingsPage() {
                 <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
                   {imageOptions.map((imageUrl, index) => {
                     const isSelected = imageUrl === selectedImage;
-                    const isCurrentExternal = index === 0 && !profileImagePresets.includes(imageUrl);
-
                     return (
                       <button
                         key={imageUrl}
@@ -275,11 +278,11 @@ export default function AccountSettingsPage() {
                         className={`rounded-full p-1 transition ${
                           isSelected ? "bg-[var(--color-accent-subtle)]" : "bg-transparent"
                         }`}
-                        aria-label={isCurrentExternal ? "Current profile image" : "Select profile image"}
+                        aria-label="Select profile image"
                       >
                         <Image
                           src={imageUrl}
-                          alt={isCurrentExternal ? "Current profile image" : "Profile preset"}
+                          alt="Profile preset"
                           width={56}
                           height={56}
                           className={`h-14 w-14 rounded-full object-cover ring-2 ${
@@ -303,7 +306,11 @@ export default function AccountSettingsPage() {
                   disabled={isSaving}
                   onClick={() => {
                     setDraftName(profile.name ?? "");
-                    setSelectedImage(profile.image ?? null);
+                    setSelectedImage(
+                      profile.image && profileImagePresets.includes(profile.image)
+                        ? profile.image
+                        : profileImagePresets[0]
+                    );
                     setErrorMessage(null);
                     setSuccessMessage(null);
                   }}

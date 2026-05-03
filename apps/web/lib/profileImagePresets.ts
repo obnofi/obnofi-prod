@@ -1,10 +1,10 @@
 const profileImageFilenames = [
   "spider.png",
   "peacock.png",
-  "armadillo.png",
+  "armadlio.png",
   "parrot.png",
-  "elephant.png",
-  "black-panther.png",
+  "eliphant.png",
+  "blackleopard.png",
 ] as const;
 
 export const profileImagePresets = profileImageFilenames.map((filename) => `/profile/${filename}`);
@@ -31,4 +31,11 @@ export function pickProfileImagePreset(seed: string) {
 
 export function isProfileImagePreset(image: string | null | undefined) {
   return image ? profileImagePresets.includes(image) : false;
+}
+
+export function normalizeProfileImagePreset(
+  image: string | null | undefined,
+  fallbackSeed: string
+) {
+  return isProfileImagePreset(image) ? image : pickProfileImagePreset(fallbackSeed);
 }

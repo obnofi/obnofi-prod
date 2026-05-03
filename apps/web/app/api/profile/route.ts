@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@obnofi/db";
+import {
+  isProfileImagePreset,
+  pickProfileImagePreset,
+} from "@/lib/profileImagePresets";
 import { getSessionUserId } from "@/lib/request-auth";
 
 export async function GET() {
@@ -16,6 +20,12 @@ export async function GET() {
       email: true,
       image: true,
       createdAt: true,
+      preferences: true,
+      accounts: {
+        select: {
+          provider: true,
+        },
+      },
     },
   });
 
@@ -23,7 +33,10 @@ export async function GET() {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  return NextResponse.json(user);
+  return NextResponse.json({
+    ...user,
+    connectedAccounts: user.accounts.map((account) => account.provider),
+  });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -53,11 +66,18 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
+  if (nextImage && !isProfileImagePreset(nextImage)) {
+    return NextResponse.json(
+      { error: "Image must be one of the bundled profile presets" },
+      { status: 400 }
+    );
+  }
+
   const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: {
       name: nextName,
-      ...(nextImage ? { image: nextImage } : {}),
+      image: nextImage ?? pickProfileImagePreset(userId),
     },
     select: {
       id: true,
@@ -65,8 +85,17 @@ export async function PATCH(request: NextRequest) {
       email: true,
       image: true,
       createdAt: true,
+      preferences: true,
+      accounts: {
+        select: {
+          provider: true,
+        },
+      },
     },
   });
 
-  return NextResponse.json(updatedUser);
+  return NextResponse.json({
+    ...updatedUser,
+    connectedAccounts: updatedUser.accounts.map((account) => account.provider),
+  });
 }

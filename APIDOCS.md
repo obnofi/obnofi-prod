@@ -223,7 +223,9 @@ curl -s "http://localhost:3000/api/databases/search" \
   "name": "Jane Doe",
   "email": "jane@example.com",
   "image": "https://lh3.googleusercontent.com/...",
-  "createdAt": "2026-04-30T00:00:00.000Z"
+  "createdAt": "2026-04-30T00:00:00.000Z",
+  "preferences": {},
+  "connectedAccounts": ["google"]
 }
 ```
 

@@ -3,7 +3,10 @@ import { prisma } from "@obnofi/db";
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { pickProfileImagePreset } from "@/lib/profileImagePresets";
+import {
+  normalizeProfileImagePreset,
+  pickProfileImagePreset,
+} from "@/lib/profileImagePresets";
 
 const googleClientId =
   process.env.GOOGLE_CLIENT_ID ??
@@ -30,16 +33,18 @@ async function ensureUserProfileImage(
     return initialProfileImage;
   }
 
-  if (typeof user.image === "string" && user.image.length > 0) {
-    return user.image;
+  const normalizedImage = normalizeProfileImagePreset(user.image, fallbackSeed);
+
+  if (user.image === normalizedImage) {
+    return normalizedImage;
   }
 
   await prisma.user.update({
     where: { id: userId },
-    data: { image: initialProfileImage },
+    data: { image: normalizedImage },
   });
 
-  return initialProfileImage;
+  return normalizedImage;
 }
 
 async function setUserProfileImagePreset(userId: string, fallbackSeed: string) {
@@ -60,7 +65,7 @@ const adapter = {
   async createUser(user: Parameters<NonNullable<typeof baseAdapter.createUser>>[0]) {
     const fallbackSeed = user.email ?? user.name ?? "obnofi-user";
 
-    return baseAdapter.createUser({
+    return baseAdapter.createUser!({
       ...user,
       image: pickProfileImagePreset(fallbackSeed),
     });
