@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback, useMemo, Suspense } from "rea
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import type { DragEndEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -23,6 +24,7 @@ import {
   GripVertical,
 } from "lucide-react";
 import { UserAvatar } from "@/components/auth/UserAvatar";
+import { WorkspaceSettingsModal } from "@/components/workspace/WorkspaceSettingsModal";
 import { usePageStore, PageTreeNode } from "@/store/pageStore";
 import {
   creatablePageDescriptions,
@@ -45,6 +47,18 @@ interface WorkspaceOption {
   role: "OWNER" | "EDITOR" | "VIEWER" | "MEMBER";
   createdAt: string;
   updatedAt: string;
+}
+
+function WorkspaceGlyph({ icon, label }: { icon: string | null; label: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-[var(--color-surface)] text-[12px]"
+      title={label}
+    >
+      {icon || "🌿"}
+    </span>
+  );
 }
 
 const typeIcons: Record<PageType, React.ReactNode> = {
@@ -287,11 +301,13 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
 function WorkspaceLayoutInner({ children }: WorkspaceLayoutProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const params = useParams();
   const workspaceId = params.workspaceId as string;
   const [expandedPages, setExpandedPages] = useState<Set<string>>(new Set());
   const [showNewPageMenu, setShowNewPageMenu] = useState(false);
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState<WorkspaceOption[]>([]);
   const [activeDragPageId, setActiveDragPageId] = useState<string | null>(null);
   const [overDragPageId, setOverDragPageId] = useState<string | null>(null);
@@ -503,6 +519,7 @@ function WorkspaceLayoutInner({ children }: WorkspaceLayoutProps) {
   );
   const currentWorkspace =
     workspaces.find((workspace) => workspace.id === workspaceId) ?? null;
+  const isOwnedWorkspace = currentWorkspace?.ownerId === session?.user?.id;
 
   const handleToggleExpand = (pageId: string) => {
     setExpandedPages((prev) => {
@@ -644,6 +661,12 @@ function WorkspaceLayoutInner({ children }: WorkspaceLayoutProps) {
 
   return (
     <div className="flex h-screen bg-[var(--color-background)]">
+      <WorkspaceSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        workspaceId={workspaceId}
+      />
+
       {/* Sidebar */}
       <aside className="w-60 border-r border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col h-full overflow-hidden">
         {/* Workspace Switcher */}
@@ -653,7 +676,14 @@ function WorkspaceLayoutInner({ children }: WorkspaceLayoutProps) {
             onClick={() => setIsWorkspaceMenuOpen((open) => !open)}
             className="flex w-full items-center gap-2 rounded-md px-1 py-1.5 text-left hover:bg-[var(--color-hover)]"
           >
-            <UserAvatar size={22} shape="square" className="shrink-0" />
+            {isOwnedWorkspace ? (
+              <UserAvatar size={22} shape="square" className="shrink-0" />
+            ) : (
+              <WorkspaceGlyph
+                icon={currentWorkspace?.icon ?? null}
+                label={currentWorkspace?.name ?? "Workspace"}
+              />
+            )}
             <div className="min-w-0 flex-1">
               <span className="block truncate text-[14px] font-medium text-[var(--color-text-primary)]">
                 {currentWorkspace?.name ?? "Workspace"}
@@ -684,9 +714,7 @@ function WorkspaceLayoutInner({ children }: WorkspaceLayoutProps) {
                         : "text-[var(--color-text-secondary)] hover:bg-[var(--color-hover)]"
                     }`}
                   >
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-[var(--color-surface)] text-[12px]">
-                      {workspace.icon || "🌿"}
-                    </span>
+                    <WorkspaceGlyph icon={workspace.icon} label={workspace.name} />
                     <span className="min-w-0 flex-1 truncate">{workspace.name}</span>
                     {isActiveWorkspace ? (
                       <span className="text-[11px] font-medium text-[var(--color-accent)]">
@@ -705,7 +733,11 @@ function WorkspaceLayoutInner({ children }: WorkspaceLayoutProps) {
           <button className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[var(--color-hover)] text-[var(--color-text-secondary)] text-[13px]">
             <Search className="w-4 h-4" />Search
           </button>
-          <button className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[var(--color-hover)] text-[var(--color-text-secondary)] text-[13px]">
+          <button
+            type="button"
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[var(--color-hover)] text-[var(--color-text-secondary)] text-[13px]"
+          >
             <Settings className="w-4 h-4" />Settings
           </button>
           <div className="relative">

@@ -261,6 +261,69 @@ curl -s "http://localhost:3000/api/databases/search" \
 
 ### `GET /api/workspaces`
 
+현재 사용자가 접근 가능한 워크스페이스 목록을 반환합니다.
+
+응답 예시:
+
+```json
+[
+  {
+    "id": "ws_123",
+    "name": "Product Grove",
+    "slug": "product-grove",
+    "icon": "🌿",
+    "ownerId": "user_123",
+    "role": "OWNER",
+    "createdAt": "2026-05-01T00:00:00.000Z",
+    "updatedAt": "2026-05-02T00:00:00.000Z"
+  }
+]
+```
+
+### `GET /api/workspaces/[workspaceId]/settings`
+
+워크스페이스 설정 모달에 필요한 읽기 전용 데이터를 반환합니다. 웹 세션이 필요하며, 해당 워크스페이스 멤버만 조회할 수 있습니다.
+
+응답 예시:
+
+```json
+{
+  "workspace": {
+    "id": "ws_123",
+    "name": "Product Grove",
+    "slug": "product-grove",
+    "icon": "🌿",
+    "ownerId": "user_123",
+    "createdAt": "2026-05-01T00:00:00.000Z",
+    "updatedAt": "2026-05-02T00:00:00.000Z",
+    "settings": {
+      "defaultPageVisibility": "workspace",
+      "allowGuestAccess": false
+    }
+  },
+  "viewerRole": "OWNER",
+  "members": [
+    {
+      "id": "member_123",
+      "role": "OWNER",
+      "joinedAt": "2026-05-01T00:00:00.000Z",
+      "user": {
+        "id": "user_123",
+        "name": "Jane Doe",
+        "email": "jane@example.com",
+        "image": "/profile/otter.png"
+      }
+    }
+  ]
+}
+```
+
+규칙:
+
+- `defaultPageVisibility`는 현재 `"workspace" | "public_link" | "private"` 중 하나로 반환됩니다.
+- 설정 JSON에 값이 없으면 기본값은 `workspace` / `false`입니다.
+- 쓰기 API는 아직 없으므로 이 엔드포인트는 조회 전용입니다.
+
 현재 사용자 멤버십 기준의 워크스페이스 목록을 반환합니다. 세션 쿠키 또는 Bearer 토큰이 필요합니다.
 
 성공 응답:
