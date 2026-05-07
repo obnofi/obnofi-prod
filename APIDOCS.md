@@ -213,6 +213,45 @@ curl -s "http://localhost:3000/api/databases/search" \
 
 ## Pages
 
+### `POST /api/crawl-import`
+
+크롤러 마이크로서비스에 URL 가져오기를 위임하고, 결과를 그대로 프런트엔드에 반환합니다.
+
+요청 본문:
+
+```json
+{
+  "url": "https://example.com/article"
+}
+```
+
+성공 응답:
+
+```json
+{
+  "title": "Page Title",
+  "url": "https://example.com/article",
+  "markdown": "# Page Title\n\n...",
+  "crawledAt": "2026-05-06T10:00:00.000Z",
+  "wordCount": 342
+}
+```
+
+오류 응답:
+
+```json
+{
+  "error": "CrawlImportError",
+  "message": "....",
+  "url": "https://example.com/article"
+}
+```
+
+동작:
+- 웹 앱의 `/api/crawl-import`는 `CRAWLER_URL` 환경변수(기본값 `http://localhost:3100`)를 사용해 `POST {CRAWLER_URL}/crawl`을 직접 호출한다. (이전엔 ws-server를 거쳤으나 의미 없는 홉이라 제거됨)
+- 30초 안에 응답이 없으면 `408`로 끊는다.
+- crawler가 `408`, `500`, `502`를 반환하면 상태 코드를 그대로 전달하고, 그 외 비정상 응답은 `502`로 정규화한다.
+
 ### `GET /api/pages/search`
 
 현재 사용자가 접근 가능한 워크스페이스 안에서 페이지를 검색합니다. 사이드바 `Search`에서 사용됩니다.

@@ -14,6 +14,7 @@ import {
   toPrismaViewType,
   type PrismaPageRow,
 } from "@/lib/prisma-transforms";
+import { normalizeTiptapDocument } from "@/lib/normalizeTiptapDocument";
 
 const PAGE_ORDER_STEP = 1024;
 
@@ -69,7 +70,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, type, parentId, workspaceId: requestedWorkspaceId } = body;
+    const {
+      title,
+      type,
+      parentId,
+      workspaceId: requestedWorkspaceId,
+      content,
+    } = body;
 
     if (!title || !type) {
       return NextResponse.json(
@@ -147,7 +154,9 @@ export async function POST(request: NextRequest) {
         workspaceId: workspace.id,
         content:
           type === "document"
-            ? { type: "doc", content: [{ type: "paragraph" }] }
+            ? normalizeTiptapDocument(
+                content ?? { type: "doc", content: [{ type: "paragraph" }] }
+              )
             : undefined,
         isPublic: false,
       },

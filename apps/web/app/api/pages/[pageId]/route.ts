@@ -11,6 +11,7 @@ import {
   toPage,
   toDatabase,
 } from "@/lib/prisma-transforms";
+import { normalizeTiptapDocument } from "@/lib/normalizeTiptapDocument";
 
 export async function GET(
   request: NextRequest,
@@ -169,7 +170,9 @@ export async function PATCH(
       if ("h5" in headingFontSizes) updateData.heading5FontSizePt = headingFontSizes.h5;
     }
     if ("highlightColors" in body) updateData.highlightColors = nextHighlightColors;
-    if ("content" in body) updateData.content = body.content;
+    if ("content" in body) {
+      updateData.content = normalizeTiptapDocument(body.content);
+    }
     if ("icon" in body) updateData.icon = body.icon;
     if ("coverImage" in body) updateData.coverImage = body.coverImage;
     if ("parentId" in body) updateData.parentId = body.parentId;

@@ -14,6 +14,7 @@ import type {
   SelectOption,
   View,
 } from "@obnofi/types";
+import { normalizeTiptapDocument } from "@/lib/normalizeTiptapDocument";
 
 // ── Enum converters ────────────────────────────────────────────────────────
 
@@ -181,7 +182,12 @@ export function toPage(p: PrismaPageRow): Page {
     highlightColors: (p.highlightColors?.length
       ? p.highlightColors
       : ["yellow", "green", "blue", "pink"]) as PageHighlightColor[],
-    content: p.content !== undefined ? (p.content as object | null) ?? null : null,
+    content:
+      p.type === PrismaPageType.DOCUMENT && p.content !== undefined
+        ? normalizeTiptapDocument((p.content as object | null) ?? null)
+        : p.content !== undefined
+          ? (p.content as object | null) ?? null
+          : null,
     type: fromPrismaPageType(p.type),
     icon: p.icon ?? null,
     coverImage: p.coverImage ?? null,
