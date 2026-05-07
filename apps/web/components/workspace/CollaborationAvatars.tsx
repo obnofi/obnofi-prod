@@ -1,11 +1,11 @@
 "use client";
 
-import { useCollaboration } from "@/lib/collaboration/CollaborationContext";
+import { useCollaborators } from "@/lib/collaboration/CollaborationContext";
 
 const MAX_VISIBLE = 3;
 
 export function CollaborationAvatars() {
-  const { collaborators } = useCollaboration();
+  const collaborators = useCollaborators();
 
   if (collaborators.length === 0) return null;
 

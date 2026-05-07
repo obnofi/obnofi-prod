@@ -34,6 +34,7 @@ export function userColor(seed: string): string {
 
 export interface CollaborationUser {
   clientId: number;
+  id?: string;
   name: string;
   color: string;
   image?: string | null;
@@ -42,16 +43,20 @@ export interface CollaborationUser {
 interface CollaborationContextValue {
   ydoc: Y.Doc | null;
   provider: WebsocketProvider | null;
-  collaborators: CollaborationUser[];
   isSynced: boolean;
 }
 
-const CollaborationContext = createContext<CollaborationContextValue>({
+const defaultDocumentContext: CollaborationContextValue = {
   ydoc: null,
   provider: null,
-  collaborators: [],
   isSynced: false,
+};
+
+const CollaborationContext = createContext<CollaborationContextValue>({
+  ...defaultDocumentContext,
 });
+
+const CollaborationPresenceContext = createContext<CollaborationUser[]>([]);
 
 export function CollaborationProvider({
   pageId,
@@ -65,6 +70,8 @@ export function CollaborationProvider({
   const { data: session } = useSession();
   const [collaborators, setCollaborators] = useState<CollaborationUser[]>([]);
   const [isSynced, setIsSynced] = useState(false);
+  const currentUserPresenceId =
+    session?.user.id ?? session?.user.email ?? null;
 
   // active=false인 페이지(문서 타입이 아님 / 공유편집 비활성)는 ydoc·provider를 만들지 않는다.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -92,7 +99,11 @@ export function CollaborationProvider({
   } | null>(null);
 
   useEffect(() => {
-    if (!provider || !ydoc) return;
+    if (!provider || !ydoc) {
+      setCollaborators([]);
+      setIsSynced(false);
+      return;
+    }
 
     // 같은 (provider, ydoc) 페어에 예약된 destroy가 있으면 취소 — strict mode toss 회복.
     const pending = pendingDestroyRef.current;
@@ -104,6 +115,10 @@ export function CollaborationProvider({
     provider.connect();
 
     return () => {
+      // 페이지 전환 직후 이전 세션이 유령 협업자로 남지 않도록 로컬 awareness를 먼저 제거한다.
+      provider.awareness.setLocalState(null);
+      setCollaborators([]);
+      setIsSynced(false);
       const timer = setTimeout(() => {
         provider.disconnect();
         provider.destroy();
@@ -117,7 +132,10 @@ export function CollaborationProvider({
   }, [provider, ydoc]);
 
   useEffect(() => {
-    if (!provider) return;
+    if (!provider) {
+      setIsSynced(false);
+      return;
+    }
     const handleSync = (synced: boolean) => setIsSynced(synced);
     provider.on('sync', handleSync);
 
@@ -148,6 +166,7 @@ export function CollaborationProvider({
         ? session.user.image
         : pickProfileImagePreset(seed);
     provider.awareness.setLocalStateField("user", {
+      id: session.user.id ?? session.user.email ?? seed,
       name,
       color,
       image,
@@ -155,39 +174,74 @@ export function CollaborationProvider({
   }, [provider, session]);
 
   useEffect(() => {
-    if (!provider) return;
+    if (!provider) {
+      setCollaborators([]);
+      return;
+    }
+
     const update = () => {
       const states = provider.awareness.getStates();
       const localId = provider.awareness.clientID;
       const users: CollaborationUser[] = [];
       states.forEach((state, clientId) => {
-        if (clientId !== localId && state.user) {
-          users.push({
-            clientId,
-            name: state.user.name,
-            color: state.user.color,
-            image: state.user.image ?? null,
-          });
+        const presenceUser = state.user as
+          | { id?: unknown; name?: unknown; color?: unknown; image?: unknown }
+          | undefined;
+
+        if (!presenceUser || clientId === localId) {
+          return;
         }
+
+        const presenceId =
+          typeof presenceUser.id === "string" ? presenceUser.id : null;
+
+        if (presenceId && currentUserPresenceId && presenceId === currentUserPresenceId) {
+          return;
+        }
+
+        users.push({
+          clientId,
+          id: presenceId ?? undefined,
+          name:
+            typeof presenceUser.name === "string"
+              ? presenceUser.name
+              : "User",
+          color:
+            typeof presenceUser.color === "string"
+              ? presenceUser.color
+              : "#888",
+          image:
+            typeof presenceUser.image === "string"
+              ? presenceUser.image
+              : null,
+        });
       });
       setCollaborators(users);
     };
+    setCollaborators([]);
     provider.awareness.on("change", update);
+    update();
     return () => provider.awareness.off("change", update);
-  }, [provider]);
+  }, [currentUserPresenceId, provider]);
 
   const value = useMemo(
-    () => ({ ydoc, provider, collaborators, isSynced }),
-    [ydoc, provider, collaborators, isSynced]
+    () => ({ ydoc, provider, isSynced }),
+    [ydoc, provider, isSynced]
   );
 
   return (
     <CollaborationContext.Provider value={value}>
-      {children}
+      <CollaborationPresenceContext.Provider value={collaborators}>
+        {children}
+      </CollaborationPresenceContext.Provider>
     </CollaborationContext.Provider>
   );
 }
 
 export function useCollaboration() {
   return useContext(CollaborationContext);
+}
+
+export function useCollaborators() {
+  return useContext(CollaborationPresenceContext);
 }
