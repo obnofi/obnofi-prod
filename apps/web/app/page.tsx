@@ -9,7 +9,7 @@ export default async function Home() {
 
   // 로그인된 사용자는 워크스페이스로 리다이렉트
   if (session?.user) {
-    redirect("/workspace/ws-1");
+    redirect("/workspace");
   }
 
   return (

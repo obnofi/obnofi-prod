@@ -6,12 +6,12 @@ import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { SiteLogo } from "@/components/branding/SiteLogo";
 
-const DEFAULT_CALLBACK = "/workspace/ws-1";
+const DEFAULT_CALLBACK = "/workspace";
 
 function SignInContent() {
   const searchParams = useSearchParams();
   const [isGooglePending, startGoogleTransition] = useTransition();
-  const [isDevPending, startDevTransition] = useTransition();
+  const [isDevPending] = useTransition();
   // NextAuth가 callbackUrl을 query에 포함시켜 이 페이지로 보냄.
   // CLI auth 흐름 등 동적 redirect를 위해 읽어서 signIn에 전달.
   const callbackUrl = searchParams.get("callbackUrl") ?? DEFAULT_CALLBACK;
