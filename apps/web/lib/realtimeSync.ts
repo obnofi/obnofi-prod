@@ -1,5 +1,5 @@
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
-import type { Comment, Element, Room, User } from "@obnofi/types/clearing";
+import type { Comment, Element, PresenceColor, User } from "@obnofi/types/clearing";
 import type { PresenceUser } from "@/store/usePresenceStore";
 import type { Point } from "@obnofi/types/clearing";
 
@@ -25,7 +25,7 @@ type TimerRequestPayload = {
 };
 
 export function randomPresenceColor() {
-  const colors = ["#2E7D45", "#2563EB", "#DC2626", "#D97706", "#7C3AED", "#DB2777"];
+  const colors: PresenceColor[] = ["fern", "sky", "rose", "sun", "mist", "ink"];
   return colors[Math.floor(Math.random() * colors.length)];
 }
 

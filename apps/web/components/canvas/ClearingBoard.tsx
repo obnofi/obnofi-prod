@@ -4,25 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Waypoints } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { CursorChat } from "@/components/canvas/CursorChat";
 import { PenTool } from "@/components/canvas/PenTool";
-import { TimerWidget } from "@/components/canvas/TimerWidget";
 import { BoardElementRenderer } from "@/components/elements/BoardElementRenderer";
 import { CommentThread } from "@/components/elements/CommentThread";
 import { EmojiStamp, type FloatingEmojiStamp } from "@/components/elements/EmojiStamp";
 import { SelectionBox } from "@/components/elements/SelectionBox";
 import { ContextMenu } from "@/components/elements/contextMenu";
 import { PropertiesPanel } from "@/components/elements/PropertiesPanel";
-import {
-  broadcastTimerState,
-  createSharedTimerState,
-  getRemainingTimerMs,
-  pauseSharedTimer,
-  requestTimerState,
-  resetSharedTimer,
-  setSharedTimerDuration,
-  startSharedTimer,
-} from "@/lib/realtimeSync";
 import { ClearingToolbar } from "@/components/toolbar/ClearingToolbar";
 import { createEmbedElement } from "@/lib/embedUtils";
 import { createImageElement, isImageDrop, uploadImageToBoard } from "@/lib/imageUpload";
@@ -442,15 +430,7 @@ export function ClearingBoard({
     x: number;
     y: number;
   } | null>(null);
-  const [sharedTimer, setSharedTimer] = useState(() => createSharedTimerState(5));
-  const [remainingTimerMs, setRemainingTimerMs] = useState(() =>
-    getRemainingTimerMs(createSharedTimerState(5))
-  );
-  const [cursorChatDraft, setCursorChatDraft] = useState("");
-  const [isCursorChatOpen, setIsCursorChatOpen] = useState(false);
   const [connectorCursor, setConnectorCursor] = useState<{ x: number; y: number } | null>(null);
-  const sharedTimerRef = useRef(sharedTimer);
-  const cursorChatTimeoutRef = useRef<number | null>(null);
   const previousElementsRef = useRef<Element[]>([]);
   const suppressPersistenceRef = useRef(false);
   const latestCommentsRef = useRef<Comment[]>([]);
@@ -827,7 +807,7 @@ export function ClearingBoard({
     };
   }, [currentUser, roomSlug, removeElement, setComments, setCurrentUser, setElements, setPresenceUsers, upsertElement]);
 
-  const persistElement = async (element: Element) => {
+  const persistElement = useCallback(async (element: Element) => {
     if (!isSupabaseLive) {
       return;
     }
@@ -844,9 +824,9 @@ export function ClearingBoard({
       logClearingPersistenceError("persistElement failed", error);
       throw error;
     }
-  };
+  }, [isSupabaseLive]);
 
-  const removePersistedElement = async (elementId: string) => {
+  const removePersistedElement = useCallback(async (elementId: string) => {
     if (!isSupabaseLive) {
       return;
     }
@@ -858,7 +838,7 @@ export function ClearingBoard({
       logClearingPersistenceError("removePersistedElement failed", error);
       throw error;
     }
-  };
+  }, [isSupabaseLive]);
 
   const flushCanvasPersistence = useCallback(async () => {
     persistTimerRef.current = null;
@@ -908,7 +888,7 @@ export function ClearingBoard({
       logClearingPersistenceError("flushCanvasPersistence failed", error);
       setSaveStatus("error");
     }
-  }, [comments, elements, isBootstrapping, isSupabaseLive, room, roomSlug]);
+  }, [elements, isBootstrapping, isSupabaseLive, room, roomSlug, persistElement, removePersistedElement]);
 
   const scheduleCanvasPersistence = useCallback(() => {
     setSaveStatus("unsaved");
@@ -1175,8 +1155,6 @@ export function ClearingBoard({
       event.stopPropagation();
       // Connect the selected connector to this element
       const connector = selectedConnector;
-      const targetElement = element;
-
       // Determine if we're connecting the start or end point
       // If fromElementId is not set, connect start. If toElementId is not set, connect end.
       // Otherwise, default to connecting the end point.
@@ -1237,7 +1215,7 @@ export function ClearingBoard({
 
     // If dragging a section, also store the original positions of elements inside it
     const sectionChildOrigins: Record<string, { x: number; y: number }> = {};
-    const movingSectionIds = dragTargets.filter((t) => t.type === "section").map((t) => t.id);
+    const movingSectionIds = dragTargets.filter((target) => target.type === "section").map((target) => target.id);
 
     if (movingSectionIds.length > 0) {
       elements.forEach((candidate) => {
@@ -1550,8 +1528,6 @@ export function ClearingBoard({
       const deltaX = scenePoint.x - activeDrag.offsetX - target.x;
       const deltaY = scenePoint.y - activeDrag.offsetY - target.y;
       const movingIds = Object.keys(activeDrag.groupOrigin);
-      const movingSectionIds = movingIds.filter((id) => elementLookup[id]?.type === "section");
-
       movingIds.forEach((id) => {
         const origin = activeDrag.groupOrigin[id];
         const candidate = elementLookup[id];
@@ -1800,9 +1776,15 @@ export function ClearingBoard({
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setFloatingStamps((current) =>
-        current.filter((stamp) => Date.now() - stamp.createdAt < 3000)
-      );
+      setFloatingStamps((current) => {
+        if (current.length === 0) {
+          return current;
+        }
+
+        const now = Date.now();
+        const next = current.filter((stamp) => now - stamp.createdAt < 3000);
+        return next.length === current.length ? current : next;
+      });
     }, 250);
     return () => window.clearInterval(timer);
   }, []);
