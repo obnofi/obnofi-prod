@@ -1,6 +1,4 @@
-export * from "./core";
 export * from "./database";
-export * from "./clearing";
 export * from "./ai";
 export * from "./db-diagram";
 
@@ -70,6 +68,7 @@ export interface CreatePageInput {
   parentId?: string | null;
   workspaceId: string;
   databaseId?: string | null;
+  content?: object | null;
 }
 
 export interface UpdatePageInput {
