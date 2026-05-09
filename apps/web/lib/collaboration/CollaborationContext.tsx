@@ -114,7 +114,21 @@ export function CollaborationProvider({
 
     provider.connect();
 
+    const handlePageHide = () => {
+      setIsSynced(false);
+      provider.disconnect();
+    };
+
+    const handlePageShow = () => {
+      provider.connect();
+    };
+
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("pageshow", handlePageShow);
+
     return () => {
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("pageshow", handlePageShow);
       // 페이지 전환 직후 이전 세션이 유령 협업자로 남지 않도록 로컬 awareness를 먼저 제거한다.
       provider.awareness.setLocalState(null);
       setCollaborators([]);
