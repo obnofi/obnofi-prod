@@ -38,10 +38,10 @@ interface UseGraphDataResult {
 }
 
 const WIKILINK_REGEX = /\[\[([^[\]]+)\]\]/g;
-const MIN_NODE_SIZE = 40;
-const MAX_NODE_SIZE = 120;
-const MIN_EDGE_WIDTH = 1;
-const MAX_EDGE_WIDTH = 4;
+const MIN_NODE_SIZE = 10;
+const MAX_NODE_SIZE = 28;
+const MIN_EDGE_WIDTH = 0.5;
+const MAX_EDGE_WIDTH = 1.5;
 
 type RawReference = {
   pageId?: string;

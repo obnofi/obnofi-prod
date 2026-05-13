@@ -6,87 +6,69 @@ import type { GraphLinkNode } from "@/components/graph/useGraphData";
 
 export type GraphCanvasNodeData = GraphLinkNode;
 
-function getNodeColors(data: GraphCanvasNodeData) {
-  if (data.isCurrentNote) {
-    return {
-      background: "var(--color-graph-current-subtle)",
-      border: "var(--color-graph-current)",
-      color: "var(--color-graph-current)",
-    };
-  }
-
-  if (data.isUnresolved) {
-    return {
-      background: "var(--color-surface)",
-      border: "var(--color-graph-unresolved)",
-      color: "var(--color-graph-unresolved)",
-    };
-  }
-
-  if (data.isOrphan) {
-    return {
-      background: "var(--color-surface)",
-      border: "var(--color-border)",
-      color: "var(--color-text-secondary)",
-    };
-  }
-
-  return {
-    background: "var(--color-accent-subtle)",
-    border: "var(--color-accent)",
-    color: "var(--color-accent)",
-  };
-}
-
 export const GraphNode = memo(function GraphNode({
   data,
   selected,
 }: NodeProps) {
   const nodeData = data as GraphCanvasNodeData;
-  const size = typeof nodeData.size === "number" ? nodeData.size : 40;
-  const colors = getNodeColors(nodeData);
+  const size = typeof nodeData.size === "number" ? nodeData.size : 10;
+
+  const fillColor = nodeData.isCurrentNote
+    ? "rgba(235, 235, 235, 0.96)"
+    : nodeData.isOrphan
+    ? "rgba(90, 90, 90, 0.38)"
+    : "rgba(148, 148, 148, 0.72)";
+
+  const labelColor = nodeData.isCurrentNote
+    ? "rgba(215, 215, 215, 0.92)"
+    : "rgba(130, 130, 130, 0.72)";
 
   return (
     <div
-      className="group relative flex items-center justify-center rounded-full text-center transition-transform"
-      style={{
-        width: size,
-        height: size,
-        background: colors.background,
-        color: colors.color,
-        border: `1px ${nodeData.isUnresolved ? "dashed" : "solid"} ${colors.border}`,
-        boxShadow: selected
-          ? `0 0 0 6px color-mix(in srgb, ${colors.border} 20%, transparent)`
-          : undefined,
-        opacity: nodeData.isOrphan ? 0.72 : 1,
-      }}
+      className="group relative cursor-pointer"
+      style={{ width: size, height: size, overflow: "visible" }}
       title={nodeData.label}
     >
       <Handle
         type="target"
         position={Position.Left}
-        className="!h-2 !w-2 !border-0 !bg-transparent opacity-0"
+        className="!h-1 !w-1 !border-0 !bg-transparent opacity-0"
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!h-2 !w-2 !border-0 !bg-transparent opacity-0"
+        className="!h-1 !w-1 !border-0 !bg-transparent opacity-0"
       />
-      <span
-        className="pointer-events-none px-2 text-[11px] font-medium leading-tight"
+
+      {/* dot */}
+      <div
+        className="rounded-full transition-transform duration-150 group-hover:scale-[1.5]"
         style={{
-          maxWidth: Math.max(size - 10, 28),
-          display: "-webkit-box",
-          WebkitLineClamp: size >= 84 ? 3 : 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-          wordBreak: "break-word",
+          width: size,
+          height: size,
+          backgroundColor: nodeData.isUnresolved ? "transparent" : fillColor,
+          border: nodeData.isUnresolved
+            ? `1px dashed rgba(130, 130, 130, 0.4)`
+            : "none",
+          boxShadow: selected
+            ? `0 0 0 ${Math.round(size * 0.6)}px rgba(180, 180, 180, 0.12)`
+            : undefined,
+          transform: selected ? "scale(1.5)" : undefined,
+          animation: "graphNodeAppear 0.45s cubic-bezier(0.34,1.56,0.64,1) both",
         }}
+      />
+
+      {/* 라벨 */}
+      <div
+        className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-center transition-opacity duration-150 group-hover:opacity-100"
+        style={{ top: size + 5, opacity: nodeData.isCurrentNote ? 0.9 : 0.65 }}
       >
-        {nodeData.label}
-      </span>
-      <div className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 rounded-md bg-[var(--color-background)] px-2 py-1 text-[11px] text-[var(--color-text-secondary)] opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-        {nodeData.backlinkCount} backlinks
+        <span
+          className="block max-w-[88px] truncate text-[10px] font-medium leading-none"
+          style={{ color: labelColor }}
+        >
+          {nodeData.label}
+        </span>
       </div>
     </div>
   );

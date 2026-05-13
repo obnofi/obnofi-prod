@@ -173,17 +173,15 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
   useEffect(() => {
     const nextNodes: GraphFlowNode[] = graphData.nodes.map((node, index) => {
       const savedPosition = savedPositionsRef.current.get(node.id);
-      const angle = (index / Math.max(graphData.nodes.length, 1)) * Math.PI * 2;
-      const radius = 160 + Math.sqrt(graphData.nodes.length) * 20;
 
       return {
         id: node.id,
         type: "graphNode",
-        position:
-          savedPosition ?? {
-            x: Math.cos(angle) * radius,
-            y: Math.sin(angle) * radius,
-          },
+        // savedPosition이 없으면 중앙 근처 랜덤 → d3-force가 폭발적으로 퍼뜨림
+        position: savedPosition ?? {
+          x: (Math.random() - 0.5) * 40,
+          y: (Math.random() - 0.5) * 40,
+        },
         data: {
           ...node,
           size: node.size,
@@ -256,18 +254,14 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
     const data = node.data as GraphCanvasNodeData;
 
     if (data.isCurrentNote) {
-      return "var(--color-graph-current)";
-    }
-
-    if (data.isUnresolved) {
-      return "var(--color-graph-unresolved)";
+      return "rgba(210, 210, 210, 0.9)";
     }
 
     if (data.isOrphan) {
-      return "var(--color-text-placeholder)";
+      return "rgba(90, 90, 90, 0.5)";
     }
 
-    return "var(--color-accent)";
+    return "rgba(140, 140, 140, 0.7)";
   }, []);
 
   return (
@@ -371,6 +365,7 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
             <MiniMap
               pannable
               zoomable
+              nodeStrokeWidth={0}
               className="!bg-[var(--color-surface)]"
               nodeColor={minimapNodeColor}
             />

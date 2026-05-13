@@ -16,9 +16,7 @@ interface SimulationNode extends SimulationNodeDatum {
   id: string;
   x: number;
   y: number;
-  data: {
-    size?: number;
-  };
+  data: { size?: number };
 }
 
 interface SimulationEdge extends SimulationLinkDatum<SimulationNode> {
@@ -39,18 +37,21 @@ export function useGraphSimulation({
   graphKey,
   setNodes,
 }: UseGraphSimulationParams) {
-  const initialNodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
+  const nodesRef = useRef(nodes);
+
+  useEffect(() => { edgesRef.current = edges; });
+  useEffect(() => { nodesRef.current = nodes; });
 
   useEffect(() => {
-    initialNodesRef.current = nodes;
-  }, [nodes]);
+    const initialNodes = nodesRef.current;
+    const initialEdges = edgesRef.current;
 
-  useEffect(() => {
-    const initialNodes = initialNodesRef.current;
+    if (initialNodes.length === 0) return;
 
-    if (initialNodes.length === 0) {
-      return;
-    }
+    const isBig = initialNodes.length >= 500;
+    // 150개 이하에서는 수렴 후에도 ambient noise로 계속 살짝 움직임
+    const isAmbient = initialNodes.length <= 150;
 
     const simulationNodes: SimulationNode[] = initialNodes.map((node) => ({
       id: node.id,
@@ -61,7 +62,7 @@ export function useGraphSimulation({
       data: node.data,
     }));
 
-    const simulationEdges: SimulationEdge[] = edges.map((edge) => ({
+    const simulationEdges: SimulationEdge[] = initialEdges.map((edge) => ({
       source: edge.source,
       target: edge.target,
     }));
@@ -70,33 +71,42 @@ export function useGraphSimulation({
       .force(
         "charge",
         forceManyBody()
-          .strength(initialNodes.length >= 500 ? -90 : -140)
-          .theta(initialNodes.length >= 500 ? 0.9 : 0.8)
+          .strength(isBig ? -120 : -300)
+          .theta(isBig ? 0.9 : 0.8),
       )
       .force(
         "link",
         forceLink(simulationEdges)
-          .id((node) => node.id)
+          .id((n) => n.id)
           .distance(80)
+          .strength(0.5),
       )
       .force(
         "collide",
-        forceCollide<SimulationNode>().radius((node) => ((node.data.size ?? 40) / 2) + 12)
+        forceCollide<SimulationNode>().radius((n) => (n.data.size ?? 10) / 2 + 18),
       )
       .force("center", forceCenter(0, 0))
       .alpha(1)
-      .alphaMin(0.02)
-      .alphaDecay(0.12)
-      .velocityDecay(0.35);
+      .alphaMin(0.001)
+      .alphaDecay(isAmbient ? 0.008 : 0.04)
+      .alphaTarget(isAmbient ? 0.025 : 0)
+      .velocityDecay(isAmbient ? 0.45 : 0.3);
+
+    // ambient 노이즈: 수렴 후에도 노드가 살짝 계속 흔들림
+    if (isAmbient) {
+      simulation.force("noise", () => {
+        for (const node of simulationNodes) {
+          node.vx = (node.vx ?? 0) + (Math.random() - 0.5) * 0.07;
+          node.vy = (node.vy ?? 0) + (Math.random() - 0.5) * 0.07;
+        }
+      });
+    }
 
     simulation.on("tick", () => {
-      setNodes((currentNodes) =>
-        currentNodes.map((node) => {
-          const next = simulationNodes.find((simulationNode) => simulationNode.id === node.id);
-          if (!next) {
-            return node;
-          }
-
+      setNodes((current) =>
+        current.map((node) => {
+          const next = simulationNodes.find((sn) => sn.id === node.id);
+          if (!next) return node;
           return {
             ...node,
             position: {
@@ -104,16 +114,13 @@ export function useGraphSimulation({
               y: next.y ?? node.position.y,
             },
           };
-        })
+        }),
       );
-
-      if (simulation.alpha() <= 0.02) {
-        simulation.stop();
-      }
     });
 
     return () => {
       simulation.stop();
     };
-  }, [edges, graphKey, setNodes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphKey, setNodes]);
 }
