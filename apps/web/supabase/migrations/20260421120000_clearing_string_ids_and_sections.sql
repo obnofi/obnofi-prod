@@ -20,6 +20,9 @@ begin
 end
 $$;
 
+alter type public.element_kind add value if not exists 'embed';
+alter type public.element_kind add value if not exists 'section';
+
 create table if not exists public.users (
   id text primary key default gen_random_uuid()::text,
   name text not null,
@@ -64,16 +67,86 @@ create table if not exists public.comments (
   element_id text references public.elements(id) on delete cascade,
   author_id text not null references public.users(id) on delete cascade,
   body text not null,
+  content text,
+  parent_id text references public.comments(id) on delete cascade,
   x double precision,
   y double precision,
+  resolved boolean not null default false,
   resolved_at timestamptz,
+  reactions jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+alter table if exists public.rooms drop constraint if exists rooms_owner_id_fkey;
+alter table if exists public.elements drop constraint if exists elements_room_id_fkey;
+alter table if exists public.elements drop constraint if exists elements_created_by_fkey;
+alter table if exists public.comments drop constraint if exists comments_room_id_fkey;
+alter table if exists public.comments drop constraint if exists comments_element_id_fkey;
+alter table if exists public.comments drop constraint if exists comments_author_id_fkey;
+alter table if exists public.comments drop constraint if exists comments_parent_id_fkey;
+
+alter table if exists public.users
+alter column id type text using id::text,
+alter column id set default gen_random_uuid()::text;
+
+alter table if exists public.rooms
+alter column id type text using id::text,
+alter column id set default gen_random_uuid()::text,
+alter column owner_id type text using owner_id::text;
+
+alter table if exists public.elements
+alter column id type text using id::text,
+alter column id set default gen_random_uuid()::text,
+alter column room_id type text using room_id::text,
+alter column created_by type text using created_by::text;
+
+alter table if exists public.comments
+add column if not exists content text,
+add column if not exists parent_id text,
+add column if not exists resolved boolean not null default false,
+add column if not exists reactions jsonb not null default '{}'::jsonb;
+
+alter table if exists public.comments
+alter column id type text using id::text,
+alter column id set default gen_random_uuid()::text,
+alter column room_id type text using room_id::text,
+alter column element_id type text using element_id::text,
+alter column author_id type text using author_id::text,
+alter column parent_id type text using parent_id::text;
+
+alter table if exists public.rooms
+add constraint rooms_owner_id_fkey
+foreign key (owner_id) references public.users(id) on delete cascade;
+
+alter table if exists public.elements
+add constraint elements_room_id_fkey
+foreign key (room_id) references public.rooms(id) on delete cascade;
+
+alter table if exists public.elements
+add constraint elements_created_by_fkey
+foreign key (created_by) references public.users(id) on delete cascade;
+
+alter table if exists public.comments
+add constraint comments_room_id_fkey
+foreign key (room_id) references public.rooms(id) on delete cascade;
+
+alter table if exists public.comments
+add constraint comments_element_id_fkey
+foreign key (element_id) references public.elements(id) on delete cascade;
+
+alter table if exists public.comments
+add constraint comments_author_id_fkey
+foreign key (author_id) references public.users(id) on delete cascade;
+
+alter table if exists public.comments
+add constraint comments_parent_id_fkey
+foreign key (parent_id) references public.comments(id) on delete cascade;
+
 create index if not exists elements_room_id_idx on public.elements (room_id, z_index);
 create index if not exists comments_room_id_idx on public.comments (room_id, created_at);
 create index if not exists comments_element_id_idx on public.comments (element_id);
+create index if not exists comments_parent_id_idx on public.comments (parent_id);
 
 drop trigger if exists users_set_current_timestamp on public.users;
 create trigger users_set_current_timestamp
@@ -156,6 +229,12 @@ for all
 using (true)
 with check (true);
 
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.users to anon, authenticated;
+grant select, insert, update, delete on public.rooms to anon, authenticated;
+grant select, insert, update, delete on public.elements to anon, authenticated;
+grant select, insert, update, delete on public.comments to anon, authenticated;
+
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'clearing-assets',
@@ -170,32 +249,34 @@ set
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
-drop policy if exists "public storage read for clearing assets" on storage.objects;
-create policy "public storage read for clearing assets"
-on storage.objects
-for select
-using (bucket_id = 'clearing-assets');
+do $$
+begin
+  alter publication supabase_realtime add table public.rooms;
+exception
+  when duplicate_object or undefined_object then null;
+end
+$$;
 
-drop policy if exists "public storage write for clearing assets" on storage.objects;
-create policy "public storage write for clearing assets"
-on storage.objects
-for insert
-with check (bucket_id = 'clearing-assets');
+do $$
+begin
+  alter publication supabase_realtime add table public.elements;
+exception
+  when duplicate_object or undefined_object then null;
+end
+$$;
 
-drop policy if exists "public storage update for clearing assets" on storage.objects;
-create policy "public storage update for clearing assets"
-on storage.objects
-for update
-using (bucket_id = 'clearing-assets')
-with check (bucket_id = 'clearing-assets');
+do $$
+begin
+  alter publication supabase_realtime add table public.comments;
+exception
+  when duplicate_object or undefined_object then null;
+end
+$$;
 
-drop policy if exists "public storage delete for clearing assets" on storage.objects;
-create policy "public storage delete for clearing assets"
-on storage.objects
-for delete
-using (bucket_id = 'clearing-assets');
-
-alter publication supabase_realtime add table public.rooms;
-alter publication supabase_realtime add table public.elements;
-alter publication supabase_realtime add table public.comments;
-alter publication supabase_realtime add table public.users;
+do $$
+begin
+  alter publication supabase_realtime add table public.users;
+exception
+  when duplicate_object or undefined_object then null;
+end
+$$;
