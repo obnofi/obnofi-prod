@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Background,
@@ -21,7 +20,7 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { ArrowLeft, Loader2, Orbit } from "lucide-react";
+import { Loader2, Orbit } from "lucide-react";
 import type { Page } from "@obnofi/types";
 import { GraphNode, type GraphCanvasNodeData } from "@/components/graph/GraphNode";
 import { GraphEdge } from "@/components/graph/GraphEdge";

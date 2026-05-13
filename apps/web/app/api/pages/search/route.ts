@@ -121,7 +121,16 @@ export async function GET(request: NextRequest) {
           new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       )
       .slice(0, 30)
-      .map(({ score: _score, ...rest }) => rest);
+      .map(({ id, title, type, icon, parentId, updatedAt, snippet, matchedIn }) => ({
+        id,
+        title,
+        type,
+        icon,
+        parentId,
+        updatedAt,
+        snippet,
+        matchedIn,
+      }));
 
     return NextResponse.json(results);
   } catch (error) {

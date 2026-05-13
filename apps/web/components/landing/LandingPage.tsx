@@ -2,15 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, FileText, Database, Layers, Check, Shield, Users, Zap, Lock, Quote, LayoutGrid, PenTool, Code } from "lucide-react";
-
-function GithubIcon({ size = 18 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.342-3.369-1.342-.454-1.154-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
-    </svg>
-  );
-}
+import { ArrowRight, FileText, Database, Layers, Check, Users, Zap, Lock, LayoutGrid, PenTool, Code } from "lucide-react";
 import { SiteLogo } from "@/components/branding/SiteLogo";
 
 // ── InView hook ───────────────────────────────────────────────────
@@ -257,37 +249,6 @@ function RoleCard({ icon, title, features }: { icon: React.ReactNode; title: str
   );
 }
 
-// ── Testimonial Card ──────────────────────────────────────────────
-function TestimonialCard({ quote, author, role, company }: { quote: string; author: string; role: string; company: string }) {
-  return (
-    <div className="p-8 rounded-2xl h-full" style={{ background: "#FFFFFF", border: "1px solid #E3E2E0" }}>
-      <div className="mb-6">
-        <Quote size={24} style={{ color: "#2E7D45", opacity: 0.5 }} />
-      </div>
-      <p className="text-base leading-relaxed mb-6" style={{ color: "#37352F" }}>&ldquo;{quote}&rdquo;</p>
-      <div>
-        <p className="font-semibold text-sm" style={{ color: "#37352F" }}>{author}</p>
-        <p className="text-xs" style={{ color: "#787774" }}>{role}, {company}</p>
-      </div>
-    </div>
-  );
-}
-
-// ── Security Item ─────────────────────────────────────────────────
-function SecurityItem({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
-  return (
-    <div className="flex items-start gap-4">
-      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#E8F5EC", color: "#2E7D45" }}>
-        {icon}
-      </div>
-      <div>
-        <h4 className="font-semibold text-sm mb-1" style={{ color: "#37352F" }}>{title}</h4>
-        <p className="text-sm" style={{ color: "#787774" }}>{description}</p>
-      </div>
-    </div>
-  );
-}
-
 // ── FAQ Item ──────────────────────────────────────────────────────
 function FAQItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
@@ -319,8 +280,6 @@ export function LandingPage() {
   const { ref: s2Ref,    inView: s2In    } = useInView(0.1);
   const { ref: ctaRef,   inView: ctaIn   } = useInView(0.1);
   const { ref: rolesRef, inView: rolesIn } = useInView(0.1);
-  const { ref: secRef,   inView: secIn   } = useInView(0.1);
-  const { ref: testRef,  inView: testIn  } = useInView(0.1);
   const { ref: faqRef,   inView: faqIn   } = useInView(0.1);
 
   const TAGS = ["블록 기반 편집","슬래시 커맨드","실시간 협업","AI 보조 작성","음성 입력 (Parrot)","무한 캔버스","6가지 DB 뷰","그래프 뷰","공개 링크 공유","다크 / 라이트 / 정글 테마","위키 링크","URL 가져오기"];
