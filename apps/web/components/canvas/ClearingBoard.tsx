@@ -372,6 +372,13 @@ function logClearingPersistenceError(scope: string, error: unknown) {
   console.error(`[ClearingBoard] ${scope}`, error);
 }
 
+function assertSupabaseSuccess(result: { error: unknown }, scope: string) {
+  if (result.error) {
+    logClearingPersistenceError(scope, result.error);
+    throw result.error;
+  }
+}
+
 function getClearingSaveLabel(status: ClearingSaveStatus, isSupabaseLive: boolean) {
   const modeLabel = isSupabaseLive ? "원격" : "로컬";
 
@@ -669,7 +676,7 @@ export function ClearingBoard({
       const supabase = createBrowserSupabaseClient();
 
       try {
-        await supabase.from("users").upsert(
+        const userResult = await supabase.from("users").upsert(
           {
             id: currentUser.id,
             name: currentUser.name,
@@ -680,6 +687,7 @@ export function ClearingBoard({
           },
           { onConflict: "id" }
         );
+        assertSupabaseSuccess(userResult, "users upsert failed");
 
         let activeRoom: Room;
         const roomResult = await supabase
@@ -736,11 +744,12 @@ export function ClearingBoard({
           .select("*")
           .eq("room_id", activeRoom.id)
           .order("z_index", { ascending: true });
+        assertSupabaseSuccess(elementResult, "elements load failed");
 
         let nextElements: Element[];
         if (!elementResult.data || elementResult.data.length === 0) {
           nextElements = createDemoElements(activeRoom.id, currentUser.id);
-          await supabase.from("elements").insert(
+          const demoElementResult = await supabase.from("elements").insert(
             nextElements.map((element) => ({
               id: element.id,
               room_id: element.roomId,
@@ -758,6 +767,7 @@ export function ClearingBoard({
               updated_at: element.updatedAt,
             }))
           );
+          assertSupabaseSuccess(demoElementResult, "demo elements insert failed");
         } else {
           nextElements = (elementResult.data as Record<string, unknown>[]).map(toElement);
         }
@@ -767,11 +777,12 @@ export function ClearingBoard({
           .select("*")
           .eq("room_id", activeRoom.id)
           .order("created_at", { ascending: true });
+        assertSupabaseSuccess(commentResult, "comments load failed");
 
         let nextComments: Comment[];
         if (!commentResult.data || commentResult.data.length === 0) {
           nextComments = [createDemoComment(activeRoom.id, nextElements[0]?.id ?? null, currentUser.id)];
-          await supabase.from("comments").insert(
+          const demoCommentResult = await supabase.from("comments").insert(
             nextComments.map((comment) => ({
               id: comment.id,
               room_id: comment.roomId,
@@ -787,6 +798,7 @@ export function ClearingBoard({
               updated_at: comment.updatedAt,
             }))
           );
+          assertSupabaseSuccess(demoCommentResult, "demo comments insert failed");
         } else {
           nextComments = (commentResult.data as Record<string, unknown>[]).map(toComment);
         }
@@ -958,12 +970,13 @@ export function ClearingBoard({
 
     try {
       const supabase = createBrowserSupabaseClient();
-      await supabase.from("elements").upsert(
+      const result = await supabase.from("elements").upsert(
         {
           ...toElementInsert(element),
         },
         { onConflict: "id" }
       );
+      assertSupabaseSuccess(result, "element upsert failed");
     } catch (error) {
       logClearingPersistenceError("persistElement failed", error);
       throw error;
@@ -977,7 +990,8 @@ export function ClearingBoard({
 
     try {
       const supabase = createBrowserSupabaseClient();
-      await supabase.from("elements").delete().eq("id", elementId);
+      const result = await supabase.from("elements").delete().eq("id", elementId);
+      assertSupabaseSuccess(result, "element delete failed");
     } catch (error) {
       logClearingPersistenceError("removePersistedElement failed", error);
       throw error;
@@ -1203,7 +1217,7 @@ export function ClearingBoard({
 
     try {
       const supabase = createBrowserSupabaseClient();
-      await supabase.from("comments").insert({
+      const result = await supabase.from("comments").insert({
         id: nextComment.id,
         room_id: nextComment.roomId,
         element_id: nextComment.elementId,
@@ -1217,6 +1231,7 @@ export function ClearingBoard({
         created_at: nextComment.createdAt,
         updated_at: nextComment.updatedAt,
       });
+      assertSupabaseSuccess(result, "comment insert failed");
     } catch (error) {
       logClearingPersistenceError("submitComment failed", error);
     }
@@ -1252,10 +1267,11 @@ export function ClearingBoard({
 
     try {
       const supabase = createBrowserSupabaseClient();
-      await supabase
+      const result = await supabase
         .from("comments")
         .update({ resolved: true, resolved_at: new Date().toISOString() })
         .in("id", ids);
+      assertSupabaseSuccess(result, "comment resolve failed");
     } catch (error) {
       logClearingPersistenceError("resolveThread failed", error);
     }
