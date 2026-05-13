@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export interface TOCHeading {
   id: string;
@@ -54,9 +54,25 @@ function getScrollParent(element: HTMLElement | null) {
   return null;
 }
 
+function headingsMatch(a: TOCHeading[], b: TOCHeading[]) {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  return a.every((heading, index) => {
+    const nextHeading = b[index];
+    return (
+      heading.id === nextHeading.id &&
+      heading.level === nextHeading.level &&
+      heading.text === nextHeading.text
+    );
+  });
+}
+
 export function useTOC(container: HTMLElement | null): UseTOCResult {
   const [headings, setHeadings] = useState<TOCHeading[]>([]);
   const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
+  const frameRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!container) {
@@ -90,10 +106,14 @@ export function useTOC(container: HTMLElement | null): UseTOCResult {
         return [{ id: element.id, level, text }];
       });
 
-      setHeadings(nextHeadings);
+      setHeadings((currentHeadings) =>
+        headingsMatch(currentHeadings, nextHeadings)
+          ? currentHeadings
+          : nextHeadings
+      );
       setActiveHeadingId((currentId) => {
         if (nextHeadings.length === 0) {
-          return null;
+          return currentId === null ? currentId : null;
         }
 
         return nextHeadings.some((heading) => heading.id === currentId)
@@ -104,8 +124,19 @@ export function useTOC(container: HTMLElement | null): UseTOCResult {
 
     collectHeadings();
 
+    const scheduleCollectHeadings = () => {
+      if (frameRef.current !== null) {
+        return;
+      }
+
+      frameRef.current = window.requestAnimationFrame(() => {
+        frameRef.current = null;
+        collectHeadings();
+      });
+    };
+
     const mutationObserver = new MutationObserver(() => {
-      collectHeadings();
+      scheduleCollectHeadings();
     });
 
     mutationObserver.observe(container, {
@@ -115,6 +146,10 @@ export function useTOC(container: HTMLElement | null): UseTOCResult {
     });
 
     return () => {
+      if (frameRef.current !== null) {
+        window.cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
       mutationObserver.disconnect();
     };
   }, [container]);
