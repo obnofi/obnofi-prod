@@ -211,6 +211,78 @@ curl -s "http://localhost:3000/api/databases/search" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
+## MossNotes
+
+MossNote는 페이지/데이터베이스 페이지에 붙는 스티키 메모입니다. 기존 `Comment` 모델을 사용하며 `content.type = "mossNote"`로 구분합니다. 문서 페이지에서는 선택된 텍스트에 연결된 메모를 만들 수 있고, 선택이 없으면 페이지 전체에 붙습니다.
+
+### `GET /api/pages/[pageId]/moss-notes`
+
+페이지의 MossNote 목록을 조회합니다. 문서(`DOCUMENT`)와 데이터베이스(`DATABASE`) 페이지에서만 지원합니다.
+
+성공 응답:
+
+```json
+[
+  {
+    "id": "comment_id",
+    "pageId": "page_id",
+    "blockId": null,
+    "body": "확인할 내용",
+    "color": "sun",
+    "anchor": { "kind": "selection", "quote": "선택된 문장", "from": 3, "to": 12 },
+    "position": { "x": 240, "y": 120 },
+    "resolved": false,
+    "authorId": "user_id",
+    "createdAt": "2026-05-13T00:00:00.000Z",
+    "updatedAt": "2026-05-13T00:00:00.000Z"
+  }
+]
+```
+
+### `POST /api/pages/[pageId]/moss-notes`
+
+MossNote를 생성합니다.
+
+요청 본문:
+
+```json
+{
+  "body": "확인할 내용",
+  "color": "sun",
+  "anchor": { "kind": "page" },
+  "position": { "x": 240, "y": 120 }
+}
+```
+
+`color`: `"sun" | "rose" | "sky"`
+
+`anchor`: `{ "kind": "page" }` 또는 `{ "kind": "selection", "quote": "선택 텍스트", "from": 1, "to": 10 }`
+
+`position`: 페이지 표면 기준 좌표 `{ "x": number, "y": number }`
+
+### `PATCH /api/pages/[pageId]/moss-notes/[mossNoteId]`
+
+MossNote의 본문, 색상, 연결 대상, 완료 상태를 수정합니다.
+
+요청 본문:
+
+```json
+{
+  "body": "수정된 내용",
+  "resolved": true
+}
+```
+
+### `DELETE /api/pages/[pageId]/moss-notes/[mossNoteId]`
+
+MossNote를 삭제합니다.
+
+성공 응답:
+
+```json
+{ "success": true }
+```
+
 ## Pages
 
 ### `POST /api/crawl-import`

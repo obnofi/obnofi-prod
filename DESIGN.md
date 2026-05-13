@@ -9,6 +9,7 @@
 | Jungle term | Meaning |
 |---|---|
 | `Canopy` | Page cover image / page hero image |
+| `MossNote` | Sticky memo attached to a Grove page, database page, or selected text |
 
 ---
 

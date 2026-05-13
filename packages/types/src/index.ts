@@ -46,6 +46,25 @@ export interface Page {
   databaseId?: string | null;
   parentDatabaseId?: string | null;
   propertyValues?: PropertyValue[];
+  collaborationEnabled: boolean;
+  lineIndicatorEnabled: boolean;
+}
+
+export type CollabRole = "editor" | "viewer";
+
+export interface PageCollaborator {
+  id: string;
+  pageId: string;
+  userId: string;
+  role: CollabRole;
+  invitedBy: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+  };
 }
 
 export interface PublicPageResponse {
@@ -83,6 +102,8 @@ export interface UpdatePageInput {
   parentId?: string | null;
   order?: number;
   isPublic?: boolean;
+  collaborationEnabled?: boolean;
+  lineIndicatorEnabled?: boolean;
 }
 
 // ============================================
