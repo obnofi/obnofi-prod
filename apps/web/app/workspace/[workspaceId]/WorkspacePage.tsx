@@ -124,7 +124,6 @@ function WorkspacePageInner({ workspaceId, pageId }: WorkspacePageInnerProps) {
   const router = useRouter();
   const {
     currentPage,
-    pages,
     fetchPage,
     updatePage,
     createPage,
@@ -281,7 +280,7 @@ function WorkspacePageInner({ workspaceId, pageId }: WorkspacePageInnerProps) {
     return trail;
   }, [activePage, getPageTrail, pageId]);
 
-  if (isLoading) {
+  if (isLoading && !activePage) {
     return (
       <div className="flex h-full items-center justify-center bg-[var(--color-background)]">
         <div className="w-8 h-8 border-2 border-[var(--color-border)] border-t-[var(--color-accent)] rounded-full animate-spin" />
@@ -451,25 +450,31 @@ function WorkspacePageInner({ workspaceId, pageId }: WorkspacePageInnerProps) {
               </div>
 
               {/* Editor */}
-              <Editor
-                key={pageId}
-                content={activePage.content}
-                bodyFontSizePt={activePage.bodyFontSizePt}
-                headingFontSizes={activePage.headingFontSizes}
-                highlightColors={activePage.highlightColors}
-                pageUpdatedAt={activePage.updatedAt}
-                yjsUpdatedAt={activePage.yjsUpdatedAt}
-                editable={true}
-                onUpdate={handleEditorUpdate}
-                onEdit={scheduleSave}
-                placeholder="Type something..."
-                workspaceId={workspaceId}
-                pageId={pageId}
-                onContentContainerReady={setGroveContentElement}
-                onEditorReady={(editor) => {
-                  editorInstanceRef.current = editor;
-                }}
-              />
+              {isLoading && activePage.content === null ? (
+                <div className="flex min-h-[240px] items-center justify-center">
+                  <Loader2 className="h-7 w-7 animate-spin text-[var(--color-accent)]" />
+                </div>
+              ) : (
+                <Editor
+                  key={pageId}
+                  content={activePage.content}
+                  bodyFontSizePt={activePage.bodyFontSizePt}
+                  headingFontSizes={activePage.headingFontSizes}
+                  highlightColors={activePage.highlightColors}
+                  pageUpdatedAt={activePage.updatedAt}
+                  yjsUpdatedAt={activePage.yjsUpdatedAt}
+                  editable={true}
+                  onUpdate={handleEditorUpdate}
+                  onEdit={scheduleSave}
+                  placeholder="Type something..."
+                  workspaceId={workspaceId}
+                  pageId={pageId}
+                  onContentContainerReady={setGroveContentElement}
+                  onEditorReady={(editor) => {
+                    editorInstanceRef.current = editor;
+                  }}
+                />
+              )}
             </div>
             <TableOfContents container={groveContentElement} />
           </div>

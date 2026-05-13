@@ -100,6 +100,14 @@ export function Editor({
     editorRef.current?.chain().focus().insertContent(text).run();
   }, []);
 
+  const handleEditorShellRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      editorShellRef.current = node;
+      onContentContainerReady?.(node);
+    },
+    [onContentContainerReady]
+  );
+
   const { interimTranscript, isListening, isSupported, start, stop } =
     useSpeechRecognition({ onFinalResult: handleSpeechFinalResult });
 
@@ -298,10 +306,7 @@ export function Editor({
     <>
       <div
         data-testid="workspace-editor"
-        ref={(node) => {
-          editorShellRef.current = node;
-          onContentContainerReady?.(node);
-        }}
+        ref={handleEditorShellRef}
         style={
           {
             "--grove-body-font-size": `${bodyFontSizePt}pt`,
