@@ -5,11 +5,11 @@ import type { Editor } from "@tiptap/react";
 import { GripVertical } from "lucide-react";
 import {
   applyBlockDrag,
-  blockActionsPluginKey,
   endBlockDrag,
   startBlockDrag,
   updateBlockDrag,
 } from "@/components/editor/extensions/BlockActionsExtension";
+import { blockActionsPluginKey } from "@/components/editor/extensions/blockActionsPluginKey";
 
 interface BlockActionBarProps {
   editor: Editor;
@@ -133,7 +133,8 @@ export function BlockActionBar({ editor, container }: BlockActionBarProps) {
           event.preventDefault();
           event.stopPropagation();
 
-          const blockId = hoveredBlockId;
+          const blockId = position.blockId;
+          let didMove = false;
           startBlockDrag(editor.view, blockId);
 
           const cleanup = () => {
@@ -143,12 +144,23 @@ export function BlockActionBar({ editor, container }: BlockActionBarProps) {
           };
 
           const handlePointerMove = (moveEvent: PointerEvent) => {
+            if (
+              Math.abs(moveEvent.clientX - event.clientX) > 3 ||
+              Math.abs(moveEvent.clientY - event.clientY) > 3
+            ) {
+              didMove = true;
+            }
             updateBlockDrag(editor.view, moveEvent);
           };
 
           const handlePointerUp = (upEvent: PointerEvent) => {
             cleanup();
-            applyBlockDrag(editor.view, upEvent);
+            if (didMove) {
+              applyBlockDrag(editor.view, upEvent);
+            } else {
+              endBlockDrag(editor.view);
+              editor.commands.selectBlockNode(blockId);
+            }
           };
 
           const handlePointerCancel = () => {

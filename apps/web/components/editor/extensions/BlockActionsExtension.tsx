@@ -2,15 +2,12 @@
 
 import { Extension } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { NodeSelection, Plugin, PluginKey, type Transaction } from "@tiptap/pm/state";
+import { NodeSelection, Plugin, type Transaction } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
-
-type BlockActionsState = {
-  hoveredBlockId: string | null;
-  draggedBlockId: string | null;
-  dropPos: number | null;
-  flashBlockId: string | null;
-};
+import {
+  blockActionsPluginKey,
+  type BlockActionsState,
+} from "@/components/editor/extensions/blockActionsPluginKey";
 
 type ActionableBlockInfo = {
   id: string;
@@ -41,15 +38,19 @@ const actionableNodeNames = [
   "horizontalRule",
   "codeBlock",
   "databaseNode",
+  "dbDiagram",
   "canvasEmbed",
   "buttonBlock",
   "linkedDatabaseEmbed",
+  "githubEmbedBlock",
+  "linkEmbedBlock",
+  "webClipBlock",
+  "fileDropBlock",
+  "groveTableBlock",
   "mathBlock",
   "subPageEmbed",
   "columnLayout",
 ];
-
-export const blockActionsPluginKey = new PluginKey<BlockActionsState>("blockActions");
 
 function isWithinBlockHoverBuffer(
   view: EditorView,
@@ -693,6 +694,27 @@ export const BlockActionsExtension = Extension.create({
 
           return true;
         },
+      selectBlockNode:
+        (blockId: string) =>
+        ({ state, dispatch }) => {
+          const block = findBlockById(state.doc, blockId);
+          if (!block) {
+            return false;
+          }
+
+          dispatch(
+            state.tr
+              .setSelection(NodeSelection.create(state.doc, block.pos))
+              .setMeta(blockActionsPluginKey, {
+                hoveredBlockId: blockId,
+                draggedBlockId: null,
+                dropPos: null,
+              })
+              .scrollIntoView()
+          );
+
+          return true;
+        },
     };
   },
 
@@ -705,6 +727,7 @@ declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     blockActions: {
       duplicateBlockNode: (blockId: string) => ReturnType;
+      selectBlockNode: (blockId: string) => ReturnType;
     };
   }
 }
