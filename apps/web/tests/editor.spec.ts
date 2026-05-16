@@ -17,7 +17,10 @@ async function signInAsDeveloper(page: import("@playwright/test").Page) {
   });
 }
 
-async function gotoWorkspaceDocument(page: import("@playwright/test").Page) {
+async function gotoWorkspaceDocument(
+  page: import("@playwright/test").Page,
+  content: object = { type: "doc", content: [{ type: "paragraph" }] }
+) {
   await signInAsDeveloper(page);
   await page.goto("/workspace");
   await expect(page).toHaveURL(/\/workspace\/[^/?]+/);
@@ -32,7 +35,7 @@ async function gotoWorkspaceDocument(page: import("@playwright/test").Page) {
       title: `Playwright Page ${Date.now()}`,
       type: "document",
       workspaceId,
-      content: { type: "doc", content: [{ type: "paragraph" }] },
+      content,
     },
   });
 
@@ -96,6 +99,58 @@ test("문서 제목을 수정할 수 있다", async ({ page }) => {
   await expect(page.getByTestId("workspace-sidebar")).toContainText(nextTitle);
 });
 
+test("목차 항목을 클릭하면 해당 Grove 제목으로 이동한다", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  const fillerParagraphs = Array.from({ length: 80 }, (_, index) => ({
+    type: "paragraph",
+    content: [{ type: "text", text: `Grove filler line ${index + 1}` }],
+  }));
+
+  await gotoWorkspaceDocument(page, {
+    type: "doc",
+    content: [
+      { type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: "Canopy Start" }] },
+      ...fillerParagraphs,
+      { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Deep Grove Section" }] },
+      { type: "paragraph", content: [{ type: "text", text: "Arrived at the section." }] },
+    ],
+  });
+
+  const targetHeading = page.getByRole("heading", { name: "Deep Grove Section" });
+  const tocButton = page.getByRole("button", { name: "Deep Grove Section" });
+
+  await expect(tocButton).toBeVisible();
+
+  const beforeScrollTop = await page.evaluate(() => {
+    const surface = document.querySelector('[data-testid="grove-page-surface"]');
+    return Math.max(
+      surface instanceof HTMLElement ? surface.scrollTop : 0,
+      window.scrollY
+    );
+  });
+  await tocButton.click();
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const surface = document.querySelector('[data-testid="grove-page-surface"]');
+        return Math.max(
+          surface instanceof HTMLElement ? surface.scrollTop : 0,
+          window.scrollY
+        );
+      })
+    )
+    .toBeGreaterThan(beforeScrollTop);
+
+  const targetTop = await targetHeading.evaluate(
+    (heading) => heading.getBoundingClientRect().top
+  );
+
+  expect(targetTop).toBeGreaterThanOrEqual(0);
+  expect(targetTop).toBeLessThan(280);
+});
+
 test("/canvas 입력시 인라인 캔버스가 삽입된다", async ({ page }) => {
   await gotoWorkspaceDocument(page);
 
@@ -142,6 +197,13 @@ test("/github 입력시 GitHub 임베드 블록이 삽입된다", async ({ page 
   );
   await expect(githubEmbed).toContainText("Pull request #1");
   await expect(githubEmbed).toContainText("openai/codex#1");
+
+  await githubEmbed.hover();
+  const blockHandle = page.getByRole("button", { name: "블록 이동" });
+  await expect(blockHandle).toBeVisible();
+  await blockHandle.click();
+  await page.keyboard.press("Backspace");
+  await expect(githubEmbed).toBeHidden();
 });
 
 test("/button 입력시 버튼 블록이 삽입된다", async ({ page }) => {
