@@ -46,11 +46,14 @@ erDiagram
     User ||--o{ WorkspaceMember : "belongs to"
     User ||--o{ Workspace : "owns"
     User ||--o{ Comment : "writes"
+    User ||--o{ CliToken : "has"
+    User ||--o{ PageCollaborator : "collaborates"
 
     Workspace ||--o{ WorkspaceMember : "has"
     Workspace ||--o{ Page : "contains"
     Workspace ||--o{ Subscription : "subscribes"
     Workspace ||--o{ Template : "has"
+    Workspace ||--o{ File : "has"
 
     Page ||--o{ Page : "parent→children (PageTree)"
     Page ||--o| Database : "hosts (type=DATABASE, 1:1)"
@@ -60,6 +63,8 @@ erDiagram
     Page ||--o{ PageLink : "source"
     Page ||--o{ PageLink : "target"
     Page ||--o{ File : "has"
+    Page ||--o| YjsDocument : "has state"
+    Page ||--o{ PageCollaborator : "has collaborators"
 
     Database ||--o{ Property : "defines columns"
     Database ||--o{ View : "has"
@@ -106,6 +111,9 @@ erDiagram
 | `Subscription` | Velog · OpenAI · Anthropic 블로그 구독 |
 | `FeedItem` | 구독 피드 캐시 |
 | `Template` | 저장된 템플릿 |
+| `YjsDocument` | 페이지별 YJS 협업 상태 저장 |
+| `PageCollaborator` | 페이지 공동 편집자 |
+| `CliToken` | CLI 인증 토큰 |
 
 ---
 
