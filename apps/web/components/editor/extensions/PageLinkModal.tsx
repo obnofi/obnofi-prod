@@ -22,9 +22,12 @@ export function PageLinkModal({
 
   useEffect(() => {
     if (isOpen && workspaceId) {
+      // 이미 같은 워크스페이스의 페이지를 가져왔으면 다시 요청하지 않음
+      if (usePageStore.getState().initializedWorkspaceId === workspaceId) return;
       fetchPages(workspaceId);
     }
-  }, [isOpen, workspaceId, fetchPages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, workspaceId]);
 
   useEffect(() => {
     if (!isOpen) {

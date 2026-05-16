@@ -130,6 +130,16 @@ function getGitHubEmbedLabel(attrs: GitHubEmbedAttrs) {
   return "GitHub";
 }
 
+function getGitHubEmbedMeta(attrs: GitHubEmbedAttrs) {
+  if (attrs.kind === "gist") {
+    return attrs.owner ? `gist.github.com/${attrs.owner}` : "gist.github.com";
+  }
+
+  const target = [attrs.owner, attrs.repo].filter(Boolean).join("/");
+  const label = getGitHubEmbedLabel(attrs);
+  return target && label !== "GitHub" ? `${target} · ${label}` : target || "github.com";
+}
+
 function GroveTableBlockView(props: ReactNodeViewProps) {
   const attrs = props.node.attrs as GroveTableAttrs;
   const cells = attrs.cells?.length ? attrs.cells : createDefaultTableCells();
@@ -226,7 +236,7 @@ function GitHubEmbedBlockView(props: ReactNodeViewProps) {
   const parsedDraft = useMemo(() => parseGitHubEmbedUrl(draftUrl), [draftUrl]);
   const hasUrl = Boolean(attrs.url);
   const isEditable = props.editor.isEditable;
-  const label = getGitHubEmbedLabel(attrs);
+  const meta = getGitHubEmbedMeta(attrs);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -242,12 +252,6 @@ function GitHubEmbedBlockView(props: ReactNodeViewProps) {
       onClick={(event) => event.stopPropagation()}
     >
       <div className="grove-github-embed" data-testid="github-embed-block">
-        <div className="grove-github-embed__header">
-          <GitGraph className="h-4 w-4" />
-          <span>GitHub</span>
-          {hasUrl ? <span className="grove-github-embed__kind">{label}</span> : null}
-        </div>
-
         {hasUrl ? (
           <a
             className="grove-github-embed__card"
@@ -255,24 +259,24 @@ function GitHubEmbedBlockView(props: ReactNodeViewProps) {
             target="_blank"
             rel="noreferrer"
           >
-            <div className="min-w-0 flex-1">
-              <p className="grove-github-embed__title">{attrs.title || attrs.url}</p>
-              <p className="grove-github-embed__meta">
-                {attrs.kind === "gist"
-                  ? attrs.gistId
-                  : [attrs.owner, attrs.repo].filter(Boolean).join(" / ")}
-              </p>
-            </div>
-            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="grove-github-embed__icon">
+              <GitGraph className="h-4 w-4" />
+            </span>
+            <span className="grove-github-embed__body">
+              <span className="grove-github-embed__title">{attrs.title || attrs.url}</span>
+              <span className="grove-github-embed__meta">{meta}</span>
+            </span>
+            <ExternalLink className="grove-github-embed__open h-3.5 w-3.5" />
           </a>
-        ) : null}
-
-        {isEditable ? (
+        ) : isEditable ? (
           <form className="grove-github-embed__form" onSubmit={handleSubmit}>
+            <span className="grove-github-embed__icon" aria-hidden="true">
+              <GitGraph className="h-4 w-4" />
+            </span>
             <input
               aria-label="GitHub URL"
               className="grove-github-embed__input"
-              placeholder="https://github.com/owner/repo/issues/1"
+              placeholder="GitHub 링크 붙여넣기"
               value={draftUrl}
               onMouseDown={(event) => event.stopPropagation()}
               onChange={(event) => setDraftUrl(event.target.value)}
