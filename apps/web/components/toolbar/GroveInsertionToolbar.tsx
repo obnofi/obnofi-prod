@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Editor } from "@tiptap/react";
 import {
   Code2,
@@ -11,7 +12,6 @@ import {
   PenLine,
   Sigma,
   StickyNote,
-  Table2,
   Globe,
   X,
 } from "lucide-react";
@@ -80,9 +80,9 @@ function LinkEmbedModal({ isOpen, onClose, onConfirm }: LinkEmbedModalProps) {
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div className="pointer-events-auto fixed inset-0 z-[1000] flex items-start justify-center pt-[22vh]">
       <div
         className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"
@@ -139,7 +139,8 @@ function LinkEmbedModal({ isOpen, onClose, onConfirm }: LinkEmbedModalProps) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -200,15 +201,6 @@ export function GroveInsertionToolbar({
       onClick: () =>
         runEditorCommand((activeEditor) => {
           activeEditor.chain().focus().insertCanvasEmbed().run();
-        }),
-      disabled: !canInsert,
-    },
-    {
-      id: "table",
-      Icon: Table2,
-      onClick: () =>
-        runEditorCommand((activeEditor) => {
-          activeEditor.chain().focus().insertGroveTableBlock().run();
         }),
       disabled: !canInsert,
     },
