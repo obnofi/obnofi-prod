@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Database, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Database, Loader2, ChevronRight } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { DatabasePage } from "@obnofi/types";
 import { ViewTabs } from "./ViewTabs";
@@ -20,10 +20,14 @@ export function InlineDatabaseView({
   const openGrovePageSideTab = useUIStore((state) => state.openGrovePageSideTab);
   const [databasePage, setDatabasePage] = useState<DatabasePage | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const hasLoaded = useRef(false);
 
   const loadDatabase = useCallback(async () => {
-    if (!databaseId) return;
+    if (!databaseId || hasLoaded.current) return;
 
+    hasLoaded.current = true;
     setIsLoading(true);
     try {
       const response = await fetch(`/api/databases/${databaseId}`);
@@ -62,14 +66,45 @@ export function InlineDatabaseView({
       });
     } catch (error) {
       console.error("Failed to load database:", error);
+      hasLoaded.current = false; // 실패 시 재시도 가능하도록
     } finally {
       setIsLoading(false);
     }
   }, [databaseId, pageTitle]);
 
-  useEffect(() => {
-    void loadDatabase();
-  }, [loadDatabase]);
+  const handleExpand = useCallback(() => {
+    if (!isExpanded) {
+      setIsExpanded(true);
+      if (!hasLoaded.current) {
+        void loadDatabase();
+      }
+    }
+  }, [isExpanded, loadDatabase]);
+
+  // 접힌 상태 - 클릭하면 펼쳐짐
+  if (!isExpanded) {
+    return (
+      <div
+        onClick={handleExpand}
+        className={`cursor-pointer overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] hover:bg-[var(--color-hover)] transition-colors ${className}`}
+      >
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2E7D45]/10">
+            <Database className="h-4 w-4 text-[#2E7D45]" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
+              {pageTitle || "Untitled Database"}
+            </h3>
+            <p className="text-xs text-[var(--color-text-secondary)]">
+              Click to load database
+            </p>
+          </div>
+          <ChevronRight className="h-5 w-5 text-[var(--color-text-secondary)]" />
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

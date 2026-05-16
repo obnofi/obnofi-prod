@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { X, Database } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { DatabasePage } from "@obnofi/types";
@@ -12,9 +12,12 @@ export function DatabaseViewModal() {
   const [databasePage, setDatabasePage] = useState<DatabasePage | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadDatabase = useCallback(async () => {
-    if (!databaseId) return;
+  const hasLoaded = useRef(false);
 
+  const loadDatabase = useCallback(async () => {
+    if (!databaseId || hasLoaded.current) return;
+
+    hasLoaded.current = true;
     setIsLoading(true);
     try {
       const response = await fetch(`/api/databases/${databaseId}`);
@@ -53,16 +56,25 @@ export function DatabaseViewModal() {
       });
     } catch (error) {
       console.error("Failed to load database:", error);
+      hasLoaded.current = false; // 실패 시 재시도 가능하도록
     } finally {
       setIsLoading(false);
     }
   }, [databaseId, pageTitle]);
 
+  // 모달이 열릴 때 hasLoaded 리셋
+  useEffect(() => {
+    if (isOpen) {
+      hasLoaded.current = false;
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (isOpen && databaseId) {
       void loadDatabase();
     }
-  }, [isOpen, databaseId, loadDatabase]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, databaseId]); // loadDatabase 제거하여 불필요한 재호출 방지
 
   // Close modal on escape key
   useEffect(() => {

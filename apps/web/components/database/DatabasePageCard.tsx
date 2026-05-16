@@ -9,6 +9,7 @@ interface DatabaseSelectionProps {
   selectedValue: string;
   onChange: (pageId: string) => void;
   onCreate?: () => void;
+  onOpen?: () => void;
 }
 
 interface DatabasePageCardProps {

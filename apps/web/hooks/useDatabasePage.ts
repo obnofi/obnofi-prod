@@ -31,6 +31,10 @@ interface UpdatePropertyInput {
   options?: SelectOption[];
 }
 
+interface LoadDatabasePageOptions {
+  force?: boolean;
+}
+
 export function useDatabasePage(pageId: string | null | undefined) {
   const databasePage = useGroveCatalogStore((state) =>
     pageId ? state.grovePages[pageId] ?? null : null
@@ -56,25 +60,36 @@ export function useDatabasePage(pageId: string | null | undefined) {
     (state) => state.patchGroveCellValue
   );
 
-  const loadDatabasePage = useCallback(async () => {
+  const isGroveLoaded = useGroveCatalogStore((state) => state.isGroveLoaded);
+  const markGroveLoaded = useGroveCatalogStore((state) => state.markGroveLoaded);
+
+  const loadDatabasePage = useCallback(async (options: LoadDatabasePageOptions = {}) => {
     if (!pageId) {
       return;
     }
 
+    // 이미 로드된 페이지는 다시 로드하지 않음 (force 옵션이 없는 경우)
+    if (!options.force && isGroveLoaded(pageId)) {
+      return;
+    }
+
+    markGroveLoaded(pageId);
     setGroveLoading(pageId, true);
     try {
       const page = await fetchGroveCatalogPage(pageId);
       setGrovePage(pageId, page);
     } catch {
       setGrovePage(pageId, null);
+      // 실패 시 재시도 가능하도록 제거는 하지 않음 (무한 루프 방지)
     } finally {
       setGroveLoading(pageId, false);
     }
-  }, [pageId, setGroveLoading, setGrovePage]);
+  }, [pageId, isGroveLoaded, markGroveLoaded, setGroveLoading, setGrovePage]);
 
   useEffect(() => {
     void loadDatabasePage();
-  }, [loadDatabasePage]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageId]); // pageId가 변경될 때만 로드
 
   const setDatabasePage = useCallback(
     (nextPage: DatabasePage | null | ((current: DatabasePage | null) => DatabasePage | null)) => {
@@ -99,7 +114,7 @@ export function useDatabasePage(pageId: string | null | undefined) {
       try {
         await patchGroveTitle(pageId, title);
       } catch {
-        await loadDatabasePage();
+        await loadDatabasePage({ force: true });
       }
     },
     [loadDatabasePage, pageId, patchGrovePageTitle]
@@ -156,7 +171,7 @@ export function useDatabasePage(pageId: string | null | undefined) {
     try {
       await pruneGroveProperty(propertyId);
     } catch {
-      await loadDatabasePage();
+      await loadDatabasePage({ force: true });
     }
   }, [loadDatabasePage, pageId, removeGroveProperty]);
 
@@ -169,7 +184,7 @@ export function useDatabasePage(pageId: string | null | undefined) {
     try {
       await renameGroveSeed(rowId, title);
     } catch {
-      await loadDatabasePage();
+      await loadDatabasePage({ force: true });
     }
   }, [loadDatabasePage, pageId, patchGroveSeedTitle]);
 
@@ -186,7 +201,7 @@ export function useDatabasePage(pageId: string | null | undefined) {
           patchGroveCellValue(pageId, rowId, propertyId, updatedPropertyValue);
         }
       } catch {
-        await loadDatabasePage();
+        await loadDatabasePage({ force: true });
       }
     },
     [loadDatabasePage, pageId, patchGroveCellValue]

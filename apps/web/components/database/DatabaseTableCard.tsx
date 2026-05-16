@@ -17,6 +17,7 @@ interface DatabaseSelectionProps {
   selectedValue: string;
   onChange: (pageId: string) => void;
   onCreate?: () => void;
+  onOpen?: () => void;
 }
 
 interface DatabaseTableCardProps {
@@ -137,7 +138,13 @@ export function DatabaseTableCard({
                 <button
                   type="button"
                   data-testid="inline-database-select"
-                  onClick={() => setIsSelectionOpen((current) => !current)}
+                  onClick={() => {
+                    const willOpen = !isSelectionOpen;
+                    setIsSelectionOpen(willOpen);
+                    if (willOpen) {
+                      selection.onOpen?.();
+                    }
+                  }}
                   className="inline-flex min-w-48 items-center justify-between gap-2 rounded border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none transition hover:bg-[var(--color-hover)]"
                 >
                   <span className="truncate">
