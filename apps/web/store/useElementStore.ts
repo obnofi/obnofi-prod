@@ -46,6 +46,7 @@ type ElementState = {
   setElements: (elements: Element[]) => void;
   addElement: (element: Element) => void;
   updateElement: (elementId: string, patch: Partial<Element>) => void;
+  updateElements: (patches: Record<string, Partial<Element>>) => void;
   removeElement: (elementId: string) => void;
   upsertElement: (element: Element) => void;
   pushHistory: (snapshot?: Element[]) => void;
@@ -104,6 +105,32 @@ export const useElementStore = create<ElementState>((set) => ({
       const nextElements: Element[] = state.elements.map((element) =>
         element.id === elementId ? ({ ...element, ...patch } as Element) : element
       );
+      return {
+        elements: nextElements.sort((left, right) => left.zIndex - right.zIndex),
+      };
+    }),
+  updateElements: (patches) =>
+    set((state) => {
+      const patchEntries = Object.entries(patches);
+      if (patchEntries.length === 0) {
+        return state;
+      }
+
+      let didChange = false;
+      const nextElements = state.elements.map((element) => {
+        const patch = patches[element.id];
+        if (!patch) {
+          return element;
+        }
+
+        didChange = true;
+        return { ...element, ...patch } as Element;
+      });
+
+      if (!didChange) {
+        return state;
+      }
+
       return {
         elements: nextElements.sort((left, right) => left.zIndex - right.zIndex),
       };

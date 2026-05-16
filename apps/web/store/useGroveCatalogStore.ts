@@ -12,8 +12,11 @@ import type {
 interface GroveCatalogState {
   grovePages: Record<string, DatabasePage>;
   groveLoading: Record<string, boolean>;
+  groveLoaded: Set<string>; // 이미 로드된 페이지 ID 추적
   setGrovePage: (pageId: string, grovePage: DatabasePage | null) => void;
   setGroveLoading: (pageId: string, isLoading: boolean) => void;
+  markGroveLoaded: (pageId: string) => void;
+  isGroveLoaded: (pageId: string) => boolean;
   patchGrovePageTitle: (pageId: string, title: string) => void;
   replaceGroveProperty: (pageId: string, property: Property) => void;
   removeGroveProperty: (pageId: string, propertyId: string) => void;
@@ -49,9 +52,10 @@ function normalizePropertyValue(
   };
 }
 
-export const useGroveCatalogStore = create<GroveCatalogState>((set) => ({
+export const useGroveCatalogStore = create<GroveCatalogState>((set, get) => ({
   grovePages: {},
   groveLoading: {},
+  groveLoaded: new Set<string>(),
 
   setGrovePage: (pageId, grovePage) =>
     set((state) => {
@@ -76,6 +80,15 @@ export const useGroveCatalogStore = create<GroveCatalogState>((set) => ({
         [pageId]: isLoading,
       },
     })),
+
+  markGroveLoaded: (pageId) =>
+    set((state) => {
+      const nextLoaded = new Set(state.groveLoaded);
+      nextLoaded.add(pageId);
+      return { groveLoaded: nextLoaded };
+    }),
+
+  isGroveLoaded: (pageId) => get().groveLoaded.has(pageId),
 
   patchGrovePageTitle: (pageId, title) =>
     set((state) => {

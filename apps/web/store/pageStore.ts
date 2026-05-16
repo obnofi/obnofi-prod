@@ -18,6 +18,7 @@ let activePageFetchController: AbortController | null = null;
 let activePageFetchSequence = 0;
 let activePageFetchPageId: string | null = null;
 let activePageFetchPromise: Promise<void> | null = null;
+const pageUpdateSequences = new Map<string, number>();
 
 function isOptimisticPageId(pageId: string) {
   return pageId.startsWith("optimistic-");
@@ -54,9 +55,14 @@ function mergeCachedPage(previousPage: Page | null | undefined, nextPage: Page):
     return nextPage;
   }
 
+  const previousUpdatedAt = new Date(previousPage.updatedAt).getTime();
+  const nextUpdatedAt = new Date(nextPage.updatedAt).getTime();
+  const shouldPreserveLocalTitle = previousUpdatedAt > nextUpdatedAt;
+
   return {
     ...previousPage,
     ...nextPage,
+    title: shouldPreserveLocalTitle ? previousPage.title : nextPage.title,
     content:
       nextPage.content !== null
         ? nextPage.content
@@ -346,6 +352,8 @@ export const usePageStore = create<PageState>((set, get) => ({
     const previousPages = previousState.pages;
     const previousCurrentPage = previousState.currentPage;
     const optimisticPage = previousPages.find((page) => page.id === pageId);
+    const updateSequence = (pageUpdateSequences.get(pageId) ?? 0) + 1;
+    pageUpdateSequences.set(pageId, updateSequence);
 
     if (!optimisticPage) {
       return;
@@ -390,6 +398,9 @@ export const usePageStore = create<PageState>((set, get) => ({
       });
       if (!response.ok) throw new Error("Failed to update page");
       const updatedPage = await response.json();
+      if (pageUpdateSequences.get(pageId) !== updateSequence) {
+        return;
+      }
       set((state) => ({
         pages: state.pages.map((p) =>
           p.id === pageId
@@ -406,6 +417,17 @@ export const usePageStore = create<PageState>((set, get) => ({
             : state.currentPage,
       }));
     } catch (error) {
+      if (pageUpdateSequences.get(pageId) !== updateSequence) {
+        return;
+      }
+
+      if ("title" in input && Object.keys(input).length === 1) {
+        set({
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+        return;
+      }
+
       set({
         pages: previousPages,
         currentPage: previousCurrentPage,
@@ -444,7 +466,9 @@ export const usePageStore = create<PageState>((set, get) => ({
       const response = await fetch(`/api/pages/${pageId}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error("Failed to delete page");
+      if (!response.ok && response.status !== 404) {
+        throw new Error("Failed to delete page");
+      }
     } catch (error) {
       set({
         pages: previousPages,
