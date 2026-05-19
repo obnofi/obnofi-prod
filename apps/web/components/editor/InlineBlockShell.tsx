@@ -31,6 +31,7 @@ export function InlineBlockShell({
 
   const activate = useCallback(() => {
     setIsActive(true);
+    console.log("[InlineBlockShell] activated");
   }, []);
 
   const deactivate = useCallback(() => {
@@ -98,12 +99,16 @@ export function InlineBlockShell({
             : "border-transparent"
         }`}
       >
-        {children}
+        {/* 비활성 상태에서 children의 pointer-events 차단 → z-index 경쟁 우회 */}
+        <div style={{ pointerEvents: isActive ? "auto" : "none" }}>
+          {children}
+        </div>
 
-        {/* 비활성 오버레이 — 포인터 이벤트 차단 + 더블클릭 감지 */}
+        {/* 비활성 오버레이 — 포인터 이벤트 차단 + 더블클릭 감지
+            z-[200]: embedded canvas z-30 요소들보다 반드시 위에 위치해야 함 */}
         {!isActive && (
           <div
-            className="absolute inset-0 z-10 cursor-default rounded-xl"
+            className="absolute inset-0 z-[200] cursor-default rounded-xl"
             onDoubleClick={(e) => {
               e.preventDefault();
               e.stopPropagation();

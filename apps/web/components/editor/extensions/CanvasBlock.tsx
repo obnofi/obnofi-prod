@@ -7,13 +7,16 @@ import {
   ReactNodeViewRenderer,
   type ReactNodeViewProps,
 } from "@tiptap/react";
-import { ExternalLink, Loader2, Layout, ChevronRight } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { Page } from "@obnofi/types";
-import { InlineBlockShell } from "@/components/editor/InlineBlockShell";
+import { usePageStore } from "@/store/pageStore";
 
 const ClearingBoard = dynamic(() => import("@/components/canvas/ClearingBoard").then(mod => mod.ClearingBoard), { ssr: false, loading: () => <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-[#2E7D45]" /></div> });
+
+const canvasPageCache = new Map<string, Page>();
+const canvasPageRequestCache = new Map<string, Promise<Page | null>>();
 
 interface CanvasBlockExtensionOptions {
   workspaceId?: string;
@@ -31,14 +34,25 @@ function CanvasBlockView(props: ReactNodeViewProps) {
   const router = useRouter();
   const attrs = props.node.attrs as CanvasBlockAttrs;
   const { pageId, workspaceId, parentPageId, autoCreate } = attrs;
+  const cachedPage = usePageStore((state) =>
+    pageId
+      ? state.pages.find((page) => page.id === pageId) ??
+        (state.currentPage?.id === pageId ? state.currentPage : null)
+      : null
+  );
   const [canvasPage, setCanvasPage] = useState<Page | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(() => autoCreate || Boolean(pageId));
 
   const hasLoaded = useRef(false);
+  const hasAttemptedReconnect = useRef(false);
   const isCreatingRef = useRef(false);
   const propsRef = useRef(props);
+
+  useEffect(() => {
+    console.log("[CanvasBlock] mounted", { pageId, workspaceId });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   propsRef.current = props;
 
@@ -86,20 +100,52 @@ function CanvasBlockView(props: ReactNodeViewProps) {
       return;
     }
 
+    const pageFromStore = cachedPage;
+    if (pageFromStore) {
+      canvasPageCache.set(pageId, pageFromStore);
+      hasLoaded.current = true;
+      setCanvasPage(pageFromStore);
+      return;
+    }
+
+    const pageFromCache = canvasPageCache.get(pageId);
+    if (pageFromCache) {
+      hasLoaded.current = true;
+      setCanvasPage(pageFromCache);
+      return;
+    }
+
     hasLoaded.current = true;
     setIsLoading(true);
-    const response = await fetch(`/api/pages/${pageId}`);
-    if (!response.ok) {
+
+    let request = canvasPageRequestCache.get(pageId);
+    if (!request) {
+      request = fetch(`/api/pages/${pageId}`)
+        .then(async (response) => {
+          if (!response.ok) {
+            return null;
+          }
+
+          return (await response.json()) as Page;
+        })
+        .finally(() => {
+          canvasPageRequestCache.delete(pageId);
+        });
+      canvasPageRequestCache.set(pageId, request);
+    }
+
+    const page = await request;
+    if (!page) {
       setCanvasPage(null);
       hasLoaded.current = false;
       setIsLoading(false);
       return;
     }
 
-    const page = (await response.json()) as Page;
+    canvasPageCache.set(pageId, page);
     setCanvasPage(page);
     setIsLoading(false);
-  }, [pageId]);
+  }, [cachedPage, pageId]);
 
   const createCanvasPage = useCallback(async () => {
     if (!workspaceId || !parentPageId || isCreatingRef.current) {
@@ -130,9 +176,9 @@ function CanvasBlockView(props: ReactNodeViewProps) {
     }
 
     const createdPage = (await response.json()) as Page;
+    canvasPageCache.set(createdPage.id, createdPage);
     hasLoaded.current = true;
     setCanvasPage(createdPage);
-    setIsExpanded(true);
     updateCanvasBlockAttrs({
       pageId: createdPage.id,
       autoCreate: false,
@@ -148,18 +194,43 @@ function CanvasBlockView(props: ReactNodeViewProps) {
   }, [autoCreate, createCanvasPage, pageId, props.editor.isEditable]);
 
   useEffect(() => {
-    if (!isExpanded || !pageId || hasLoaded.current) {
+    if (!pageId) {
+      hasLoaded.current = false;
+      setCanvasPage(null);
+      return;
+    }
+
+    if (cachedPage) {
+      canvasPageCache.set(pageId, cachedPage);
+      hasLoaded.current = true;
+      setCanvasPage(cachedPage);
+    }
+  }, [cachedPage, pageId]);
+
+  useEffect(() => {
+    if (!pageId || hasLoaded.current) {
       return;
     }
 
     void loadCanvasPage();
-  }, [isExpanded, loadCanvasPage, pageId]);
+  }, [loadCanvasPage, pageId]);
 
   useEffect(() => {
-    if (pageId || autoCreate || !workspaceId || !parentPageId) {
+    if (pageId) {
+      hasAttemptedReconnect.current = false;
       return;
     }
 
+    if (
+      autoCreate ||
+      !workspaceId ||
+      !parentPageId ||
+      hasAttemptedReconnect.current
+    ) {
+      return;
+    }
+
+    hasAttemptedReconnect.current = true;
     let cancelled = false;
 
     const reconnectCanvasPage = async () => {
@@ -188,7 +259,6 @@ function CanvasBlockView(props: ReactNodeViewProps) {
       hasLoaded.current = true;
       setCanvasPage(fallbackCanvasPage);
       setIsCreating(false);
-      setIsExpanded(true);
       updateCanvasBlockAttrs({
         pageId: fallbackCanvasPage.id,
         autoCreate: false,
@@ -196,123 +266,69 @@ function CanvasBlockView(props: ReactNodeViewProps) {
     };
 
     void reconnectCanvasPage();
-    const retryTimer = window.setInterval(() => {
-      void reconnectCanvasPage();
-    }, 1000);
 
     return () => {
       cancelled = true;
-      window.clearInterval(retryTimer);
     };
   }, [autoCreate, pageId, parentPageId, updateCanvasBlockAttrs, workspaceId]);
-
-  useEffect(() => {
-    if (autoCreate || pageId) {
-      setIsExpanded(true);
-    }
-  }, [autoCreate, pageId]);
-
-  const handleExpand = useCallback(() => {
-    if (!isExpanded) {
-      setIsExpanded(true);
-      if (!hasLoaded.current && pageId) {
-        void loadCanvasPage();
-      }
-    }
-  }, [isExpanded, loadCanvasPage, pageId]);
-
-  // 접힌 상태 - 클릭하면 펼쳐짐
-  if (!isExpanded) {
-    return (
-      <NodeViewWrapper
-        className="my-4"
-        contentEditable={false}
-        onMouseDown={(event) => event.stopPropagation()}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div
-          onClick={handleExpand}
-          data-testid="inline-canvas-collapsed"
-          className="cursor-pointer overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 transition-colors dark:border-zinc-800 dark:bg-zinc-900/70 dark:hover:bg-zinc-800"
-        >
-          <div className="flex items-center gap-3 px-4 py-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2E7D45]/10">
-              <Layout className="h-4 w-4 text-[#2E7D45]" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                {canvasPage?.title || "Inline Clearing"}
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                {isCreating ? "Creating..." : "Click to load canvas"}
-              </p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-zinc-400 dark:text-zinc-500" />
-          </div>
-        </div>
-      </NodeViewWrapper>
-    );
-  }
 
   return (
     <NodeViewWrapper
       className="my-4"
       contentEditable={false}
-      onMouseDown={(event) => event.stopPropagation()}
-      onClick={(event) => event.stopPropagation()}
+      data-inline-block="true"
+      onClick={() => console.log("[CanvasBlock] interacted", { pageId })}
     >
-      <InlineBlockShell activationHint="더블클릭하여 캔버스 편집">
+      <div
+        data-testid="inline-canvas-embed"
+        data-state={
+          isLoading ? "loading" : canvasPage ? "ready" : isCreating ? "creating" : "empty"
+        }
+        className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 not-prose dark:border-zinc-800 dark:bg-zinc-900/70"
+      >
         <div
-          data-testid="inline-canvas-embed"
-          data-state={
-            isLoading ? "loading" : canvasPage ? "ready" : isCreating ? "creating" : "empty"
-          }
-          className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 not-prose dark:border-zinc-800 dark:bg-zinc-900/70"
+          data-export-ignore="true"
+          className="flex items-center justify-end gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800"
         >
-          <div
-            data-export-ignore="true"
-            className="flex items-center justify-end gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800"
-          >
-              {workspaceId && canvasPage ? (
-                <button
-                  type="button"
-                  data-testid="inline-canvas-open"
-                  onClick={() => router.push(`/workspace/${workspaceId}?page=${canvasPage.id}`)}
-                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
-                >
-                  Open
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </button>
-              ) : null}
-          </div>
-
-          {isLoading ? (
-            <div data-testid="inline-canvas-loading" className="flex h-64 items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-[#2E7D45]" />
-            </div>
-          ) : canvasPage ? (
-            <div
-              data-testid="inline-canvas-ready"
-              className="h-[520px] min-h-[520px]"
-            >
-              <ClearingBoard
-                embedded={true}
-                realtimeEnabled={false}
-                roomSlug={canvasPage.id}
-                title={canvasPage.title || "Inline Clearing"}
-              />
-            </div>
-          ) : (
-            <div data-testid="inline-canvas-empty" className="px-4 py-8 text-sm text-zinc-500 dark:text-zinc-400">
-              {isCreating
-                ? "Creating Clearing..."
-                : props.editor.isEditable
-                ? "Clearing is being prepared."
-                : "Clearing preview unavailable."}
-            </div>
-          )}
+            {workspaceId && canvasPage ? (
+              <button
+                type="button"
+                data-testid="inline-canvas-open"
+                onClick={() => router.push(`/workspace/${workspaceId}?page=${canvasPage.id}`)}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+              >
+                Open
+                <ExternalLink className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
         </div>
-      </InlineBlockShell>
+
+        {isLoading ? (
+          <div data-testid="inline-canvas-loading" className="flex h-64 items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-[#2E7D45]" />
+          </div>
+        ) : canvasPage ? (
+          <div
+            data-testid="inline-canvas-ready"
+            className="h-[520px] min-h-[520px]"
+          >
+            <ClearingBoard
+              embedded={true}
+              realtimeEnabled={false}
+              roomSlug={canvasPage.id}
+              title={canvasPage.title || "Inline Clearing"}
+            />
+          </div>
+        ) : (
+          <div data-testid="inline-canvas-empty" className="px-4 py-8 text-sm text-zinc-500 dark:text-zinc-400">
+            {isCreating
+              ? "Creating Clearing..."
+              : props.editor.isEditable
+              ? "Clearing is being prepared."
+              : "Clearing preview unavailable."}
+          </div>
+        )}
+      </div>
     </NodeViewWrapper>
   );
 }
@@ -321,7 +337,7 @@ export const CanvasBlock = Node.create<CanvasBlockExtensionOptions>({
   name: "canvasEmbed",
   group: "block",
   atom: true,
-  selectable: true,
+  selectable: false,
   draggable: true,
 
   addOptions() {
@@ -360,7 +376,16 @@ export const CanvasBlock = Node.create<CanvasBlockExtensionOptions>({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(CanvasBlockView);
+    return ReactNodeViewRenderer(CanvasBlockView, {
+      stopEvent: ({ event }) => {
+        if (event.type === "mousedown") return true;
+        const target = event.target as HTMLElement;
+        return (
+          ["INPUT", "BUTTON", "SELECT", "TEXTAREA"].includes(target?.tagName ?? "") ||
+          Boolean(target?.isContentEditable)
+        );
+      },
+    });
   },
 
   addCommands() {
@@ -368,15 +393,18 @@ export const CanvasBlock = Node.create<CanvasBlockExtensionOptions>({
       insertCanvasEmbed:
         () =>
         ({ commands }) =>
-          commands.insertContent({
-            type: this.name,
-            attrs: {
-              pageId: null,
-              workspaceId: this.options.workspaceId ?? null,
-              parentPageId: this.options.pageId ?? null,
-              autoCreate: true,
+          commands.insertContent([
+            {
+              type: this.name,
+              attrs: {
+                pageId: null,
+                workspaceId: this.options.workspaceId ?? null,
+                parentPageId: this.options.pageId ?? null,
+                autoCreate: true,
+              },
             },
-          }),
+            { type: "paragraph" },
+          ]),
     };
   },
 
@@ -393,15 +421,18 @@ export const CanvasBlock = Node.create<CanvasBlockExtensionOptions>({
 
           chain()
             .deleteRange({ from: deleteFrom, to })
-            .insertContent({
-              type: this.name,
-              attrs: {
-                pageId: null,
-                workspaceId: this.options.workspaceId ?? null,
-                parentPageId: this.options.pageId ?? null,
-                autoCreate: true,
+            .insertContent([
+              {
+                type: this.name,
+                attrs: {
+                  pageId: null,
+                  workspaceId: this.options.workspaceId ?? null,
+                  parentPageId: this.options.pageId ?? null,
+                  autoCreate: true,
+                },
               },
-            })
+              { type: "paragraph" },
+            ])
             .run();
         },
       }),
