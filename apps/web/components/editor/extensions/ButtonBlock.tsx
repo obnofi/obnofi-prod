@@ -37,7 +37,7 @@ function ButtonBlockView(props: ReactNodeViewProps) {
       onMouseDown={stopEditorSelection}
       onClick={(event) => event.stopPropagation()}
     >
-      <div className="not-prose">
+      <div className="not-prose flex flex-col gap-2">
         <button
           type="button"
           data-testid="button-block-preview"
@@ -51,6 +51,26 @@ function ButtonBlockView(props: ReactNodeViewProps) {
           <span>{label || "Button"}</span>
           {url ? <ExternalLink className="h-3.5 w-3.5" /> : null}
         </button>
+        {isEditable ? (
+          <div className="flex flex-col gap-1.5" onMouseDown={stopEditorSelection}>
+            <input
+              type="text"
+              data-testid="button-block-label"
+              value={label}
+              placeholder="Button label"
+              onChange={(e) => props.updateAttributes({ label: e.target.value })}
+              className="w-full max-w-xs rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-2 py-1 text-xs text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
+            />
+            <input
+              type="url"
+              data-testid="button-block-url"
+              value={url}
+              placeholder="https://..."
+              onChange={(e) => props.updateAttributes({ url: e.target.value })}
+              className="w-full max-w-xs rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-2 py-1 text-xs text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
+            />
+          </div>
+        ) : null}
       </div>
     </NodeViewWrapper>
   );
