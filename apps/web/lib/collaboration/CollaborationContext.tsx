@@ -60,6 +60,26 @@ const CollaborationContext = createContext<CollaborationContextValue>({
 
 const CollaborationPresenceContext = createContext<CollaborationUser[]>([]);
 
+function resolveCollaborationServerUrl() {
+  const configuredUrl = process.env.NEXT_PUBLIC_WS_URL?.trim();
+  if (configuredUrl) {
+    return configuredUrl.replace(/\/+$/, "");
+  }
+
+  if (typeof window === "undefined") {
+    return "ws://localhost:3001";
+  }
+
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const { hostname, host } = window.location;
+  const isLocalHost =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1";
+
+  return isLocalHost ? `${protocol}//${hostname}:3001` : `${protocol}//${host}`;
+}
+
 export function CollaborationProvider({
   pageId,
   active,
@@ -83,7 +103,7 @@ export function CollaborationProvider({
 
   const provider = useMemo(() => {
     if (!ydoc) return null;
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:3001";
+    const wsUrl = resolveCollaborationServerUrl();
     return new WebsocketProvider(wsUrl, "ws", ydoc, {
       connect: false,
       params: { docId: pageId },
