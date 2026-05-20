@@ -255,6 +255,7 @@ export function GroveInsertionToolbar({
           <button
             key={id}
             type="button"
+            data-testid={`toolbar-${id}`}
             aria-pressed={active}
             disabled={disabled}
             onClick={onClick}

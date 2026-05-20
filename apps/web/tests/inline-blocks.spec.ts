@@ -32,6 +32,52 @@ async function gotoWorkspaceDocument(page: import("@playwright/test").Page) {
   await expect(page.getByTestId("workspace-editor")).toBeVisible({ timeout: 15000 });
 }
 
+async function createWorkspaceDatabaseFixture(
+  page: import("@playwright/test").Page
+) {
+  await signInAsDeveloper(page);
+  await page.goto("/workspace");
+  await expect(page).toHaveURL(/\/workspace\/[^/?]+/);
+
+  const workspaceId = page.url().match(/\/workspace\/([^/?]+)/)?.[1];
+  expect(workspaceId).toBeTruthy();
+
+  const createPageResponse = await page.context().request.post("/api/pages", {
+    data: {
+      title: `Database Fixture ${Date.now()}`,
+      type: "database",
+      workspaceId,
+      content: { type: "doc", content: [{ type: "paragraph" }] },
+    },
+  });
+
+  expect(createPageResponse.ok()).toBeTruthy();
+  const databasePage = (await createPageResponse.json()) as { id: string };
+
+  const createDatabaseResponse = await page.context().request.post("/api/databases", {
+    data: { pageId: databasePage.id },
+  });
+  expect(createDatabaseResponse.ok()).toBeTruthy();
+  const database = (await createDatabaseResponse.json()) as { id: string };
+
+  const createRowResponse = await page.context().request.post(
+    `/api/databases/${database.id}/rows`,
+    {
+      data: { title: `Row Fixture ${Date.now()}` },
+    }
+  );
+  expect(createRowResponse.ok()).toBeTruthy();
+  const row = (await createRowResponse.json()) as { id: string; title: string };
+
+  return {
+    workspaceId: workspaceId!,
+    databasePageId: databasePage.id,
+    databaseId: database.id,
+    rowId: row.id,
+    rowTitle: row.title,
+  };
+}
+
 async function focusEditorTail(page: import("@playwright/test").Page) {
   const editor = page.getByTestId("workspace-editor-input");
   await expect(editor).toBeVisible();
@@ -165,6 +211,36 @@ test("인라인 Database: New 버튼으로 행 추가되고 타이틀 버튼이 
   // 행 타이틀 버튼이 렌더돼야 함
   const titleBtn = dbEmbed.locator("tbody tr button").first();
   await expect(titleBtn).toBeVisible();
+});
+
+test("Database row 상세 탭은 캐시된 row 정보로 열리고 database를 다시 요청하지 않는다", async ({ page }) => {
+  test.setTimeout(120000);
+
+  const fixture = await createWorkspaceDatabaseFixture(page);
+  await page.goto(`/workspace/${fixture.workspaceId}?page=${fixture.databasePageId}`);
+
+  await expect(page.getByTestId("workspace-database-ready")).toBeVisible({
+    timeout: 20000,
+  });
+
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    const url = request.url();
+    if (url.includes(`/api/databases/${fixture.databaseId}`)) {
+      requests.push(url);
+    }
+  });
+
+  const rowLocator = page.locator("tbody tr").filter({ hasText: fixture.rowTitle }).first();
+  await expect(rowLocator).toBeVisible({ timeout: 15000 });
+  const openRowButton = rowLocator.getByRole("button", { name: fixture.rowTitle });
+  await expect(openRowButton).toBeVisible({ timeout: 15000 });
+  await openRowButton.click();
+
+  const sideTab = page.locator("[data-grove-side-tab-panel='true']");
+  await expect(sideTab).toBeVisible({ timeout: 15000 });
+  await expect(sideTab).toContainText(fixture.rowTitle);
+  expect(requests).toHaveLength(0);
 });
 
 test("인라인 Canvas: Select 툴 버튼 클릭이 동작한다", async ({ page }) => {
