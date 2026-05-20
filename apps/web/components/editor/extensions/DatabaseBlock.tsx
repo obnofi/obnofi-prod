@@ -150,11 +150,6 @@ function DatabaseBlockView(props: ReactNodeViewProps) {
     [updateDatabaseBlockAttrs]
   );
 
-  useEffect(() => {
-    console.log("[DatabaseBlock] mounted", { pageId, databaseId, workspaceId });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const hasLoadedPages = useRef(false);
 
   const loadDatabasePages = useCallback(async () => {
@@ -248,7 +243,7 @@ function DatabaseBlockView(props: ReactNodeViewProps) {
       className="my-4"
       contentEditable={false}
       data-inline-block="true"
-      onClick={(e) => { e.stopPropagation(); console.log("[DatabaseBlock] interacted", { pageId, databaseId }); }}
+      onClick={(e) => e.stopPropagation()}
     >
       <DatabasePageCard
         pageId={pageId}

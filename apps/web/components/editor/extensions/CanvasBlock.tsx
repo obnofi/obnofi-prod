@@ -49,11 +49,6 @@ function CanvasBlockView(props: ReactNodeViewProps) {
   const isCreatingRef = useRef(false);
   const propsRef = useRef(props);
 
-  useEffect(() => {
-    console.log("[CanvasBlock] mounted", { pageId, workspaceId });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   propsRef.current = props;
 
   const updateCanvasBlockAttrs = useCallback(
@@ -277,7 +272,6 @@ function CanvasBlockView(props: ReactNodeViewProps) {
       className="my-4"
       contentEditable={false}
       data-inline-block="true"
-      onClick={() => console.log("[CanvasBlock] interacted", { pageId })}
     >
       <div
         data-testid="inline-canvas-embed"

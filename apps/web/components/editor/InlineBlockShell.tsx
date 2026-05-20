@@ -31,7 +31,6 @@ export function InlineBlockShell({
 
   const activate = useCallback(() => {
     setIsActive(true);
-    console.log("[InlineBlockShell] activated");
   }, []);
 
   const deactivate = useCallback(() => {
