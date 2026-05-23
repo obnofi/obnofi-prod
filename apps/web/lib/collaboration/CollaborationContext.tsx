@@ -13,23 +13,15 @@ import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { useSession } from "next-auth/react";
 import { pickProfileImagePreset } from "@/lib/profileImagePresets";
+import { getUserColor } from "@/lib/collaborationUtils";
+import type {
+  AwarenessState as CursorAwarenessState,
+  UserCursor,
+} from "@/types/collaboration";
 
-const CURSOR_COLORS = [
-  "#958DF1",
-  "#F98181",
-  "#FBBC88",
-  "#70CFF8",
-  "#94FADB",
-  "#B9F18D",
-  "#F6A6C1",
-];
 
 export function userColor(seed: string): string {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  }
-  return CURSOR_COLORS[hash % CURSOR_COLORS.length];
+  return getUserColor(seed);
 }
 
 export interface CollaborationUser {
@@ -46,6 +38,15 @@ interface CollaborationContextValue {
   isSynced: boolean;
   pageType: "document" | "canvas" | "database" | null;
   awarenessCount: number;
+  awarenessStates: Array<CursorAwarenessState & { clientId: number; image?: string | null }>;
+  updateCursor: (fields: Partial<UserCursor> | null) => void;
+  localUserId: string | null;
+}
+
+interface ProviderAwarenessState {
+  user?: unknown;
+  cursor?: unknown;
+  userCursor?: UserCursor | null;
 }
 
 const defaultDocumentContext: CollaborationContextValue = {
@@ -54,6 +55,9 @@ const defaultDocumentContext: CollaborationContextValue = {
   isSynced: false,
   pageType: null,
   awarenessCount: 0,
+  awarenessStates: [],
+  updateCursor: () => {},
+  localUserId: null,
 };
 
 const CollaborationContext = createContext<CollaborationContextValue>({
@@ -65,11 +69,12 @@ const CollaborationPresenceContext = createContext<CollaborationUser[]>([]);
 function resolveCollaborationServerUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_WS_URL?.trim();
   if (configuredUrl) {
-    return configuredUrl.replace(/\/+$/, "");
+    const normalized = configuredUrl.replace(/\/+$/, "");
+    return normalized.endsWith("/ws") ? normalized : `${normalized}/ws`;
   }
 
   if (typeof window === "undefined") {
-    return "ws://localhost:3001";
+    return "ws://localhost:3001/ws";
   }
 
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -79,7 +84,8 @@ function resolveCollaborationServerUrl() {
     hostname === "127.0.0.1" ||
     hostname === "::1";
 
-  return isLocalHost ? `${protocol}//${hostname}:3001` : `${protocol}//${host}`;
+  const baseUrl = isLocalHost ? `${protocol}//${hostname}:3001` : `${protocol}//${host}`;
+  return `${baseUrl}/ws`;
 }
 
 export function CollaborationProvider({
@@ -93,10 +99,13 @@ export function CollaborationProvider({
   pageType?: "document" | "canvas" | "database" | null;
   children: ReactNode;
 }) {
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const [collaborators, setCollaborators] = useState<CollaborationUser[]>([]);
   const [isSynced, setIsSynced] = useState(false);
   const [awarenessCount, setAwarenessCount] = useState(0);
+  const [awarenessStates, setAwarenessStates] = useState<
+    Array<CursorAwarenessState & { clientId: number; image?: string | null }>
+  >([]);
   const localPresenceUser = useMemo(() => {
     if (!session?.user) {
       return null;
@@ -117,23 +126,28 @@ export function CollaborationProvider({
       image,
     };
   }, [session]);
+  const collaborationUserId =
+    localPresenceUser?.id ?? session?.user?.id ?? session?.user?.email ?? null;
+  const collaborationReady = active && sessionStatus !== "loading" && Boolean(collaborationUserId);
 
   // active=false인 페이지(문서 타입이 아님 / 공유편집 비활성)는 ydoc·provider를 만들지 않는다.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const ydoc = useMemo(() => (active ? new Y.Doc() : null), [pageId, active]);
+  const ydoc = useMemo(
+    () => (collaborationReady ? new Y.Doc() : null),
+    [pageId, collaborationReady]
+  );
 
   const provider = useMemo(() => {
     if (!ydoc) return null;
     const wsUrl = resolveCollaborationServerUrl();
-    return new WebsocketProvider(wsUrl, "ws", ydoc, {
+    return new WebsocketProvider(wsUrl, pageId, ydoc, {
       connect: false,
       params: {
-        docId: pageId,
-        userId: session?.user?.id ?? "",
+        userId: collaborationUserId ?? "",
       },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ydoc, pageId, session?.user?.id]);
+  }, [ydoc, pageId, collaborationUserId]);
 
   // React 18 strict mode의 mount→cleanup→re-mount 더블 사이클에서
   // 같은 ydoc/provider 인스턴스가 destroy된 후 재사용되어 doc.update 핸들러가 사라지는
@@ -151,14 +165,24 @@ export function CollaborationProvider({
       setCollaborators([]);
       setIsSynced(false);
       setAwarenessCount(0);
+      setAwarenessStates([]);
       return;
     }
 
-    // 같은 (provider, ydoc) 페어에 예약된 destroy가 있으면 취소 — strict mode toss 회복.
+    // 예약된 destroy 처리 — strict mode 재마운트 회복 및 세션 로드 후 provider 교체 대응.
+    // provider만 바뀌고 ydoc은 같은 경우(session 로드 후 userId 확정): 이전 provider만 destroy.
+    // 둘 다 같은 경우(strict mode toss): timer만 취소하여 인스턴스 유지.
     const pending = pendingDestroyRef.current;
-    if (pending && pending.provider === provider && pending.ydoc === ydoc) {
+    if (pending) {
       clearTimeout(pending.timer);
       pendingDestroyRef.current = null;
+      if (pending.provider !== provider) {
+        pending.provider.disconnect();
+        pending.provider.destroy();
+      }
+      if (pending.ydoc !== ydoc) {
+        pending.ydoc.destroy();
+      }
     }
 
     provider.connect();
@@ -183,6 +207,7 @@ export function CollaborationProvider({
       setCollaborators([]);
       setIsSynced(false);
       setAwarenessCount(0);
+      setAwarenessStates([]);
       const timer = setTimeout(() => {
         provider.disconnect();
         provider.destroy();
@@ -226,6 +251,8 @@ export function CollaborationProvider({
       provider.awareness.setLocalState({
         ...currentState,
         user: localPresenceUser,
+        userCursor:
+          (currentState.userCursor as CursorAwarenessState["userCursor"] | undefined) ?? null,
       });
     };
 
@@ -243,6 +270,7 @@ export function CollaborationProvider({
     if (!provider) {
       setCollaborators([]);
       setAwarenessCount(0);
+      setAwarenessStates([]);
       return;
     }
 
@@ -251,10 +279,34 @@ export function CollaborationProvider({
       const localId = provider.awareness.clientID;
       setAwarenessCount(states.size);
       const users: CollaborationUser[] = [];
+      const nextAwarenessStates: Array<
+        CursorAwarenessState & { clientId: number; image?: string | null }
+      > = [];
       states.forEach((state, clientId) => {
-        const presenceUser = state.user as
+        const awarenessState = state as ProviderAwarenessState;
+        const presenceUser = awarenessState.user as
           | { id?: unknown; name?: unknown; color?: unknown; image?: unknown }
           | undefined;
+        const userCursor = awarenessState.userCursor as UserCursor | null | undefined;
+        const awarenessUserId =
+          typeof presenceUser?.id === "string" ? presenceUser.id : null;
+        const awarenessUserName =
+          typeof presenceUser?.name === "string" ? presenceUser.name : "User";
+        const awarenessColor =
+          typeof presenceUser?.color === "string" ? presenceUser.color : "#888";
+        const awarenessImage =
+          typeof presenceUser?.image === "string" ? presenceUser.image : null;
+
+        if (awarenessUserId) {
+          nextAwarenessStates.push({
+            clientId,
+            userId: awarenessUserId,
+            userName: awarenessUserName,
+            color: awarenessColor,
+            userCursor: userCursor ?? null,
+            image: awarenessImage,
+          });
+        }
 
         if (!presenceUser || clientId === localId) {
           return;
@@ -262,35 +314,72 @@ export function CollaborationProvider({
 
         users.push({
           clientId,
-          id:
-            typeof presenceUser.id === "string"
-              ? presenceUser.id
-              : undefined,
-          name:
-            typeof presenceUser.name === "string"
-              ? presenceUser.name
-              : "User",
-          color:
-            typeof presenceUser.color === "string"
-              ? presenceUser.color
-              : "#888",
-          image:
-            typeof presenceUser.image === "string"
-              ? presenceUser.image
-              : null,
+          id: awarenessUserId ?? undefined,
+          name: awarenessUserName,
+          color: awarenessColor,
+          image: awarenessImage,
         });
       });
       setCollaborators(users);
+      setAwarenessStates(nextAwarenessStates);
     };
     setCollaborators([]);
+    setAwarenessStates([]);
     provider.awareness.on("change", update);
     update();
     return () => provider.awareness.off("change", update);
   }, [provider]);
 
+  const updateCursor = useMemo(
+    () => (fields: Partial<UserCursor> | null) => {
+      if (!provider) {
+        return;
+      }
+
+      const currentState =
+        (provider.awareness.getLocalState() as ProviderAwarenessState | null) ?? null;
+
+      if (fields === null) {
+        provider.awareness.setLocalStateField("userCursor", null);
+        return;
+      }
+
+      const nextCursor: UserCursor = {
+        type:
+          currentState?.userCursor?.type ??
+          (pageType === "canvas" || pageType === "database" ? pageType : "page"),
+        pageId: currentState?.userCursor?.pageId ?? pageId,
+        canvasPosition: currentState?.userCursor?.canvasPosition ?? null,
+        databaseCell: currentState?.userCursor?.databaseCell ?? null,
+        ...fields,
+      };
+
+      provider.awareness.setLocalStateField("userCursor", nextCursor);
+    },
+    [pageId, pageType, provider]
+  );
+
   const value = useMemo(
-    () => ({ ydoc, provider, isSynced, pageType, awarenessCount }),
-    [ydoc, provider, isSynced, pageType, awarenessCount]
+    () => ({
+      ydoc,
+      provider,
+      isSynced,
+      pageType,
+      awarenessCount,
+      awarenessStates,
+      updateCursor,
+      localUserId: localPresenceUser?.id ?? null,
+    }),
+    [
+      ydoc,
+      provider,
+      isSynced,
+      pageType,
+      awarenessCount,
+      awarenessStates,
+      updateCursor,
+      localPresenceUser?.id,
+    ]
   );
 
   return (
