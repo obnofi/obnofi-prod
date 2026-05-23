@@ -251,6 +251,7 @@ export function DatabaseSurface({
       <div className="min-h-0 flex-1">
         {viewType === "table" ? (
           <TableView
+            pageId={databasePage.id}
             table={table}
             properties={properties}
             onOpenRow={onOpenRow}

@@ -34,6 +34,8 @@ export function CollaborationAvatars() {
     <div
       className="flex items-center gap-2"
       data-testid="collaboration-status"
+      data-awareness-count={awarenessCount}
+      data-collaborator-count={collaborators.length}
       title={detail}
     >
       <div className="flex -space-x-1.5" data-testid="collaboration-avatars">

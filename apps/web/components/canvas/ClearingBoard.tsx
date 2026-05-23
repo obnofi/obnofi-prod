@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Waypoints } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useCollaboration } from "@/lib/collaboration/CollaborationContext";
 import { DraftConnectorLayer, type DraftConnectorApi } from "@/components/canvas/DraftConnectorLayer";
 import { type ConnectorHandlePosition } from "@/components/elements/ConnectorHandles";
 import { PenTool } from "@/components/canvas/PenTool";
@@ -466,6 +467,12 @@ export function ClearingBoard({
   onTitleChange?: (title: string) => void;
 }) {
   const { data: session } = useSession();
+  const collaboration = useCollaboration();
+  const awarenessStates = Array.isArray(collaboration.awarenessStates)
+    ? collaboration.awarenessStates
+    : [];
+  const updateCursor = collaboration.updateCursor ?? (() => {});
+  const localUserId = collaboration.localUserId ?? null;
   const boardRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -563,6 +570,17 @@ export function ClearingBoard({
     () => [...elements].sort((left, right) => left.zIndex - right.zIndex),
     [elements]
   );
+  const remoteCanvasCursors = useMemo(
+    () =>
+      awarenessStates.filter(
+        (state) =>
+          state.userId !== localUserId &&
+          state.userCursor?.type === "canvas" &&
+          state.userCursor.pageId === roomSlug &&
+          state.userCursor.canvasPosition
+      ),
+    [awarenessStates, localUserId, roomSlug]
+  );
   const selectionFrame = useMemo(() => {
     if (selectedIds.length === 0) {
       return null;
@@ -611,6 +629,19 @@ export function ClearingBoard({
       titleInputRef.current?.select();
     }
   }, [isTitleEditing]);
+
+  useEffect(() => {
+    updateCursor({
+      type: "canvas",
+      pageId: roomSlug,
+      canvasPosition: null,
+      databaseCell: null,
+    });
+
+    return () => {
+      updateCursor(null);
+    };
+  }, [roomSlug, updateCursor]);
 
   const commitClearingTitle = useCallback(() => {
     const nextTitle = titleDraft.trim() || "Jungle Clearing";
@@ -2002,14 +2033,22 @@ export function ClearingBoard({
       });
     }
 
+    const now = Date.now();
+    if (now - lastCursorSyncRef.current < 80) {
+      return;
+    }
+    lastCursorSyncRef.current = now;
+
     if (presenceChannelRef.current && currentUserRef.current && boardRef.current) {
-      const now = Date.now();
-      if (now - lastCursorSyncRef.current < 80) {
-        return;
-      }
-      lastCursorSyncRef.current = now;
       syncCursorPresence(scenePoint);
     }
+
+    updateCursor({
+      type: "canvas",
+      pageId: roomSlug,
+      canvasPosition: scenePoint,
+      databaseCell: null,
+    });
   };
 
   const handleBoardPointerUp = async () => {
@@ -2445,6 +2484,12 @@ export function ClearingBoard({
             onPointerLeave={() => {
               void handleBoardPointerUp();
               syncCursorPresence();
+              updateCursor({
+                type: "canvas",
+                pageId: roomSlug,
+                canvasPosition: null,
+                databaseCell: null,
+              });
             }}
             onWheel={handleWheel}
           >
@@ -2543,6 +2588,47 @@ export function ClearingBoard({
               {floatingStamps.map((stamp) => (
                 <EmojiStamp key={stamp.id} stamp={stamp} />
               ))}
+
+              {remoteCanvasCursors.map((state) => {
+                const canvasPosition = state.userCursor?.canvasPosition;
+                if (!canvasPosition) {
+                  return null;
+                }
+
+                return (
+                  <div
+                    key={state.userId}
+                    data-user-cursor={state.userId}
+                    className="pointer-events-none absolute z-40"
+                    style={{
+                      left: canvasPosition.x,
+                      top: canvasPosition.y,
+                    }}
+                  >
+                    <svg
+                      width="20"
+                      height="24"
+                      viewBox="0 0 20 24"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M3 2L16 12L10.5 13.5L13.5 21L9.5 22.5L6.5 15L3 18V2Z"
+                        fill={state.color}
+                        stroke="white"
+                        strokeWidth="1.5"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <span
+                      className="ml-3 mt-1 inline-flex rounded-full px-2 py-1 text-[10px] font-semibold text-white shadow-sm"
+                      style={{ backgroundColor: state.color }}
+                    >
+                      {state.userName}
+                    </span>
+                  </div>
+                );
+              })}
 
               {others
                 .filter((user) => user.cursor)

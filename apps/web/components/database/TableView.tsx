@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { flexRender, type Row, type Table } from "@tanstack/react-table";
 import { Plus, X } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { Property, Page, PropertyType, SelectOption } from "@obnofi/types";
+import { useCollaboration } from "@/lib/collaboration/CollaborationContext";
 import { getPropertyTypeLabel, getPropertyTypeIcon } from "@/lib/database-utils";
 import { PropertyHeader } from "./PropertyHeader";
 
 interface TableViewProps {
+  pageId: string;
   table: Table<Page>;
   properties: Property[];
   onCreateRow?: () => void;
@@ -25,6 +27,7 @@ const ADDABLE_TYPES: PropertyType[] = [
 ];
 
 export function TableView({
+  pageId,
   table,
   properties: _properties,
   onCreateRow,
@@ -35,11 +38,56 @@ export function TableView({
   onMoveProperty,
   compact = false,
 }: TableViewProps) {
+  const collaboration = useCollaboration();
+  const awarenessStates = Array.isArray(collaboration.awarenessStates)
+    ? collaboration.awarenessStates
+    : [];
+  const updateCursor = collaboration.updateCursor ?? (() => {});
+  const localUserId = collaboration.localUserId ?? null;
   const [showAddProp, setShowAddProp] = useState(false);
   const [newPropName, setNewPropName] = useState("");
   const [newPropType, setNewPropType] = useState<PropertyType>("text");
   const addPropRef = useRef<HTMLTableCellElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const occupiedCells = useMemo(() => {
+    const occupied = new Map<string, Array<{ userId: string; userName: string; color: string }>>();
+
+    awarenessStates.forEach((state) => {
+      const databaseCell = state.userCursor?.databaseCell;
+      if (
+        state.userId === localUserId ||
+        state.userCursor?.type !== "database" ||
+        state.userCursor?.pageId !== pageId ||
+        !databaseCell
+      ) {
+        return;
+      }
+
+      const key = `${databaseCell.rowId}:${databaseCell.colId}`;
+      const current = occupied.get(key) ?? [];
+      current.push({
+        userId: state.userId,
+        userName: state.userName,
+        color: state.color,
+      });
+      occupied.set(key, current);
+    });
+
+    return occupied;
+  }, [awarenessStates, localUserId, pageId]);
+
+  useEffect(() => {
+    updateCursor({
+      type: "database",
+      pageId,
+      canvasPosition: null,
+      databaseCell: null,
+    });
+
+    return () => {
+      updateCursor(null);
+    };
+  }, [pageId, updateCursor]);
 
   const openAddProp = () => {
     setNewPropName("");
@@ -72,6 +120,32 @@ export function TableView({
     }
 
     onOpenRow(row.original.id);
+  };
+
+  const handleCellEnter = (rowId: string, colId: string) => {
+    updateCursor({
+      type: "database",
+      pageId,
+      canvasPosition: null,
+      databaseCell: { rowId, colId },
+    });
+  };
+
+  const handleCellLeave = (
+    event: React.FocusEvent<HTMLTableCellElement>,
+    rowId: string,
+    colId: string
+  ) => {
+    if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) {
+      return;
+    }
+
+    updateCursor({
+      type: "database",
+      pageId,
+      canvasPosition: null,
+      databaseCell: null,
+    });
   };
 
   return (
@@ -237,18 +311,35 @@ export function TableView({
               >
                 {row.getVisibleCells().map((cell) => {
                   const isTitleColumn = cell.column.id === "title";
+                  const occupancyKey = `${row.original.id}:${cell.column.id}`;
+                  const occupyingUsers = occupiedCells.get(occupancyKey) ?? [];
+                  const primaryOccupant = occupyingUsers[0];
                   return (
                     <td
                       key={cell.id}
+                      data-testid={`db-cell-${row.original.id}-${cell.column.id}`}
+                      onFocusCapture={() => handleCellEnter(row.original.id, cell.column.id)}
+                      onClick={() => handleCellEnter(row.original.id, cell.column.id)}
+                      onBlurCapture={(event) =>
+                        handleCellLeave(event, row.original.id, cell.column.id)
+                      }
+                      title={occupyingUsers.map((user) => user.userName).join(", ") || undefined}
                       className={`border-r border-[var(--color-border)] px-3 py-1.5 ${
                         isTitleColumn
                           ? "sticky left-0 z-10 bg-[var(--color-background)] px-4 py-2 transition-colors group-hover:bg-[var(--color-hover)]"
                           : ""
                       }`}
                       style={
-                        row.depth > 0 && isTitleColumn
-                          ? { paddingLeft: `${16 + row.depth * 20}px` }
-                          : undefined
+                        {
+                          ...(row.depth > 0 && isTitleColumn
+                            ? { paddingLeft: `${16 + row.depth * 20}px` }
+                            : undefined),
+                          ...(primaryOccupant
+                            ? {
+                                boxShadow: `inset 0 0 0 2px ${primaryOccupant.color}`,
+                              }
+                            : undefined),
+                        }
                       }
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

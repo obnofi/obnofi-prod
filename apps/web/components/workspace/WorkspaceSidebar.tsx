@@ -29,6 +29,8 @@ import {
 import { WorkspaceSettingsModal } from "@/components/workspace/WorkspaceSettingsModal";
 import { ImportFromUrlControl } from "@/components/workspace/ImportFromUrlControl";
 import { AntGlyph } from "@/components/icons/AntGlyph";
+import { useCollaboration } from "@/lib/collaboration/CollaborationContext";
+import { getUserColor } from "@/lib/collaborationUtils";
 import { usePageStore, PageTreeNode } from "@/store/pageStore";
 import {
   creatablePageLabels,
@@ -131,6 +133,7 @@ interface ProjectedDrop {
 interface PageTreeItemProps {
   page: FlattenedPageNode;
   currentPageId?: string;
+  activeAudience: Array<{ userId: string; userName: string }>;
   onSelect: (pageId: string) => void;
   onToggle: (pageId: string) => void;
   expanded: Set<string>;
@@ -138,6 +141,19 @@ interface PageTreeItemProps {
   onOpenMenu: (nodeId: string, buttonEl: HTMLButtonElement) => void;
   projectedDepth?: number;
   isDragging?: boolean;
+}
+
+function getUserInitials(userName: string) {
+  const trimmed = userName.trim();
+  if (!trimmed) return "?";
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return parts
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
 }
 
 function flattenVisiblePageTree(
@@ -241,6 +257,7 @@ function getReorderedSiblingIds(
 function SortablePageTreeItem({
   page,
   currentPageId,
+  activeAudience,
   onSelect,
   onToggle,
   expanded,
@@ -261,6 +278,8 @@ function SortablePageTreeItem({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const createButtonRef = useRef<HTMLButtonElement>(null);
   const depth = projectedDepth ?? page.depth;
+  const visibleAudience = activeAudience.slice(0, 1);
+  const extraAudienceCount = Math.max(0, activeAudience.length - visibleAudience.length);
 
   const handleOpenMenu = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -287,6 +306,7 @@ function SortablePageTreeItem({
       <div
         {...attributes}
         {...listeners}
+        data-testid={`sidebar-page-${page.id}`}
         className={`group flex items-center gap-1.5 py-1 rounded transition-colors ${
           isActive
             ? "bg-[var(--color-selected)] text-[var(--color-text-primary)]"
@@ -310,6 +330,26 @@ function SortablePageTreeItem({
           {page.icon || typeIcons[page.type]}
         </span>
         <span className="flex-1 text-[13px] truncate">{page.title || "Untitled"}</span>
+        {activeAudience.length > 0 ? (
+          <div className="flex items-center gap-1">
+            {visibleAudience.map((user) => (
+              <span
+                key={user.userId}
+                data-testid={`user-avatar-${user.userId}`}
+                title={user.userName}
+                className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
+                style={{ backgroundColor: getUserColor(user.userId) }}
+              >
+                {getUserInitials(user.userName)}
+              </span>
+            ))}
+            {extraAudienceCount > 0 ? (
+              <span className="text-[11px] font-medium text-[var(--color-text-secondary)]">
+                +{extraAudienceCount}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
         
         <button
           ref={createButtonRef}
@@ -497,6 +537,12 @@ export function WorkspaceSidebar({ workspaceId }: WorkspaceSidebarProps) {
 function WorkspaceSidebarInner({ workspaceId }: WorkspaceSidebarProps) {
   const router = useRouter();
   const { data: session } = useSession();
+  const collaboration = useCollaboration();
+  const awarenessStates = Array.isArray(collaboration.awarenessStates)
+    ? collaboration.awarenessStates
+    : [];
+  const updateCursor = collaboration.updateCursor ?? (() => {});
+  const localUserId = collaboration.localUserId ?? null;
   const [expandedPages, setExpandedPages] = useState<Set<string>>(new Set());
   const [showNewPageMenu, setShowNewPageMenu] = useState(false);
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false);
@@ -535,6 +581,24 @@ function WorkspaceSidebarInner({ workspaceId }: WorkspaceSidebarProps) {
   const searchParams = useSearchParams();
   const currentPageId = searchParams.get("page") ?? undefined;
   const effectiveCurrentPageId = pendingPageId ?? currentPageId;
+  const pageAudienceById = useMemo(() => {
+    const audienceMap = new Map<string, Array<{ userId: string; userName: string }>>();
+
+    awarenessStates.forEach((state) => {
+      if (
+        state.userId === localUserId ||
+        !state.userCursor?.pageId
+      ) {
+        return;
+      }
+
+      const currentAudience = audienceMap.get(state.userCursor.pageId) ?? [];
+      currentAudience.push({ userId: state.userId, userName: state.userName });
+      audienceMap.set(state.userCursor.pageId, currentAudience);
+    });
+
+    return audienceMap;
+  }, [awarenessStates, localUserId]);
 
   useEffect(() => {
     setIsSearchOpen(false);
@@ -543,6 +607,23 @@ function WorkspaceSidebarInner({ workspaceId }: WorkspaceSidebarProps) {
     setActiveMenuNodeId(null);
     setCreateMenuState(null);
   }, [workspaceId, currentPageId]);
+
+  useEffect(() => {
+    if (!effectiveCurrentPageId) {
+      return;
+    }
+
+    updateCursor({
+      type: "page",
+      pageId: effectiveCurrentPageId,
+      canvasPosition: null,
+      databaseCell: null,
+    });
+
+    return () => {
+      updateCursor(null);
+    };
+  }, [effectiveCurrentPageId, updateCursor]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -1312,6 +1393,7 @@ function WorkspaceSidebarInner({ workspaceId }: WorkspaceSidebarProps) {
                           key={item.id}
                           page={item}
                           currentPageId={effectiveCurrentPageId}
+                          activeAudience={pageAudienceById.get(item.id) ?? []}
                           onSelect={handleSelectPage}
                           onToggle={handleToggleExpand}
                           expanded={expandedPages}
