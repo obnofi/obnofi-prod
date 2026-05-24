@@ -1,63 +1,36 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Background,
   Controls,
   MiniMap,
   type Node as ReactFlowNode,
-  Panel,
   ReactFlow,
   ReactFlowProvider,
-  useEdgesState,
-  useNodesState,
   useReactFlow,
-  type Edge,
   type EdgeTypes,
-  type Node,
-  type NodeMouseHandler,
   type NodeTypes,
 } from "@xyflow/react";
-import { ArrowLeft, Loader2, Orbit } from "lucide-react";
-import Link from "next/link";
-import type { Page } from "@obnofi/types";
+import { Loader2, Orbit } from "lucide-react";
 import { GraphNode, type GraphCanvasNodeData } from "@/components/graph/GraphNode";
 import { GraphEdge } from "@/components/graph/GraphEdge";
 import { useGraphStore } from "@/components/graph/graphStore";
 import { useGraphData } from "@/components/graph/useGraphData";
-import { useGraphSimulation } from "@/components/graph/useGraphSimulation";
+import { useGraphPages } from "@/components/graph/useGraphPages";
+import { useGraphFlowNodes } from "@/components/graph/useGraphFlowNodes";
+import { GraphControlPanel } from "@/components/graph/GraphControlPanel";
+import { GraphViewHeader } from "@/components/graph/GraphViewHeader";
 
 interface GraphViewProps {
   workspaceId: string;
 }
 
-type GraphFlowNode = Node<GraphCanvasNodeData, "graphNode">;
-type GraphFlowEdge = Edge<{ thickness: number; isUnresolved: boolean }, "graphEdge">;
-
-const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
-
-function createGraphSeedPosition(index: number, total: number) {
-  const spread = Math.max(160, Math.sqrt(total) * 120);
-  const radius = Math.sqrt(index + 0.5) * (spread / Math.max(1, Math.sqrt(total)));
-  const angle = index * GOLDEN_ANGLE;
-
-  return {
-    x: Math.cos(angle) * radius,
-    y: Math.sin(angle) * radius,
-  };
-}
-
-const nodeTypes: NodeTypes = {
-  graphNode: GraphNode,
-};
-
-const edgeTypes: EdgeTypes = {
-  graphEdge: GraphEdge,
-};
+const nodeTypes: NodeTypes = { graphNode: GraphNode };
+const edgeTypes: EdgeTypes = { graphEdge: GraphEdge };
 
 function GraphViewCanvas({ workspaceId }: GraphViewProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const focusedNoteId = useGraphStore((state) => state.focusedNoteId);
   const localDepth = useGraphStore((state) => state.localDepth);
@@ -68,14 +41,7 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
   const setLocalMode = useGraphStore((state) => state.setLocalMode);
   const { fitView } = useReactFlow();
 
-  const [pages, setPages] = useState<Page[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState<GraphFlowNode>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<GraphFlowEdge>([]);
-  const savedPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
-
   const queryPageId = searchParams.get("page");
 
   useEffect(() => {
@@ -84,66 +50,9 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
     }
   }, [queryPageId, setFocusedNote]);
 
-  const hasSetInitialNote = useRef(false);
+  const { pages, isLoading, error } = useGraphPages(workspaceId, queryPageId, setFocusedNote);
 
-  useEffect(() => {
-    let mounted = true;
-    hasSetInitialNote.current = false;
-
-    const loadPages = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch(
-          `/api/pages?workspaceId=${workspaceId}&includeContent=true`
-        );
-
-        if (!response.ok) {
-          throw new Error("그래프 데이터를 불러오는 데 실패했습니다.");
-        }
-
-        const nextPages = (await response.json()) as Page[];
-        if (!mounted) {
-          return;
-        }
-
-        setPages(nextPages);
-        // queryPageId가 없고 아직 초기 노드를 설정하지 않았을 때만 setFocusedNote 호출
-        if (!queryPageId && nextPages[0] && !hasSetInitialNote.current) {
-          hasSetInitialNote.current = true;
-          setFocusedNote(nextPages[0].id);
-        }
-      } catch (loadError) {
-        if (!mounted) {
-          return;
-        }
-
-        setError(
-          loadError instanceof Error ? loadError.message : "그래프를 불러오는 데 실패했습니다."
-        );
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    void loadPages();
-
-    return () => {
-      mounted = false;
-    };
-    // queryPageId와 setFocusedNote를 의존성에서 제거하여 workspaceId 변경 시에만 실행
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceId]);
-
-  const graphData = useGraphData({
-    pages,
-    focusedNoteId,
-    localDepth,
-    isLocalMode,
-  });
+  const graphData = useGraphData({ pages, focusedNoteId, localDepth, isLocalMode });
 
   useEffect(() => {
     setGraphData(graphData.nodes, graphData.edges);
@@ -153,34 +62,18 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
     if (graphData.allNodes.length <= 2000 || isLocalMode) {
       return;
     }
-
     setLocalMode(true);
     setLocalDepth(2);
     setToastMessage("노드가 2000개를 넘어 로컬 그래프로 자동 전환했습니다.");
-  }, [
-    graphData.allNodes.length,
-    isLocalMode,
-    setLocalDepth,
-    setLocalMode,
-  ]);
+  }, [graphData.allNodes.length, isLocalMode, setLocalDepth, setLocalMode]);
 
   useEffect(() => {
     if (!toastMessage) {
       return;
     }
-
-    const timeout = window.setTimeout(() => {
-      setToastMessage(null);
-    }, 3200);
-
+    const timeout = window.setTimeout(() => setToastMessage(null), 3200);
     return () => window.clearTimeout(timeout);
   }, [toastMessage]);
-
-  useEffect(() => {
-    savedPositionsRef.current = new Map(
-      nodes.map((node) => [node.id, { ...node.position }])
-    );
-  }, [nodes]);
 
   const graphKey = useMemo(() => {
     const nodeKey = graphData.nodes.map((node) => node.id).join("|");
@@ -190,109 +83,31 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
     return `${nodeKey}__${edgeKey}`;
   }, [graphData.edges, graphData.nodes]);
 
-  useEffect(() => {
-    const nextNodes: GraphFlowNode[] = graphData.nodes.map((node, index, allNodes) => {
-      const savedPosition = savedPositionsRef.current.get(node.id);
-
-      return {
-        id: node.id,
-        type: "graphNode",
-        position: savedPosition ?? createGraphSeedPosition(index, allNodes.length),
-        data: {
-          ...node,
-          size: node.size,
-        },
-      };
-    });
-
-    const nextEdges: GraphFlowEdge[] = graphData.edges.map((edge) => ({
-      id: `${edge.source}->${edge.target}`,
-      source: edge.source,
-      target: edge.target,
-      type: "graphEdge",
-      selectable: false,
-      data: {
-        thickness: edge.thickness,
-        isUnresolved: edge.isUnresolved,
-      },
-      zIndex: -1,
-    }));
-
-    setNodes(nextNodes);
-    setEdges(nextEdges);
-  }, [graphData.edges, graphData.nodes, setEdges, setNodes]);
-
-  useGraphSimulation({
+  const {
     nodes,
     edges,
+    onNodesChange,
+    onEdgesChange,
+    handleNodeClick,
+    handleNodeDragStart,
+    handleNodeDrag,
+    handleNodeDragStop,
+  } = useGraphFlowNodes({
+    workspaceId,
     graphKey,
-    setNodes,
+    graphNodes: graphData.nodes,
+    graphEdges: graphData.edges,
   });
 
   useEffect(() => {
     if (nodes.length === 0) {
       return;
     }
-
     const timeout = window.setTimeout(() => {
       void fitView({ padding: 0.2, duration: 280 });
     }, 80);
-
     return () => window.clearTimeout(timeout);
   }, [fitView, graphKey, nodes.length]);
-
-  const handleNodeClick = useCallback<NodeMouseHandler<GraphFlowNode>>(
-    (_event, node) => {
-      const nextId = node.data.pageId;
-      setFocusedNote(node.id);
-
-      if (!nextId) {
-        return;
-      }
-
-      router.push(`/workspace/${workspaceId}?page=${nextId}`);
-    },
-    [router, setFocusedNote, workspaceId]
-  );
-
-  // 노드 드래그 시작
-  const handleNodeDragStart = useCallback(
-    (_event: React.MouseEvent, node: GraphFlowNode) => {
-      setNodes((current) =>
-        current.map((n) =>
-          n.id === node.id ? { ...n, dragging: true } : n
-        )
-      );
-    },
-    [setNodes]
-  );
-
-  // 노드 드래그 중 실시간 위치 업데이트
-  const handleNodeDrag = useCallback(
-    (_event: React.MouseEvent, node: GraphFlowNode) => {
-      setNodes((current) =>
-        current.map((n) =>
-          n.id === node.id
-            ? { ...n, position: node.position, dragging: true }
-            : n
-        )
-      );
-    },
-    [setNodes]
-  );
-
-  const handleNodeDragStop = useCallback(
-    (_event: React.MouseEvent, node: GraphFlowNode) => {
-      setNodes((current) =>
-        current.map((n) =>
-          n.id === node.id ? { ...n, dragging: false } : n
-        )
-      );
-      // 저장된 위치 업데이트
-      savedPositionsRef.current.set(node.id, { ...node.position });
-    },
-    [setNodes]
-  );
 
   const handleLocalModeToggle = useCallback(() => {
     setLocalMode(!isLocalMode);
@@ -307,42 +122,19 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
 
   const minimapNodeColor = useCallback((node: ReactFlowNode) => {
     const data = node.data as GraphCanvasNodeData;
-
-    if (data.isCurrentNote) {
-      return "rgba(210, 210, 210, 0.9)";
-    }
-
-    if (data.isOrphan) {
-      return "rgba(90, 90, 90, 0.5)";
-    }
-
+    if (data.isCurrentNote) return "rgba(210, 210, 210, 0.9)";
+    if (data.isOrphan) return "rgba(90, 90, 90, 0.5)";
     return "rgba(140, 140, 140, 0.7)";
   }, []);
 
   return (
     <>
-      <header className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-background)] px-5 py-3">
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/workspace/${workspaceId}${queryPageId ? `?page=${queryPageId}` : ""}`}
-            data-testid="graph-back-link"
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--color-text-secondary)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-text-primary)]"
-            aria-label="워크스페이스로 돌아가기"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <div className="flex items-center gap-2">
-            <div>
-              <h1 className="text-sm font-semibold text-[var(--color-text-primary)]">
-                Graph View
-              </h1>
-              <p className="text-xs text-[var(--color-text-secondary)]">
-                {graphData.nodes.length}개 노드, {graphData.edges.length}개 링크
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
+      <GraphViewHeader
+        workspaceId={workspaceId}
+        queryPageId={queryPageId}
+        nodeCount={graphData.nodes.length}
+        edgeCount={graphData.edges.length}
+      />
 
       <main className="relative flex-1 overflow-hidden bg-[var(--color-background)]">
         {toastMessage ? (
@@ -394,44 +186,13 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
             onlyRenderVisibleElements
             className="graph-view-flow"
           >
-            <Panel
-              position="top-right"
-              className="m-3 flex min-w-[240px] flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/95 p-3 shadow-sm backdrop-blur"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-medium text-[var(--color-text-primary)]">
-                  로컬 그래프
-                </span>
-                <button
-                  type="button"
-                  onClick={handleLocalModeToggle}
-                  className="rounded-md px-2 py-1 text-xs text-[var(--color-text-secondary)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-text-primary)]"
-                >
-                  {isLocalMode ? "켜짐" : "꺼짐"}
-                </button>
-              </div>
-              <div className="flex items-center gap-3">
-                <input
-                  type="range"
-                  name="graph-depth"
-                  min={1}
-                  max={4}
-                  step={1}
-                  value={localDepth}
-                  onChange={handleDepthChange}
-                  disabled={!isLocalMode}
-                  className="w-full accent-[var(--color-accent)] disabled:opacity-50"
-                />
-                <span className="w-6 text-xs text-[var(--color-text-secondary)]">
-                  {localDepth}
-                </span>
-              </div>
-              <div className="text-[11px] text-[var(--color-text-secondary)]">
-                {graphData.allNodes.length >= 500
-                  ? "Barnes-Hut 최적화가 활성화된 레이아웃입니다."
-                  : "전체 워크스페이스 링크를 표시합니다."}
-              </div>
-            </Panel>
+            <GraphControlPanel
+              isLocalMode={isLocalMode}
+              localDepth={localDepth}
+              allNodesCount={graphData.allNodes.length}
+              onLocalModeToggle={handleLocalModeToggle}
+              onDepthChange={handleDepthChange}
+            />
             <MiniMap
               pannable
               zoomable
@@ -455,3 +216,6 @@ export function GraphView({ workspaceId }: GraphViewProps) {
     </ReactFlowProvider>
   );
 }
+
+export { GraphViewCanvas };
+
