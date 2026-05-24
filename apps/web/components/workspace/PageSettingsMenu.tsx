@@ -402,7 +402,7 @@ export function PageSettingsMenu({
                     {collaborationEnabled
                       ? activeCollaborators.length > 0
                         ? `${activeCollaborators.length}명 편집 중`
-                        : "링크를 받은 로그인 사용자가 함께 편집할 수 있음"
+                        : "커서 기반 공유 편집이 기본으로 활성화됨"
                       : "비활성화됨"}
                   </p>
                 </div>
@@ -427,36 +427,41 @@ export function PageSettingsMenu({
             {/* 공동 편집 활성 시 추가 옵션 */}
             {collaborationEnabled && (
               <>
-                {/* 줄 기반 뷰 (문서 타입만) */}
+                {/* 커서 기반 안내 + 라인 기반 토글 (문서 타입만) */}
                 {pageType === "document" && (
-                  <div className="flex items-center justify-between rounded-md px-2 py-2 hover:bg-[var(--color-hover)]">
-                    <div className="flex items-center gap-2.5">
-                      <AlignLeft className="h-4 w-4 text-[var(--color-text-secondary)]" />
-                      <div>
-                        <p className="text-[13px] font-medium text-[var(--color-text-primary)]">
-                          줄 점유 표시
-                        </p>
-                        <p className="text-[11px] text-[var(--color-text-placeholder)]">
-                          블록 왼쪽에 협업자 색상 바 표시
-                        </p>
-                      </div>
+                  <>
+                    <div className="rounded-md px-2 py-2 text-[11px] text-[var(--color-text-placeholder)]">
+                      현재 모드: 커서 기반 공동 편집
                     </div>
-                    <button
-                      onClick={() => onLineIndicatorEnabledChange(!lineIndicatorEnabled)}
-                      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
-                        lineIndicatorEnabled
-                          ? "bg-[var(--color-accent)]"
-                          : "bg-zinc-300 dark:bg-zinc-600"
-                      }`}
-                      aria-label={lineIndicatorEnabled ? "줄 점유 표시 끄기" : "줄 점유 표시 켜기"}
-                    >
-                      <span
-                        className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-                          lineIndicatorEnabled ? "translate-x-4" : "translate-x-0"
+                    <div className="flex items-center justify-between rounded-md px-2 py-2 hover:bg-[var(--color-hover)]">
+                      <div className="flex items-center gap-2.5">
+                        <AlignLeft className="h-4 w-4 text-[var(--color-text-secondary)]" />
+                        <div>
+                          <p className="text-[13px] font-medium text-[var(--color-text-primary)]">
+                            라인 기반 점유 표시
+                          </p>
+                          <p className="text-[11px] text-[var(--color-text-placeholder)]">
+                            커서 표시와 함께 블록 왼쪽에 협업자 색상 바 추가
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => onLineIndicatorEnabledChange(!lineIndicatorEnabled)}
+                        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+                          lineIndicatorEnabled
+                            ? "bg-[var(--color-accent)]"
+                            : "bg-zinc-300 dark:bg-zinc-600"
                         }`}
-                      />
-                    </button>
-                  </div>
+                        aria-label={lineIndicatorEnabled ? "줄 점유 표시 끄기" : "줄 점유 표시 켜기"}
+                      >
+                        <span
+                          className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                            lineIndicatorEnabled ? "translate-x-4" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </>
                 )}
 
                 {/* 링크 복사 */}

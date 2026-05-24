@@ -112,8 +112,10 @@ export function buildOptimisticPage(
     sharePassword: null,
     databaseId: input.databaseId ?? null,
     parentDatabaseId: null,
-    collaborationEnabled: false,
-    lineIndicatorEnabled: false,
+    collaborationEnabled:
+      input.type === "document" ? input.collaborationEnabled ?? true : false,
+    lineIndicatorEnabled:
+      input.type === "document" ? input.lineIndicatorEnabled ?? false : false,
   };
 }
 

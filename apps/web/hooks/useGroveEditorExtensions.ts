@@ -2,6 +2,7 @@ import Collaboration from "@tiptap/extension-collaboration";
 import Placeholder from "@tiptap/extension-placeholder";
 import StarterKit from "@tiptap/starter-kit";
 import { GroveCollaborationCursor } from "@/components/editor/extensions/GroveCollaborationCursor";
+import { PersistentCursorPresenceExtension } from "@/components/editor/extensions/PersistentCursorPresenceExtension";
 import { LinePresenceExtension } from "@/components/editor/extensions/LinePresenceExtension";
 import { DatabaseBlock } from "@/components/editor/extensions/DatabaseBlock";
 import { CanvasBlock } from "@/components/editor/extensions/CanvasBlock";
@@ -84,6 +85,9 @@ export function useGroveEditorExtensions({
               color: userColor(sessionUserEmail ?? ""),
               image: sessionUserImage ?? null,
             },
+          }),
+          PersistentCursorPresenceExtension.configure({
+            awareness: provider.awareness,
           }),
           ...(lineIndicatorEnabled
             ? [

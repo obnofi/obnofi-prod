@@ -573,7 +573,9 @@ MossNote를 삭제합니다.
   "title": "New page",
   "type": "document",
   "workspaceId": "optional_workspace_id",
-  "parentId": "optional_parent_page_id"
+  "parentId": "optional_parent_page_id",
+  "collaborationEnabled": true,
+  "lineIndicatorEnabled": false
 }
 ```
 
@@ -586,6 +588,8 @@ MossNote를 삭제합니다.
 특이사항:
 
 - `document`는 기본 TipTap 문서 본문이 생성됩니다.
+- `document`는 기본적으로 `collaborationEnabled=true`, `lineIndicatorEnabled=false` 입니다.
+- `collaborationEnabled`, `lineIndicatorEnabled`는 문서 페이지 생성 시에만 반영됩니다.
 - `database`는 Page 생성과 함께 Database, 기본 Property들, 기본 `Table` View까지 트랜잭션으로 생성됩니다.
 
 성공 응답:
@@ -645,7 +649,9 @@ MossNote를 삭제합니다.
   "icon": "🌱",
   "coverImage": "https://... or data:image/...",
   "parentId": "optional_parent_id_or_null",
-  "isPublic": true
+  "isPublic": true,
+  "collaborationEnabled": true,
+  "lineIndicatorEnabled": false
 }
 ```
 
@@ -656,6 +662,8 @@ MossNote를 삭제합니다.
 - `headingFontSizes`는 페이지 heading 표시 크기이며 `h1`~`h5` 각각 `8`~`48` 사이 정수 `pt`만 허용됩니다.
 - `highlightColors`는 페이지 형광펜 팔레트이며 비어 있지 않은 배열이어야 합니다.
 - 허용 색상은 `yellow | green | blue | purple | pink | red | orange` 입니다.
+- `collaborationEnabled`는 문서 공동 편집의 기본 커서 기반 모드를 켜고 끕니다.
+- `lineIndicatorEnabled`는 문서에서 라인 기반 점유 표시를 추가로 켜고 끕니다.
 
 성공 응답:
 

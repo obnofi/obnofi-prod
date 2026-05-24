@@ -79,6 +79,8 @@ export async function POST(request: NextRequest) {
       parentId,
       workspaceId: requestedWorkspaceId,
       content,
+      collaborationEnabled,
+      lineIndicatorEnabled,
     } = body;
 
     if (!title || !type) {
@@ -99,6 +101,10 @@ export async function POST(request: NextRequest) {
     }
 
     const order = await getNextSiblingOrder(workspace.id, parentId || null);
+    const nextCollaborationEnabled =
+      type === "document" ? Boolean(collaborationEnabled ?? true) : false;
+    const nextLineIndicatorEnabled =
+      type === "document" ? Boolean(lineIndicatorEnabled ?? false) : false;
 
     if (type === "database") {
       const defaultColumns = getExampleDatabaseColumns();
@@ -162,7 +168,8 @@ export async function POST(request: NextRequest) {
               )
             : undefined,
         isPublic: false,
-        collaborationEnabled: type === "document",
+        collaborationEnabled: nextCollaborationEnabled,
+        lineIndicatorEnabled: nextLineIndicatorEnabled,
       },
       include: PAGE_INCLUDE,
     });

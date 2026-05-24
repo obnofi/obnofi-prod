@@ -88,6 +88,8 @@ export interface CreatePageInput {
   workspaceId: string;
   databaseId?: string | null;
   content?: object | null;
+  collaborationEnabled?: boolean;
+  lineIndicatorEnabled?: boolean;
 }
 
 export interface UpdatePageInput {
