@@ -4,6 +4,7 @@
  */
 
 import type { ID, OperationType } from '@obnofi/types/core';
+import { transformOperation as transformOp } from "./crdtTransform";
 
 // ============================================
 // Types
@@ -237,66 +238,8 @@ export class CRDTDocumentManager {
     block.modifiedBy = op.userId;
   }
 
-  /**
-   * Transform operation against concurrent operations
-   */
   private transformOperation(op: CRDTOperation): CRDTOperation {
-    // Get concurrent operations (same document, different user, similar time)
-    const concurrentOps = this.operationLog.filter(
-      existing => 
-        existing.userId !== op.userId &&
-        Math.abs(existing.timestamp - op.timestamp) < 5000 // 5 second window
-    );
-
-    let transformed = { ...op };
-
-    for (const concurrent of concurrentOps) {
-      transformed = this.transformAgainst(transformed, concurrent);
-    }
-
-    return transformed;
-  }
-
-  private transformAgainst(op: CRDTOperation, against: CRDTOperation): CRDTOperation {
-    // If operations don't affect the same block, no transformation needed
-    if (op.blockId !== against.blockId) {
-      // But check for ordering conflicts
-      if (op.type === 'insert_block' && against.type === 'insert_block') {
-        if (op.afterId === against.afterId) {
-          // Both inserting after same block - use timestamp to break tie
-          if (against.timestamp < op.timestamp) {
-            return { ...op, afterId: against.blockId };
-          }
-        }
-      }
-      return op;
-    }
-
-    // Same block - apply transformation rules
-    switch (op.type) {
-      case 'update_block':
-        if (against.type === 'update_block') {
-          // Merge updates
-          return {
-            ...op,
-            updates: { ...against.updates, ...op.updates },
-          };
-        }
-        if (against.type === 'delete_block') {
-          // Update after delete - cancel update
-          return { ...op, type: 'noop' as OperationType };
-        }
-        break;
-
-      case 'delete_block':
-        if (against.type === 'delete_block') {
-          // Double delete - noop
-          return { ...op, type: 'noop' as OperationType };
-        }
-        break;
-    }
-
-    return op;
+    return transformOp(op, this.operationLog);
   }
 
   /**
@@ -343,165 +286,7 @@ export class CRDTDocumentManager {
   }
 }
 
-// ============================================
-// Awareness (Cursor/Selection)
-// ============================================
-
-export interface AwarenessState {
-  userId: ID;
-  userName: string;
-  userColor: string;
-  cursor: CursorPosition | null;
-  selection: TextSelection | null;
-}
-
-export interface CursorPosition {
-  blockId: ID;
-  offset: number;
-}
-
-export interface TextSelection {
-  blockId: ID;
-  start: number;
-  end: number;
-}
-
-export class AwarenessManager {
-  private states = new Map<ID, AwarenessState>();
-  private localUserId: ID;
-  private listeners = new Set<(states: Map<ID, AwarenessState>) => void>();
-
-  constructor(localUserId: ID) {
-    this.localUserId = localUserId;
-  }
-
-  setLocalState(state: Omit<AwarenessState, 'userId'>): void {
-    const fullState: AwarenessState = {
-      ...state,
-      userId: this.localUserId,
-    };
-    
-    this.states.set(this.localUserId, fullState);
-    this.notifyListeners();
-  }
-
-  setRemoteState(state: AwarenessState): void {
-    this.states.set(state.userId, state);
-    this.notifyListeners();
-  }
-
-  removeRemoteState(userId: ID): void {
-    this.states.delete(userId);
-    this.notifyListeners();
-  }
-
-  getStates(): Map<ID, AwarenessState> {
-    return new Map(this.states);
-  }
-
-  getOtherStates(): Map<ID, AwarenessState> {
-    const others = new Map(this.states);
-    others.delete(this.localUserId);
-    return others;
-  }
-
-  subscribe(callback: (states: Map<ID, AwarenessState>) => void): () => void {
-    this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
-  }
-
-  private notifyListeners(): void {
-    for (const listener of this.listeners) {
-      listener(this.getStates());
-    }
-  }
-}
-
-// ============================================
-// Sync Protocol
-// ============================================
-
-export interface SyncMessage {
-  type: 'init' | 'operation' | 'awareness' | 'ping' | 'pong';
-  documentId: ID;
-  data: unknown;
-}
-
-export interface InitMessage {
-  document: CRDTDocument;
-  operations: CRDTOperation[];
-  version: number;
-}
-
-export class SyncProtocol {
-  private docManager: CRDTDocumentManager;
-  private awareness: AwarenessManager;
-  private sendMessage: (msg: SyncMessage) => void;
-
-  constructor(
-    docManager: CRDTDocumentManager,
-    awareness: AwarenessManager,
-    sendMessage: (msg: SyncMessage) => void
-  ) {
-    this.docManager = docManager;
-    this.awareness = awareness;
-    this.sendMessage = sendMessage;
-  }
-
-  /**
-   * Handle incoming sync message
-   */
-  handleMessage(msg: SyncMessage): void {
-    switch (msg.type) {
-      case 'init':
-        this.handleInit(msg.data as InitMessage);
-        break;
-      case 'operation':
-        this.handleOperation(msg.data as CRDTOperation);
-        break;
-      case 'awareness':
-        this.handleAwareness(msg.data as AwarenessState);
-        break;
-      case 'ping':
-        this.sendMessage({ type: 'pong', documentId: msg.documentId, data: null });
-        break;
-    }
-  }
-
-  /**
-   * Send local operation to server
-   */
-  sendOperation(op: CRDTOperation): void {
-    this.sendMessage({
-      type: 'operation',
-      documentId: this.docManager.getDocument().id,
-      data: op,
-    });
-  }
-
-  /**
-   * Send awareness update
-   */
-  sendAwareness(state: AwarenessState): void {
-    this.sendMessage({
-      type: 'awareness',
-      documentId: this.docManager.getDocument().id,
-      data: state,
-    });
-  }
-
-  private handleInit(data: InitMessage): void {
-    // Merge server document with local
-    for (const op of data.operations) {
-      this.docManager.applyRemote(op);
-    }
-  }
-
-  private handleOperation(op: CRDTOperation): void {
-    this.docManager.applyRemote(op);
-  }
-
-  private handleAwareness(state: AwarenessState): void {
-    this.awareness.setRemoteState(state);
-  }
-}
+export { AwarenessManager } from "./awarenessManager";
+export type { AwarenessState, CursorPosition, TextSelection } from "./awarenessManager";
+export { SyncProtocol } from "./syncProtocol";
+export type { SyncMessage, InitMessage } from "./syncProtocol";

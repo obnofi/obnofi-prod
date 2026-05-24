@@ -162,6 +162,7 @@ export async function POST(request: NextRequest) {
               )
             : undefined,
         isPublic: false,
+        collaborationEnabled: type === "document",
       },
       include: PAGE_INCLUDE,
     });

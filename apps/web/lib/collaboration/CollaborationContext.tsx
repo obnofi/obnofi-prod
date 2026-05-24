@@ -18,18 +18,16 @@ import type {
   AwarenessState as CursorAwarenessState,
   UserCursor,
 } from "@/types/collaboration";
+import { resolveCollaborationServerUrl } from "./wsUrl";
+import {
+  useCollaborationAwareness,
+  type CollaborationUser,
+} from "./useCollaborationAwareness";
 
+export type { CollaborationUser };
 
 export function userColor(seed: string): string {
   return getUserColor(seed);
-}
-
-export interface CollaborationUser {
-  clientId: number;
-  id?: string;
-  name: string;
-  color: string;
-  image?: string | null;
 }
 
 interface CollaborationContextValue {
@@ -66,28 +64,6 @@ const CollaborationContext = createContext<CollaborationContextValue>({
 
 const CollaborationPresenceContext = createContext<CollaborationUser[]>([]);
 
-function resolveCollaborationServerUrl() {
-  const configuredUrl = process.env.NEXT_PUBLIC_WS_URL?.trim();
-  if (configuredUrl) {
-    const normalized = configuredUrl.replace(/\/+$/, "");
-    return normalized.endsWith("/ws") ? normalized : `${normalized}/ws`;
-  }
-
-  if (typeof window === "undefined") {
-    return "ws://localhost:3001/ws";
-  }
-
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const { hostname, host } = window.location;
-  const isLocalHost =
-    hostname === "localhost" ||
-    hostname === "127.0.0.1" ||
-    hostname === "::1";
-
-  const baseUrl = isLocalHost ? `${protocol}//${hostname}:3001` : `${protocol}//${host}`;
-  return `${baseUrl}/ws`;
-}
-
 export function CollaborationProvider({
   pageId,
   active,
@@ -100,12 +76,8 @@ export function CollaborationProvider({
   children: ReactNode;
 }) {
   const { data: session, status: sessionStatus } = useSession();
-  const [collaborators, setCollaborators] = useState<CollaborationUser[]>([]);
   const [isSynced, setIsSynced] = useState(false);
-  const [awarenessCount, setAwarenessCount] = useState(0);
-  const [awarenessStates, setAwarenessStates] = useState<
-    Array<CursorAwarenessState & { clientId: number; image?: string | null }>
-  >([]);
+
   const localPresenceUser = useMemo(() => {
     if (!session?.user) {
       return null;
@@ -126,6 +98,7 @@ export function CollaborationProvider({
       image,
     };
   }, [session]);
+
   const collaborationUserId =
     localPresenceUser?.id ?? session?.user?.id ?? session?.user?.email ?? null;
   const collaborationReady = active && sessionStatus !== "loading" && Boolean(collaborationUserId);
@@ -149,11 +122,7 @@ export function CollaborationProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ydoc, pageId, collaborationUserId]);
 
-  // React 18 strict mode의 mount→cleanup→re-mount 더블 사이클에서
-  // 같은 ydoc/provider 인스턴스가 destroy된 후 재사용되어 doc.update 핸들러가 사라지는
-  // 버그를 회피하기 위해 destroy를 마이크로태스크 다음 tick으로 지연시킨다.
-  // 같은 페어로 다시 mount되면 destroy를 취소해 인스턴스를 살려둔다 (드롭아웃 없음).
-  // 페어 자체가 바뀌면(pageId 변경 등) 취소되지 않고 정상적으로 destroy된다.
+  // strict mode 재마운트 대응: destroy를 다음 tick으로 지연시켜 같은 인스턴스 재사용을 허용.
   const pendingDestroyRef = useRef<{
     provider: WebsocketProvider;
     ydoc: Y.Doc;
@@ -162,16 +131,10 @@ export function CollaborationProvider({
 
   useEffect(() => {
     if (!provider || !ydoc) {
-      setCollaborators([]);
       setIsSynced(false);
-      setAwarenessCount(0);
-      setAwarenessStates([]);
       return;
     }
 
-    // 예약된 destroy 처리 — strict mode 재마운트 회복 및 세션 로드 후 provider 교체 대응.
-    // provider만 바뀌고 ydoc은 같은 경우(session 로드 후 userId 확정): 이전 provider만 destroy.
-    // 둘 다 같은 경우(strict mode toss): timer만 취소하여 인스턴스 유지.
     const pending = pendingDestroyRef.current;
     if (pending) {
       clearTimeout(pending.timer);
@@ -202,12 +165,8 @@ export function CollaborationProvider({
     return () => {
       window.removeEventListener("pagehide", handlePageHide);
       window.removeEventListener("pageshow", handlePageShow);
-      // 페이지 전환 직후 이전 세션이 유령 협업자로 남지 않도록 로컬 awareness를 먼저 제거한다.
       provider.awareness.setLocalState(null);
-      setCollaborators([]);
       setIsSynced(false);
-      setAwarenessCount(0);
-      setAwarenessStates([]);
       const timer = setTimeout(() => {
         provider.disconnect();
         provider.destroy();
@@ -228,7 +187,6 @@ export function CollaborationProvider({
     const handleSync = (synced: boolean) => setIsSynced(synced);
     provider.on('sync', handleSync);
 
-    // WS 연결 실패 시 저장이 영원히 막히므로, disconnected 즉시 + 5초 타임아웃 이중 폴백
     const handleStatus = ({ status }: { status: string }) => {
       if (status === 'disconnected') setIsSynced(true);
     };
@@ -266,69 +224,8 @@ export function CollaborationProvider({
     };
   }, [localPresenceUser, provider]);
 
-  useEffect(() => {
-    if (!provider) {
-      setCollaborators([]);
-      setAwarenessCount(0);
-      setAwarenessStates([]);
-      return;
-    }
-
-    const update = () => {
-      const states = provider.awareness.getStates();
-      const localId = provider.awareness.clientID;
-      setAwarenessCount(states.size);
-      const users: CollaborationUser[] = [];
-      const nextAwarenessStates: Array<
-        CursorAwarenessState & { clientId: number; image?: string | null }
-      > = [];
-      states.forEach((state, clientId) => {
-        const awarenessState = state as ProviderAwarenessState;
-        const presenceUser = awarenessState.user as
-          | { id?: unknown; name?: unknown; color?: unknown; image?: unknown }
-          | undefined;
-        const userCursor = awarenessState.userCursor as UserCursor | null | undefined;
-        const awarenessUserId =
-          typeof presenceUser?.id === "string" ? presenceUser.id : null;
-        const awarenessUserName =
-          typeof presenceUser?.name === "string" ? presenceUser.name : "User";
-        const awarenessColor =
-          typeof presenceUser?.color === "string" ? presenceUser.color : "#888";
-        const awarenessImage =
-          typeof presenceUser?.image === "string" ? presenceUser.image : null;
-
-        if (awarenessUserId) {
-          nextAwarenessStates.push({
-            clientId,
-            userId: awarenessUserId,
-            userName: awarenessUserName,
-            color: awarenessColor,
-            userCursor: userCursor ?? null,
-            image: awarenessImage,
-          });
-        }
-
-        if (!presenceUser || clientId === localId) {
-          return;
-        }
-
-        users.push({
-          clientId,
-          id: awarenessUserId ?? undefined,
-          name: awarenessUserName,
-          color: awarenessColor,
-          image: awarenessImage,
-        });
-      });
-      setCollaborators(users);
-      setAwarenessStates(nextAwarenessStates);
-    };
-    setCollaborators([]);
-    setAwarenessStates([]);
-    provider.awareness.on("change", update);
-    update();
-    return () => provider.awareness.off("change", update);
-  }, [provider]);
+  const { collaborators, awarenessCount, awarenessStates } =
+    useCollaborationAwareness(provider);
 
   const updateCursor = useMemo(
     () => (fields: Partial<UserCursor> | null) => {

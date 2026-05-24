@@ -14,6 +14,16 @@ fastify.register(async (fastify) => {
     const docId = url.searchParams.get('docId') ?? 'default'
     const userId = url.searchParams.get('userId')
     const cookieHeader = req.headers.cookie ?? null
+    const pendingMessages: Array<ArrayBuffer | Buffer | Buffer[]> = []
+    let connectionReady = false
+
+    const queueMessage = (rawData: ArrayBuffer | Buffer | Buffer[]) => {
+      if (!connectionReady) {
+        pendingMessages.push(rawData)
+      }
+    }
+
+    socket.on('message', queueMessage)
 
     checkPageAccess(docId, cookieHeader, userId)
       .then((allowed) => {
@@ -23,7 +33,9 @@ fastify.register(async (fastify) => {
           return
         }
         fastify.log.info({ docId, userId }, 'collaboration access granted')
-        return setupConnection(socket as unknown as WebSocket, docId)
+        connectionReady = true
+        socket.off('message', queueMessage)
+        return setupConnection(socket as unknown as WebSocket, docId, pendingMessages)
       })
       .catch((err) => {
         fastify.log.error(err)
@@ -39,6 +51,16 @@ fastify.register(async (fastify) => {
         : url.searchParams.get('docId') ?? 'default'
     const userId = url.searchParams.get('userId')
     const cookieHeader = req.headers.cookie ?? null
+    const pendingMessages: Array<ArrayBuffer | Buffer | Buffer[]> = []
+    let connectionReady = false
+
+    const queueMessage = (rawData: ArrayBuffer | Buffer | Buffer[]) => {
+      if (!connectionReady) {
+        pendingMessages.push(rawData)
+      }
+    }
+
+    socket.on('message', queueMessage)
 
     checkPageAccess(docId, cookieHeader, userId)
       .then((allowed) => {
@@ -48,7 +70,9 @@ fastify.register(async (fastify) => {
           return
         }
         fastify.log.info({ docId, userId }, 'collaboration access granted')
-        return setupConnection(socket as unknown as WebSocket, docId)
+        connectionReady = true
+        socket.off('message', queueMessage)
+        return setupConnection(socket as unknown as WebSocket, docId, pendingMessages)
       })
       .catch((err) => {
         fastify.log.error(err)

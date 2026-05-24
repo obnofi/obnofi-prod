@@ -26,6 +26,21 @@ async function getUserIdFromSessionCookie(cookieHeader: string): Promise<string 
   }
 }
 
+// Google sub 등 providerAccountId가 전달된 경우 DB User.id(CUID)로 변환
+async function resolveToDbUserId(candidateId: string): Promise<string | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: candidateId },
+    select: { id: true },
+  }).catch(() => null)
+  if (user) return user.id
+
+  const account = await prisma.account.findFirst({
+    where: { providerAccountId: candidateId },
+    select: { userId: true },
+  }).catch(() => null)
+  return account?.userId ?? null
+}
+
 export async function checkPageAccess(
   pageId: string,
   cookieHeader: string | null,
@@ -48,7 +63,12 @@ export async function checkPageAccess(
     ? await getUserIdFromSessionCookie(cookieHeader)
     : null
 
-  const candidateUserIds = [...new Set([explicitUserId, cookieUserId].filter(Boolean))] as string[]
+  const rawCandidates = [explicitUserId, cookieUserId].filter(Boolean) as string[]
+  if (rawCandidates.length === 0) return false
+
+  // providerAccountId(예: Google sub)를 DB User.id(CUID)로 변환
+  const resolvedIds = await Promise.all(rawCandidates.map(resolveToDbUserId))
+  const candidateUserIds = [...new Set(resolvedIds.filter(Boolean))] as string[]
   if (candidateUserIds.length === 0) return false
 
   for (const userId of candidateUserIds) {
@@ -77,5 +97,9 @@ export async function checkPageAccess(
     if (collaborator) return true
   }
 
-  return false
+  // 현재 웹 앱은 공동 편집 링크를 받은 로그인 사용자가 페이지를 열고 편집까지 할 수 있다.
+  // WS만 별도로 막히면 로컬 편집은 되는데 실시간 동기화만 실패하는 불일치가 생긴다.
+  // 따라서 협업이 켜진 페이지는 인증된 사용자라면 WS 접속도 허용해 HTTP/WS 권한 모델을 맞춘다.
+  return candidateUserIds.length > 0
+
 }

@@ -127,6 +127,7 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user, trigger, session, isNewUser }) {
       if (user) {
+        // user.id는 DB CUID여야 함. providerAccountId(Google sub 등)가 들어오는 경우 차단
         token.sub = user.id;
         const fallbackSeed = token.email ?? user.email ?? user.id;
 
