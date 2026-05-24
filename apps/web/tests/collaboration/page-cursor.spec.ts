@@ -84,3 +84,66 @@ test("page presence: sidebar avatar appears for co-present user, disappears on d
     await contextB.close();
   }
 });
+
+test("document cursor: userA mouse movement shows figjam-like pointer in userB view", async ({
+  browser,
+}) => {
+  test.setTimeout(60000);
+
+  const contextA = await browser.newContext({ baseURL: "http://localhost:3000" });
+  const pageA = await contextA.newPage();
+  const workspaceId = await getWorkspaceId(pageA, "dev1");
+  const userAId = getUserId("dev1");
+
+  const contextB = await browser.newContext({ baseURL: "http://localhost:3000" });
+  const pageB = await contextB.newPage();
+  await signInAs(pageB, "dev2");
+
+  const { id: docPageId } = await createCollabPage(
+    pageA,
+    workspaceId,
+    "document",
+    `Document Cursor Test ${Date.now()}`,
+    ["dev2"]
+  );
+
+  await pageA.goto(`/workspace/${workspaceId}?page=${docPageId}`);
+  await pageA.waitForSelector('[data-testid="workspace-editor"]', { timeout: 15000 });
+
+  await pageB.goto(`/workspace/${workspaceId}?page=${docPageId}`);
+  await pageB.waitForSelector('[data-testid="workspace-editor"]', { timeout: 15000 });
+
+  try {
+    const editorBox = await pageA.getByTestId("workspace-editor").boundingBox();
+    if (!editorBox) throw new Error("Editor bounding box not found");
+
+    await pageA.mouse.move(editorBox.x + editorBox.width / 3, editorBox.y + 80);
+    await pageA.mouse.move(editorBox.x + editorBox.width / 2, editorBox.y + 140);
+
+    await expect
+      .poll(
+        () => pageB.locator(`[data-user-cursor="${userAId}"]`).count(),
+        { timeout: 8000, message: `data-user-cursor="${userAId}" should appear in userB's editor` }
+      )
+      .toBeGreaterThan(0);
+
+    const boxBefore = await pageB.locator(`[data-user-cursor="${userAId}"]`).boundingBox();
+    if (!boxBefore) throw new Error("Remote document cursor bounding box not found");
+
+    await pageA.mouse.move(editorBox.x + editorBox.width - 120, editorBox.y + 240);
+
+    await expect
+      .poll(
+        async () => {
+          const box = await pageB.locator(`[data-user-cursor="${userAId}"]`).boundingBox();
+          if (!box) return false;
+          return Math.abs(box.x - boxBefore.x) > 5 || Math.abs(box.y - boxBefore.y) > 5;
+        },
+        { timeout: 5000, message: "Document cursor position should change after userA mouse move" }
+      )
+      .toBe(true);
+  } finally {
+    await contextA.close();
+    await contextB.close();
+  }
+});

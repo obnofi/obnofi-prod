@@ -39,17 +39,32 @@ export async function createCollabPage(
   workspaceId: string,
   type: "document" | "canvas" | "database",
   title: string,
-  collaboratorUsernames: string[] = []
+  collaboratorUsernames: string[] = [],
+  options: {
+    collaborationEnabled?: boolean;
+    lineIndicatorEnabled?: boolean;
+  } = {}
 ): Promise<{ id: string; databaseId?: string }> {
   const res = await page.context().request.post("/api/pages", {
-    data: { title, type, workspaceId },
+    data: {
+      title,
+      type,
+      workspaceId,
+      collaborationEnabled: options.collaborationEnabled,
+      lineIndicatorEnabled: options.lineIndicatorEnabled,
+    },
   });
   if (!res.ok()) throw new Error(`POST /api/pages failed: ${await res.text()}`);
   const created = (await res.json()) as { id: string; databaseId?: string };
 
-  await page.context().request.patch(`/api/pages/${created.id}`, {
-    data: { collaborationEnabled: true },
-  });
+  if (options.collaborationEnabled !== false) {
+    await page.context().request.patch(`/api/pages/${created.id}`, {
+      data: {
+        collaborationEnabled: true,
+        lineIndicatorEnabled: options.lineIndicatorEnabled ?? false,
+      },
+    });
+  }
 
   for (const username of collaboratorUsernames) {
     const email = `${username}@obnofi.com`;

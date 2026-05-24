@@ -14,7 +14,10 @@ async function signInAsDeveloper(page: Page) {
   });
 }
 
-async function gotoCollaborativeDocument(page: Page) {
+async function gotoCollaborativeDocument(
+  page: Page,
+  options: { lineIndicatorEnabled?: boolean } = {}
+) {
   await signInAsDeveloper(page);
   await page.goto("/workspace");
   await expect(page).toHaveURL(/\/workspace\/[^/?]+/);
@@ -28,7 +31,7 @@ async function gotoCollaborativeDocument(page: Page) {
       type: "document",
       workspaceId,
       collaborationEnabled: true,
-      lineIndicatorEnabled: true,
+      lineIndicatorEnabled: options.lineIndicatorEnabled ?? false,
       content: {
         type: "doc",
         content: [
@@ -47,7 +50,7 @@ async function gotoCollaborativeDocument(page: Page) {
   await page.context().request.patch(`/api/pages/${createdPage.id}`, {
     data: {
       collaborationEnabled: true,
-      lineIndicatorEnabled: true,
+      lineIndicatorEnabled: options.lineIndicatorEnabled ?? false,
     },
   });
 
@@ -64,7 +67,7 @@ async function focusEditor(page: Page) {
   return editor;
 }
 
-test("공유편집에서 실시간 커서와 편집 상태가 보인다", async ({ browser }) => {
+test("공유편집은 기본으로 실시간 커서와 편집 상태를 보여준다", async ({ browser }) => {
   test.setTimeout(120000);
 
   const primaryContext = await browser.newContext({
@@ -92,9 +95,7 @@ test("공유편집에서 실시간 커서와 편집 상태가 보인다", async 
       .poll(async () => page.locator(".collaboration-cursor__caret").count())
       .toBeGreaterThan(0);
 
-    await expect
-      .poll(async () => page.locator(".line-presence-block").count())
-      .toBeGreaterThan(0);
+    await expect(page.locator(".line-presence-block")).toHaveCount(0);
 
     await peerEditor.press("End");
     await peerPage.keyboard.type(" live cursor");
@@ -102,6 +103,39 @@ test("공유편집에서 실시간 커서와 편집 상태가 보인다", async 
     await expect(page.getByTestId("workspace-editor-input")).toContainText(
       "shared grove seed live cursor"
     );
+  } finally {
+    await primaryContext.close();
+    await secondContext.close();
+  }
+});
+
+test("공유편집에서 라인 기반 점유 표시는 토글로 추가된다", async ({ browser }) => {
+  test.setTimeout(120000);
+
+  const primaryContext = await browser.newContext({
+    baseURL: "http://localhost:3000",
+  });
+  const page = await primaryContext.newPage();
+  const { workspaceId, pageId } = await gotoCollaborativeDocument(page, {
+    lineIndicatorEnabled: true,
+  });
+
+  const secondContext = await browser.newContext({
+    baseURL: "http://localhost:3000",
+  });
+  const peerPage = await secondContext.newPage();
+
+  try {
+    await signInAsDeveloper(peerPage);
+    await peerPage.goto(`/workspace/${workspaceId}?page=${pageId}`);
+    await expect(peerPage.getByTestId("workspace-editor")).toBeVisible();
+
+    await focusEditor(peerPage);
+    await page.bringToFront();
+
+    await expect
+      .poll(async () => page.locator(".line-presence-block").count())
+      .toBeGreaterThan(0);
   } finally {
     await primaryContext.close();
     await secondContext.close();
