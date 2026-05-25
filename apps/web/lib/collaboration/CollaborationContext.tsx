@@ -4,14 +4,13 @@ import {
   createContext,
   useContext,
   useMemo,
-  useEffect,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { useSession } from "next-auth/react";
+import { useJungleCursor } from "@/lib/cursor/jungleCursor";
 import { pickProfileImagePreset } from "@/lib/profileImagePresets";
 import { getUserColor } from "@/lib/collaborationUtils";
 import type {
@@ -23,6 +22,8 @@ import {
   useCollaborationAwareness,
   type CollaborationUser,
 } from "./useCollaborationAwareness";
+import { useProviderConnection } from "./useProviderConnection";
+import { usePresenceSync } from "./usePresenceSync";
 
 export type { CollaborationUser };
 
@@ -76,6 +77,7 @@ export function CollaborationProvider({
   children: ReactNode;
 }) {
   const { data: session, status: sessionStatus } = useSession();
+  const jungleCursor = useJungleCursor();
   const [isSynced, setIsSynced] = useState(false);
 
   const localPresenceUser = useMemo(() => {
@@ -85,7 +87,7 @@ export function CollaborationProvider({
 
     const name = session.user.name ?? session.user.email ?? "Anonymous";
     const seed = session.user.email ?? session.user.id ?? name;
-    const color = userColor(seed);
+    const color = jungleCursor.color;
     const image =
       typeof session.user.image === "string" && session.user.image.length > 0
         ? session.user.image
@@ -96,18 +98,19 @@ export function CollaborationProvider({
       name,
       color,
       image,
+      cursorColorKey: jungleCursor.colorKey,
+      cursorVariant: jungleCursor.variant,
     };
-  }, [session]);
+  }, [jungleCursor.color, jungleCursor.colorKey, jungleCursor.variant, session]);
 
   const collaborationUserId =
     localPresenceUser?.id ?? session?.user?.id ?? session?.user?.email ?? null;
   const collaborationReady = active && sessionStatus !== "loading" && Boolean(collaborationUserId);
 
   // active=false인 페이지(문서 타입이 아님 / 공유편집 비활성)는 ydoc·provider를 만들지 않는다.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const ydoc = useMemo(
     () => (collaborationReady ? new Y.Doc() : null),
-    [pageId, collaborationReady]
+    [collaborationReady]
   );
 
   const provider = useMemo(() => {
@@ -122,107 +125,8 @@ export function CollaborationProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ydoc, pageId, collaborationUserId]);
 
-  // strict mode 재마운트 대응: destroy를 다음 tick으로 지연시켜 같은 인스턴스 재사용을 허용.
-  const pendingDestroyRef = useRef<{
-    provider: WebsocketProvider;
-    ydoc: Y.Doc;
-    timer: ReturnType<typeof setTimeout>;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!provider || !ydoc) {
-      setIsSynced(false);
-      return;
-    }
-
-    const pending = pendingDestroyRef.current;
-    if (pending) {
-      clearTimeout(pending.timer);
-      pendingDestroyRef.current = null;
-      if (pending.provider !== provider) {
-        pending.provider.disconnect();
-        pending.provider.destroy();
-      }
-      if (pending.ydoc !== ydoc) {
-        pending.ydoc.destroy();
-      }
-    }
-
-    provider.connect();
-
-    const handlePageHide = () => {
-      setIsSynced(false);
-      provider.disconnect();
-    };
-
-    const handlePageShow = () => {
-      provider.connect();
-    };
-
-    window.addEventListener("pagehide", handlePageHide);
-    window.addEventListener("pageshow", handlePageShow);
-
-    return () => {
-      window.removeEventListener("pagehide", handlePageHide);
-      window.removeEventListener("pageshow", handlePageShow);
-      provider.awareness.setLocalState(null);
-      setIsSynced(false);
-      const timer = setTimeout(() => {
-        provider.disconnect();
-        provider.destroy();
-        ydoc.destroy();
-        if (pendingDestroyRef.current?.provider === provider) {
-          pendingDestroyRef.current = null;
-        }
-      }, 0);
-      pendingDestroyRef.current = { provider, ydoc, timer };
-    };
-  }, [provider, ydoc]);
-
-  useEffect(() => {
-    if (!provider) {
-      setIsSynced(false);
-      return;
-    }
-    const handleSync = (synced: boolean) => setIsSynced(synced);
-    provider.on('sync', handleSync);
-
-    const handleStatus = ({ status }: { status: string }) => {
-      if (status === 'disconnected') setIsSynced(true);
-    };
-    provider.on('status', handleStatus);
-    const fallbackTimer = setTimeout(() => setIsSynced(true), 5000);
-
-    return () => {
-      provider.off('sync', handleSync);
-      provider.off('status', handleStatus);
-      clearTimeout(fallbackTimer);
-    };
-  }, [provider]);
-
-  useEffect(() => {
-    if (!provider || !localPresenceUser) return;
-
-    const syncPresenceUser = () => {
-      const currentState =
-        (provider.awareness.getLocalState() as Record<string, unknown> | null) ?? {};
-      provider.awareness.setLocalState({
-        ...currentState,
-        user: localPresenceUser,
-        userCursor:
-          (currentState.userCursor as CursorAwarenessState["userCursor"] | undefined) ?? null,
-      });
-    };
-
-    syncPresenceUser();
-    provider.on("sync", syncPresenceUser);
-    provider.on("status", syncPresenceUser);
-
-    return () => {
-      provider.off("sync", syncPresenceUser);
-      provider.off("status", syncPresenceUser);
-    };
-  }, [localPresenceUser, provider]);
+  useProviderConnection(provider, ydoc, setIsSynced);
+  usePresenceSync(provider, localPresenceUser);
 
   const { collaborators, awarenessCount, awarenessStates } =
     useCollaborationAwareness(provider);

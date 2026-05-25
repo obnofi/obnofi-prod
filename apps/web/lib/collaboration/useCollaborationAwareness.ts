@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { WebsocketProvider } from "y-websocket";
 import type { AwarenessState as CursorAwarenessState, UserCursor } from "@/types/collaboration";
+import type {
+  JungleCursorColorKey,
+  JungleCursorVariant,
+} from "@/lib/cursor/jungleCursor";
 
 export interface CollaborationUser {
   clientId: number;
@@ -12,7 +16,7 @@ export interface CollaborationUser {
 
 interface ProviderAwarenessState {
   user?: unknown;
-  cursor?: unknown;
+  cursor?: { anchor?: unknown; head?: unknown } | null;
   userCursor?: UserCursor | null;
 }
 
@@ -46,9 +50,20 @@ export function useCollaborationAwareness(provider: WebsocketProvider | null): {
       states.forEach((state, clientId) => {
         const awarenessState = state as ProviderAwarenessState;
         const presenceUser = awarenessState.user as
-          | { id?: unknown; name?: unknown; color?: unknown; image?: unknown }
+          | {
+              id?: unknown;
+              name?: unknown;
+              color?: unknown;
+              image?: unknown;
+              cursorColorKey?: unknown;
+              cursorVariant?: unknown;
+            }
           | undefined;
         const userCursor = awarenessState.userCursor as UserCursor | null | undefined;
+        const hasTextCursor = Boolean(
+          awarenessState.cursor &&
+            (awarenessState.cursor.anchor != null || awarenessState.cursor.head != null)
+        );
         const awarenessUserId =
           typeof presenceUser?.id === "string" ? presenceUser.id : null;
         const awarenessUserName =
@@ -57,6 +72,14 @@ export function useCollaborationAwareness(provider: WebsocketProvider | null): {
           typeof presenceUser?.color === "string" ? presenceUser.color : "#888";
         const awarenessImage =
           typeof presenceUser?.image === "string" ? presenceUser.image : null;
+        const awarenessCursorColorKey =
+          typeof presenceUser?.cursorColorKey === "string"
+            ? (presenceUser.cursorColorKey as JungleCursorColorKey)
+            : undefined;
+        const awarenessCursorVariant =
+          typeof presenceUser?.cursorVariant === "string"
+            ? (presenceUser.cursorVariant as JungleCursorVariant)
+            : undefined;
 
         if (awarenessUserId) {
           nextAwarenessStates.push({
@@ -64,6 +87,9 @@ export function useCollaborationAwareness(provider: WebsocketProvider | null): {
             userId: awarenessUserId,
             userName: awarenessUserName,
             color: awarenessColor,
+            cursorColorKey: awarenessCursorColorKey,
+            cursorVariant: awarenessCursorVariant,
+            hasTextCursor,
             userCursor: userCursor ?? null,
             image: awarenessImage,
           });

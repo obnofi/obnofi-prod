@@ -1,3 +1,8 @@
+import type {
+  JungleCursorColorKey,
+  JungleCursorVariant,
+} from "@/lib/cursor/jungleCursor";
+
 export interface UserCursor {
   type: "page" | "canvas" | "database";
   pageId: string;
@@ -9,5 +14,8 @@ export interface AwarenessState {
   userId: string;
   userName: string;
   color: string;
+  cursorColorKey?: JungleCursorColorKey;
+  cursorVariant?: JungleCursorVariant;
+  hasTextCursor?: boolean;
   userCursor: UserCursor | null;
 }

@@ -1,10 +1,20 @@
 import { Extension } from "@tiptap/core";
 import { yCursorPlugin } from "@tiptap/y-tiptap";
 import type { Awareness } from "y-protocols/awareness";
+import {
+  getJungleCursorAssetPath,
+  getJungleCursorRenderMetrics,
+} from "@/lib/cursor/jungleCursor";
 
 export interface GroveCollaborationCursorOptions {
   awareness: Awareness;
-  user: { name: string; color: string; image?: string | null };
+  user: {
+    name: string;
+    color: string;
+    image?: string | null;
+    cursorColorKey?: "green" | "leafy" | "blue" | "pink";
+    cursorVariant?: "pointing" | "highlighting" | "fucku";
+  };
 }
 
 // CollaborationCursor replacement that uses @tiptap/y-tiptap's yCursorPlugin.
@@ -25,10 +35,18 @@ export const GroveCollaborationCursor =
       const { awareness, user } = this.options;
       return [
         yCursorPlugin(awareness, {
-          cursorBuilder: (cursorUser: { name?: string; color?: string; image?: string | null }) => {
+          cursorBuilder: (cursorUser: {
+            name?: string;
+            color?: string;
+            image?: string | null;
+            cursorColorKey?: "green" | "leafy" | "blue" | "pink";
+            cursorVariant?: "pointing" | "highlighting" | "fucku";
+          }) => {
             const name = cursorUser?.name ?? user.name;
             const color = cursorUser?.color ?? user.color;
-            const image = cursorUser?.image ?? user.image ?? null;
+            const cursorColorKey = cursorUser?.cursorColorKey ?? user.cursorColorKey ?? "green";
+            const cursorVariant = cursorUser?.cursorVariant ?? user.cursorVariant ?? "pointing";
+            const metrics = getJungleCursorRenderMetrics(cursorVariant);
 
             const caret = document.createElement("span");
             caret.classList.add("collaboration-cursor__caret");
@@ -39,23 +57,22 @@ export const GroveCollaborationCursor =
             badge.setAttribute("style", `--cursor-color: ${color}`);
             badge.setAttribute("title", name);
 
-            if (image) {
-              const avatar = document.createElement("img");
-              avatar.classList.add("collaboration-cursor__avatar");
-              avatar.setAttribute("src", image);
-              avatar.setAttribute("alt", name);
-              badge.appendChild(avatar);
-            } else {
-              const initials = document.createElement("span");
-              initials.classList.add("collaboration-cursor__initial");
-              initials.textContent = name.charAt(0).toUpperCase();
-              badge.appendChild(initials);
-            }
-
             const label = document.createElement("div");
             label.classList.add("collaboration-cursor__label");
             label.textContent = name;
 
+            const cursorIcon = document.createElement("img");
+            cursorIcon.classList.add("collaboration-cursor__icon");
+            cursorIcon.setAttribute(
+              "src",
+              getJungleCursorAssetPath(cursorVariant, cursorColorKey)
+            );
+            cursorIcon.setAttribute("alt", "");
+            cursorIcon.setAttribute("aria-hidden", "true");
+            cursorIcon.style.width = `${metrics.width}px`;
+            cursorIcon.style.height = `${metrics.height}px`;
+
+            badge.appendChild(cursorIcon);
             badge.appendChild(label);
             caret.appendChild(badge);
             return caret;
