@@ -15,6 +15,10 @@ function isOptimisticPageId(pageId: string) {
   return pageId.startsWith("optimistic-");
 }
 
+function buildPersistKey(pageId: string, content: object) {
+  return `${pageId}:${JSON.stringify(content)}`;
+}
+
 export function useAutoSave({
   pageId,
   getContent,
@@ -32,6 +36,8 @@ export function useAutoSave({
   const getContentRef = useRef(getContent);
   const pageIdRef = useRef(pageId);
   const onSavedRef = useRef(onSaved);
+  const inFlightPersistKeyRef = useRef<string | null>(null);
+  const lastPersistedKeyRef = useRef<string | null>(null);
 
   useEffect(() => { isDirtyRef.current = isDirty; }, [isDirty]);
   useEffect(() => { getContentRef.current = getContent; }, [getContent]);
@@ -50,11 +56,20 @@ export function useAutoSave({
         return false;
       }
 
+      const persistKey = buildPersistKey(targetPageId, content);
+      if (
+        persistKey === inFlightPersistKeyRef.current ||
+        persistKey === lastPersistedKeyRef.current
+      ) {
+        return true;
+      }
+
       if (updateStatus) {
         markSaving();
       }
 
       try {
+        inFlightPersistKeyRef.current = persistKey;
         const res = await fetch(`/api/pages/${targetPageId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -67,6 +82,7 @@ export function useAutoSave({
         if (updateStatus) {
           markSaved();
         }
+        lastPersistedKeyRef.current = persistKey;
         onSavedRef.current?.(content);
         return true;
       } catch {
@@ -74,6 +90,10 @@ export function useAutoSave({
           markError();
         }
         return false;
+      } finally {
+        if (inFlightPersistKeyRef.current === persistKey) {
+          inFlightPersistKeyRef.current = null;
+        }
       }
     },
     [markError, markSaved, markSaving]
