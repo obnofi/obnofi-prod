@@ -71,16 +71,8 @@ export function useProviderConnection(
     const handleSync = (synced: boolean) => setIsSynced(synced);
     provider.on("sync", handleSync);
 
-    const handleStatus = ({ status }: { status: string }) => {
-      if (status === "disconnected") setIsSynced(true);
-    };
-    provider.on("status", handleStatus);
-    const fallbackTimer = setTimeout(() => setIsSynced(true), 5000);
-
     return () => {
       provider.off("sync", handleSync);
-      provider.off("status", handleStatus);
-      clearTimeout(fallbackTimer);
     };
   }, [provider, setIsSynced]);
 }
