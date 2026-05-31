@@ -21,10 +21,10 @@ export interface GraphLinkEdge {
 }
 
 const WIKILINK_REGEX = /\[\[([^[\]]+)\]\]/g;
-const MIN_NODE_SIZE = 18;
+const MIN_NODE_SIZE = 8;
 const MAX_NODE_SIZE = 24;
-const MIN_EDGE_WIDTH = 0.5;
-const MAX_EDGE_WIDTH = 1.5;
+const MIN_EDGE_WIDTH = 0.4;
+const MAX_EDGE_WIDTH = 1.2;
 
 type RawReference = {
   pageId?: string;
@@ -184,10 +184,6 @@ export function createGraphFromPages(
   pages.forEach((page) => {
     const references: RawReference[] = [];
     collectReferences(page.content, references);
-
-    if (page.parentId && pageIds.has(page.parentId)) {
-      addEdge(page.parentId, page.id, false);
-    }
 
     references.forEach((reference) => {
       let targetId: string | undefined;

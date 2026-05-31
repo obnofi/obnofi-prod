@@ -95,6 +95,7 @@ export function useGraphSimulation({
   const isRunningRef = useRef(false);
   const currentNodesRef = useRef(nodes);
   const currentEdgesRef = useRef(edges);
+  const draggingIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     currentNodesRef.current = nodes;
@@ -227,8 +228,8 @@ export function useGraphSimulation({
       return;
     }
 
-    let hasDraggedNode = false;
-    let isDragging = false;
+    const prevDragging = draggingIdsRef.current;
+    const nowDragging = new Set<string>();
 
     for (const node of nodes) {
       const simNode = nodeMapRef.current.get(node.id);
@@ -238,29 +239,24 @@ export function useGraphSimulation({
       }
 
       if (node.dragging) {
+        nowDragging.add(node.id);
         simNode.fx = node.position.x;
         simNode.fy = node.position.y;
-        hasDraggedNode = true;
-        isDragging = true;
-        continue;
-      }
-
-      if (simNode.fx !== null || simNode.fy !== null) {
+      } else if (simNode.fx !== null || simNode.fy !== null) {
         simNode.fx = null;
         simNode.fy = null;
-        hasDraggedNode = true;
       }
     }
 
-    if (hasDraggedNode) {
-      simulation.alpha(isDragging ? 0.22 : 0.12);
-      simulation.alphaTarget(isDragging ? 0.08 : 0.03).restart();
+    const startedDragging = [...nowDragging].some((id) => !prevDragging.has(id));
+    const stoppedDragging = [...prevDragging].some((id) => !nowDragging.has(id));
 
-      if (!isDragging) {
-        window.setTimeout(() => {
-          simulation.alphaTarget(0);
-        }, 180);
-      }
+    draggingIdsRef.current = nowDragging;
+
+    if (startedDragging) {
+      simulation.alphaTarget(0.15).restart();
+    } else if (stoppedDragging) {
+      simulation.alphaTarget(0);
     }
   }, [nodes]);
 }

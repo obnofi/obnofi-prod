@@ -131,8 +131,6 @@ export function buildGraphData(pages: Page[]): {
       } as Node<CustomNoteNodeData, "customNote">);
     }
 
-    if (page.parentId) addEdge(page.parentId, page.id);
-
     const contentData = pageContentData.get(page.id);
     if (contentData) {
       for (const ref of contentData.pageReferences) {
