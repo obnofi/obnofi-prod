@@ -43,7 +43,7 @@ export function useClearingActions({
   persistElement,
   elementLookup,
 }: ClearingActionsOptions) {
-  const handleCreateElement = async (kind: "sticky" | "connector") => {
+  const handleCreateElement = async (kind: "sticky" | "connector" | "vine") => {
     const activeRoom = currentRoomRef.current;
     const activeUser = currentUserRef.current;
     if (!activeRoom || !activeUser) return;

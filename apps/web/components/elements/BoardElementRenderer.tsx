@@ -8,8 +8,9 @@ import { SectionTool } from "@/components/elements/SectionTool";
 import { ShapeTool } from "@/components/elements/ShapeTool";
 import { StickyTool } from "@/components/elements/StickyTool";
 import { TextTool } from "@/components/elements/TextTool";
+import { VineTool } from "@/components/elements/VineTool";
 import { VoteBadge } from "@/components/elements/VoteBadge";
-import type { Element, StickyElement } from "@obnofi/types/clearing";
+import type { Element, StickyElement, VineElement } from "@obnofi/types/clearing";
 import { useElementStore } from "@/store/useElementStore";
 import { resolveColor, getConnectorPoints } from "@/lib/boardElementUtils";
 
@@ -141,6 +142,10 @@ export function BoardElementRenderer({
 
       {element.type === "text" ? (
         <TextTool autoEdit={element.content.text.length === 0} element={element} isSelected={isSelected} onPointerDown={onPointerDown} />
+      ) : null}
+
+      {element.type === "vine" ? (
+        <VineTool autoEdit={element.content.text.length === 0} element={element as VineElement} isSelected={isSelected} />
       ) : null}
 
       {element.type === "image" ? (

@@ -8,9 +8,12 @@ export function buildConnectorElement(
   index: number
 ): Element {
   const firstSticky = elements.find((element) => element.type === "sticky");
+  const firstVine = elements.find((element) => element.type === "vine");
   const firstText = elements.find((element) => element.type === "text");
-  const fromPoint = firstSticky ? getElementCenter(firstSticky) : { x: 580, y: 270 };
-  const toPoint = firstText ? getElementCenter(firstText) : { x: 980, y: 320 };
+  const fromTarget = firstVine ?? firstSticky;
+  const toTarget = firstText ?? firstVine ?? firstSticky;
+  const fromPoint = fromTarget ? getElementCenter(fromTarget) : { x: 580, y: 270 };
+  const toPoint = toTarget ? getElementCenter(toTarget) : { x: 980, y: 320 };
 
   return {
     id: crypto.randomUUID(),
@@ -37,8 +40,8 @@ export function buildConnectorElement(
       lineStyle: "solid",
       start: fromPoint,
       end: toPoint,
-      fromElementId: firstSticky?.id,
-      toElementId: firstText?.id,
+      fromElementId: fromTarget?.id,
+      toElementId: toTarget?.id,
       label: "flow",
     },
   };
@@ -152,6 +155,26 @@ export function buildElement(
         fontSize: 28,
         align: "left",
         weight: 600,
+      },
+    };
+  }
+
+  if (kind === "vine") {
+    return {
+      ...base,
+      type: "vine",
+      width: 220,
+      height: 72,
+      style: {
+        color: "#D7DDD9",
+        opacity: 1,
+      },
+      content: {
+        kind: "vine",
+        text: "Branch out",
+        fontSize: 22,
+        weight: 600,
+        fill: "#FFFFFF",
       },
     };
   }

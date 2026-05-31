@@ -101,6 +101,20 @@ export function useClearingBoardPointerDown({
         void persistElement(el); setTool("select"); return;
       }
 
+      if (tool === "vine" && activeRoom && activeUser) {
+        pushHistory();
+        const el: Element = {
+          id: crypto.randomUUID(), roomId: activeRoom.id, type: "vine",
+          x: sp.x, y: sp.y, width: 220, height: 72, rotation: 0,
+          zIndex: elements.length + 1, createdBy: activeUser.id,
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+          style: { color: "#D7DDD9", opacity: 1 },
+          content: { kind: "vine", text: "", fontSize: 22, weight: 600, fill: "#FFFFFF" },
+        };
+        addElement(el); selectSingle(el.id); setSelectedElement(el.id);
+        void persistElement(el); setTool("select"); return;
+      }
+
       if (tool === "comment") {
         setActiveThreadTarget({ elementId: null, x: sp.x, y: sp.y });
         return;

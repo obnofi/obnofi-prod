@@ -11,6 +11,7 @@ import {
   Type,
   Highlighter,
   PenTool as PenToolIcon,
+  Waypoints,
 } from "lucide-react";
 import type { CanvasTool, LineStyle } from "@/store/useCanvasStore";
 import type { Element } from "@obnofi/types/clearing";
@@ -54,7 +55,7 @@ export function ClearingToolbar({
   isUploadingImage: boolean;
   lineStyle: LineStyle;
   onAddComment: () => void;
-  onAddElement: (kind: Extract<Element["type"], "sticky" | "connector">) => void;
+  onAddElement: (kind: Extract<Element["type"], "sticky" | "connector" | "vine">) => void;
   onDrawingColorChange: (color: string) => void;
   onEmojiStampSelect: (emoji: string) => void;
   onLineStyleChange: (style: LineStyle) => void;
@@ -187,6 +188,15 @@ export function ClearingToolbar({
             />
           )}
         </div>
+
+        <button
+          className={toolButtonClass(activeTool === "vine")}
+          onClick={() => onSetTool("vine")}
+          title="Mind map"
+          type="button"
+        >
+          <Waypoints className="h-4 w-4" />
+        </button>
 
         <button
           className={toolButtonClass(activeTool === "text")}

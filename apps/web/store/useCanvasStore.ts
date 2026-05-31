@@ -10,6 +10,7 @@ export type CanvasTool =
   | "shape-diamond"
   | "shape-triangle"
   | "text"
+  | "vine"
   | "pen"
   | "marker"
   | "connector"
