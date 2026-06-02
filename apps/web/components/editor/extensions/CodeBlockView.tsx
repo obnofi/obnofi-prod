@@ -5,6 +5,7 @@ import { Check, Copy, Play, ChevronDown, ChevronRight, X } from "lucide-react";
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import { LANGUAGES, type CodeBlockAttrs, type LanguageId } from "./codeBlockLanguages";
 import { CodeBlockSandpackPreview } from "./CodeBlockSandpack";
+import { renderHighlightedCode } from "./codeBlockHighlight";
 
 export function CodeBlockView(props: ReactNodeViewProps) {
   const attrs = props.node.attrs as CodeBlockAttrs;
@@ -213,13 +214,13 @@ export function CodeBlockView(props: ReactNodeViewProps) {
               />
             ) : (
               <pre
-                className="max-h-[520px] min-h-[96px] overflow-auto p-4 font-mono text-sm leading-relaxed text-[var(--color-text-primary)]"
+                className="code-block-content max-h-[520px] min-h-[96px] overflow-auto p-4 font-mono text-sm leading-relaxed text-[var(--color-text-primary)]"
                 style={{
                   fontFamily:
                     '"SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace',
                 }}
               >
-                <code>{localCode || "// 코드가 비어 있습니다"}</code>
+                <code>{renderHighlightedCode(localCode, language)}</code>
               </pre>
             )}
           </div>

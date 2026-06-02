@@ -7,6 +7,7 @@ import { DatabasePageCard } from "@/components/database/DatabasePageCard";
 import { useUIStore } from "@/store/useUIStore";
 import { type ViewType } from "@obnofi/types";
 import { useDatabaseBlockData, type DatabaseNodeAttrs } from "@/hooks/useDatabaseBlockData";
+import { preventInlineBlockDrag } from "@/lib/editor/inlineBlockInteractions";
 
 type GroveSurfaceView = Extract<ViewType, "table" | "gallery" | "board" | "calendar">;
 
@@ -67,7 +68,7 @@ export function DatabaseBlockView(props: ReactNodeViewProps) {
       className="my-4"
       contentEditable={false}
       data-inline-block="true"
-      onClick={(e) => e.stopPropagation()}
+      onDragStart={preventInlineBlockDrag}
     >
       <DatabasePageCard
         pageId={pageId}

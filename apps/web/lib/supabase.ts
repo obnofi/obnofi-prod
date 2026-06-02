@@ -117,6 +117,10 @@ export async function uploadClearingAsset(file: File, roomId: string) {
   return uploadPublicAsset(file, roomId);
 }
 
+export async function uploadGroveImageAsset(file: File, pageId: string) {
+  return uploadPublicAsset(file, `grove-images/${pageId}`);
+}
+
 export async function uploadPageCanopyAsset(file: File, pageId: string) {
   return uploadPublicAsset(file, `page-canopies/${pageId}`);
 }

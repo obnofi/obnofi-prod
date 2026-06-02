@@ -7,6 +7,10 @@ import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react'
 import type { NodeViewProps } from '@tiptap/react'
 import dynamic from 'next/dynamic'
 import { blockActionsPluginKey } from '@/components/editor/extensions/blockActionsPluginKey'
+import {
+  preventInlineBlockDrag,
+  shouldStopInlineBlockEvent,
+} from '@/lib/editor/inlineBlockInteractions'
 
 const DbDiagramBlock = dynamic(
   () => import('@/src/components/blocks/db-diagram/DbDiagramBlock'),
@@ -45,6 +49,7 @@ function DbDiagramBlockWrapper(props: NodeViewProps) {
       contentEditable={false}
       data-testid="db-diagram-block"
       data-inline-block="true"
+      onDragStart={preventInlineBlockDrag}
       onMouseMoveCapture={markDbDiagramHovered}
     >
       <DbDiagramBlock {...(props as any)} />
@@ -112,14 +117,7 @@ export const DbDiagramExtension = Node.create<DbDiagramOptions>({
 
   addNodeView() {
     return ReactNodeViewRenderer(DbDiagramBlockWrapper, {
-      stopEvent: ({ event }) => {
-        if (event.type === 'mousedown') return true
-        const target = event.target as HTMLElement
-        return (
-          ['INPUT', 'BUTTON', 'SELECT', 'TEXTAREA'].includes(target?.tagName ?? '') ||
-          Boolean(target?.isContentEditable)
-        )
-      },
+      stopEvent: ({ event }) => shouldStopInlineBlockEvent(event),
     })
   },
 

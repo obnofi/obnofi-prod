@@ -11,6 +11,7 @@ import dynamic from "next/dynamic";
 import type { Page } from "@obnofi/types";
 import { usePageStore } from "@/store/pageStore";
 import { useCanvasPageState } from "@/hooks/useCanvasPageState";
+import { preventInlineBlockDrag } from "@/lib/editor/inlineBlockInteractions";
 
 const ClearingBoard = dynamic(
   () => import("@/components/canvas/ClearingBoard").then((mod) => mod.ClearingBoard),
@@ -94,6 +95,7 @@ export function CanvasBlockView(props: ReactNodeViewProps) {
       className="my-4"
       contentEditable={false}
       data-inline-block="true"
+      onDragStart={preventInlineBlockDrag}
     >
       <div
         data-testid="inline-canvas-embed"

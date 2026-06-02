@@ -3,6 +3,7 @@
 import { InputRule, Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import { CanvasBlockView } from "@/components/editor/blocks/CanvasBlockView";
+import { shouldStopInlineBlockEvent } from "@/lib/editor/inlineBlockInteractions";
 
 interface CanvasBlockExtensionOptions {
   workspaceId?: string;
@@ -53,14 +54,7 @@ export const CanvasBlock = Node.create<CanvasBlockExtensionOptions>({
 
   addNodeView() {
     return ReactNodeViewRenderer(CanvasBlockView, {
-      stopEvent: ({ event }) => {
-        if (event.type === "mousedown") return true;
-        const target = event.target as HTMLElement;
-        return (
-          ["INPUT", "BUTTON", "SELECT", "TEXTAREA"].includes(target?.tagName ?? "") ||
-          Boolean(target?.isContentEditable)
-        );
-      },
+      stopEvent: ({ event }) => shouldStopInlineBlockEvent(event),
     });
   },
 

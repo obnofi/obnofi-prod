@@ -4,6 +4,7 @@ import { InputRule, Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import { DatabaseBlockView } from "@/components/editor/blocks/DatabaseBlockView";
 import { PropertyType, ViewType } from "@obnofi/types";
+import { shouldStopInlineBlockEvent } from "@/lib/editor/inlineBlockInteractions";
 
 interface DatabaseBlockExtensionOptions {
   workspaceId?: string;
@@ -85,14 +86,7 @@ export const DatabaseBlock = Node.create<DatabaseBlockExtensionOptions>({
 
   addNodeView() {
     return ReactNodeViewRenderer(DatabaseBlockView, {
-      stopEvent: ({ event }) => {
-        if (event.type === "mousedown") return true;
-        const target = event.target as HTMLElement;
-        return (
-          ["INPUT", "BUTTON", "SELECT", "TEXTAREA"].includes(target?.tagName ?? "") ||
-          Boolean(target?.isContentEditable)
-        );
-      },
+      stopEvent: ({ event }) => shouldStopInlineBlockEvent(event),
     });
   },
 

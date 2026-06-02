@@ -9,6 +9,10 @@ import {
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useUIStore } from "@/store/useUIStore";
+import {
+  preventInlineBlockDrag,
+  shouldStopInlineBlockEvent,
+} from "@/lib/editor/inlineBlockInteractions";
 
 const DatabasePageCard = dynamic(() => import("@/components/database/DatabasePageCard").then(mod => mod.DatabasePageCard), { ssr: false, loading: () => <div className="p-8 text-center text-sm text-[var(--color-text-secondary)]">Loading database...</div> });
 
@@ -34,6 +38,7 @@ function LinkedDatabaseBlockView(props: ReactNodeViewProps) {
       className="my-4"
       contentEditable={false}
       data-inline-block="true"
+      onDragStart={preventInlineBlockDrag}
     >
       <DatabasePageCard
         pageId={pageId}
@@ -97,14 +102,7 @@ export const LinkedDatabaseBlock = Node.create<LinkedDatabaseBlockExtensionOptio
 
   addNodeView() {
     return ReactNodeViewRenderer(LinkedDatabaseBlockView, {
-      stopEvent: ({ event }) => {
-        if (event.type === "mousedown") return true;
-        const target = event.target as HTMLElement;
-        return (
-          ["INPUT", "BUTTON", "SELECT", "TEXTAREA"].includes(target?.tagName ?? "") ||
-          Boolean(target?.isContentEditable)
-        );
-      },
+      stopEvent: ({ event }) => shouldStopInlineBlockEvent(event),
     });
   },
 

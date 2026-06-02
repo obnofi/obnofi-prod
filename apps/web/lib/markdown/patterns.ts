@@ -8,6 +8,8 @@ export const HORIZONTAL_RULE_PATTERN = /^(?:---|\*\*\*|___)\s*$/;
 export const CODE_FENCE_PATTERN = /^```/;
 
 export const CODE_BLOCK_LANGUAGE_ALIASES: Record<string, string> = {
+  htm: "html",
+  xhtml: "html",
   cjs: "javascript",
   js: "javascript",
   jsx: "react",

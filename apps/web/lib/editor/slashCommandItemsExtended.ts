@@ -3,6 +3,15 @@ import type { SlashCommandItem } from "@/lib/editor/slashCommandTypes";
 export const extendedSlashCommands: SlashCommandItem[] = [
   // ── 캔버스 / 그래프 (obnofi 전용) ────────────────────────────
   {
+    id: "mindMap",
+    title: "마인드 맵",
+    description: "FigJam 스타일 노드 기반 Clearing을 인라인 블록으로 삽입",
+    icon: "Waypoints",
+    category: "canvas",
+    isObnofi: true,
+    keywords: ["mindmap", "mind map", "node", "vine", "마인드맵", "마인드 맵", "노드", "브레인스토밍"],
+  },
+  {
     id: "canvas",
     title: "Clearing",
     description: "FigJam 스타일 무한 캔버스를 인라인 블록으로 삽입",

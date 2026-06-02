@@ -8,7 +8,7 @@ import {
   PenTool, Database, Network, Zap, GitGraph, GitPullRequest, ChevronDown,
   Sigma, Square, Link, LayoutTemplate, Globe, HardDrive, MessageSquare,
   AtSign, FileText, CalendarDays, Smile, BarChart2, Columns2, Columns3,
-  ClipboardList,
+  ClipboardList, Waypoints,
 } from "lucide-react";
 
 export const iconMap: Record<
@@ -22,7 +22,7 @@ export const iconMap: Record<
   PenTool, Database, Network, Zap, GitGraph, GitPullRequest, ChevronDown,
   Sigma, Square, Link, LayoutTemplate, Globe, HardDrive, MessageSquare,
   AtSign, FileText, CalendarDays, Smile, BarChart2, Columns2, Columns3,
-  ClipboardList,
+  ClipboardList, Waypoints,
 };
 
 export function shortcutBadge(text: string) {

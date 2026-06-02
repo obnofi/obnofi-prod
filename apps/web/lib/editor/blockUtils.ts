@@ -34,6 +34,7 @@ export const actionableNodeNames = [
   "buttonBlock",
   "linkedDatabaseEmbed",
   "githubEmbedBlock",
+  "groveImageBlock",
   "linkEmbedBlock",
   "webClipBlock",
   "fileDropBlock",
@@ -148,4 +149,3 @@ export function cloneJsonWithFreshBlockIds(value: unknown): unknown {
 
   return value;
 }
-

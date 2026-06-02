@@ -116,10 +116,20 @@ export function useSlashCommandSelect({
             .insertCodeBlock()
             .run();
           break;
+        case "image":
+          (
+            chain as typeof chain & {
+              insertGroveImageBlock: () => typeof chain;
+            }
+          )
+            .insertGroveImageBlock()
+            .run();
+          break;
         case "dbTable":
           chain.insertDatabaseEmbed().run();
           break;
         case "canvas":
+        case "mindMap":
           chain.insertCanvasEmbed().run();
           break;
         case "dbDiagram":

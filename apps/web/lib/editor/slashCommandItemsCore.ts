@@ -152,7 +152,6 @@ export const coreSlashCommands: SlashCommandItem[] = [
     description: "이미지 업로드 또는 URL 삽입",
     icon: "Image",
     category: "media",
-    isDisabled: true,
     keywords: ["image", "photo", "이미지", "사진"],
   },
   {

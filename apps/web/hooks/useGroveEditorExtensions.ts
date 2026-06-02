@@ -28,6 +28,7 @@ import { TextHighlightMark } from "@/components/editor/extensions/TextHighlightM
 import { TaskItem, TaskList } from "@/components/editor/extensions/TaskList";
 import {
   FileDropBlock,
+  GroveImageBlock,
   GitHubEmbedBlock,
   GroveTableBlock,
   LinkEmbedBlock,
@@ -113,6 +114,7 @@ export function useGroveEditorExtensions({
     MathBlock,
     LinkedDatabaseBlock.configure({ workspaceId, pageId }),
     GroveTableBlock,
+    GroveImageBlock.configure({ pageId }),
     FileDropBlock,
     LinkEmbedBlock,
     GitHubEmbedBlock,
