@@ -133,15 +133,6 @@ export function useWorkspacePageHandlers({
     [createPage, pageId, router, workspaceId]
   );
 
-  const handleShareUpdate = useCallback(
-    (isPublic: boolean, shareId: string | null) => {
-      setCurrentPage((page) =>
-        page ? { ...page, isPublic, shareId } : page
-      );
-    },
-    [setCurrentPage]
-  );
-
   return {
     handleTitleChange,
     handlePageChromeUpdate,
@@ -152,6 +143,5 @@ export function useWorkspacePageHandlers({
     handleSelectPage,
     handleExportPage,
     handleCreateChildPage,
-    handleShareUpdate,
   };
 }

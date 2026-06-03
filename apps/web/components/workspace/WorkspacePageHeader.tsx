@@ -30,7 +30,6 @@ export interface WorkspacePageHeaderProps {
   collabActive: boolean;
   onSaveRetry: () => void;
   onSelectPage: (pageId: string) => void;
-  onShareUpdate: (isPublic: boolean, shareId: string | null) => void;
   onHeadingFontSizesChange: (v: Page["headingFontSizes"]) => void;
   onHighlightColorsChange: (v: Page["highlightColors"]) => void;
   onCollaborationEnabledChange: (v: boolean) => void;
@@ -46,7 +45,6 @@ export function WorkspacePageHeader({
   collabActive,
   onSaveRetry,
   onSelectPage,
-  onShareUpdate,
   onHeadingFontSizesChange,
   onHighlightColorsChange,
   onCollaborationEnabledChange,
@@ -100,11 +98,8 @@ export function WorkspacePageHeader({
           pageType={activePage.type}
           headingFontSizes={activePage.headingFontSizes}
           highlightColors={activePage.highlightColors}
-          isPublic={activePage.isPublic}
-          shareId={activePage.shareId}
           collaborationEnabled={activePage.collaborationEnabled}
           lineIndicatorEnabled={activePage.lineIndicatorEnabled}
-          onShareUpdate={onShareUpdate}
           onHeadingFontSizesChange={onHeadingFontSizesChange}
           onHighlightColorsChange={onHighlightColorsChange}
           onCollaborationEnabledChange={onCollaborationEnabledChange}

@@ -180,7 +180,6 @@ export function WorkspaceSidebar({ workspaceId }: WorkspaceSidebarProps) {
       {activeMenuNodeId && typeof document !== "undefined" && (
         <PageTreeMenuPortal
           position={menuPosition}
-          nodeId={activeMenuNodeId}
           onDelete={() => {
             handleDeletePage(activeMenuNodeId);
             handleCloseMenu();
@@ -191,8 +190,6 @@ export function WorkspaceSidebar({ workspaceId }: WorkspaceSidebarProps) {
       {createMenuState && typeof document !== "undefined" && (
         <CreatePageMenuPortal
           position={createMenuState.position}
-          workspaceId={workspaceId}
-          parentId={createMenuState.parentId ?? null}
           onCreate={handleCreateFromSidebarMenu}
           onClose={handleCloseCreateMenu}
         />

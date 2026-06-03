@@ -3,14 +3,23 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { ButtonBlock } from "@/components/editor/extensions/ButtonBlock";
+import { CodeBlock } from "@/components/editor/extensions/CodeBlock";
 import { TaskItem, TaskList } from "@/components/editor/extensions/TaskList";
 import { TextHighlightMark } from "@/components/editor/extensions/TextHighlightMark";
+import { ReactNodeViewRenderer } from "@tiptap/react";
+import { PublicReadonlyCodeBlock } from "./PublicReadonlyCodeBlock";
 
 interface PublicReadonlyEditorProps {
   content: object | null;
 }
 
 export function PublicReadonlyEditor({ content }: PublicReadonlyEditorProps) {
+  const readonlyCodeBlock = CodeBlock.extend({
+    addNodeView() {
+      return ReactNodeViewRenderer(PublicReadonlyCodeBlock);
+    },
+  });
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -18,6 +27,7 @@ export function PublicReadonlyEditor({ content }: PublicReadonlyEditorProps) {
       TaskList,
       TaskItem,
       ButtonBlock,
+      readonlyCodeBlock,
     ],
     content: content || { type: "doc", content: [{ type: "paragraph" }] },
     editable: false,

@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Trash2, FileText, Palette, Database } from "lucide-react";
-import { ImportFromUrlControl } from "@/components/workspace/ImportFromUrlControl";
 import {
   creatablePageTypes,
   creatablePageLabels,
@@ -20,7 +19,6 @@ const typeIcons: Record<PageType, React.ReactNode> = {
 
 interface PageTreeMenuPortalProps {
   position: { top: number; left: number };
-  nodeId: string;
   onDelete: () => void;
   onClose: () => void;
 }
@@ -72,16 +70,12 @@ export function PageTreeMenuPortal({ position, onDelete, onClose }: PageTreeMenu
 
 interface CreatePageMenuPortalProps {
   position: { top: number; left: number };
-  workspaceId: string;
-  parentId: string | null;
   onCreate: (type: PageType) => void;
   onClose: () => void;
 }
 
 export function CreatePageMenuPortal({
   position,
-  workspaceId,
-  parentId,
   onCreate,
   onClose,
 }: CreatePageMenuPortalProps) {
@@ -130,14 +124,6 @@ export function CreatePageMenuPortal({
           </span>
         </button>
       ))}
-      <div className="px-1 pb-1">
-        <ImportFromUrlControl
-          workspaceId={workspaceId}
-          parentId={parentId}
-          onClose={onClose}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[var(--color-hover)]"
-        />
-      </div>
     </div>,
     document.body
   );

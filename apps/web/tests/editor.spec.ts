@@ -164,6 +164,28 @@ test("/canvas 입력시 인라인 캔버스가 삽입된다", async ({ page }) =
   await expect(page.getByTestId("inline-canvas")).toBeVisible();
 });
 
+test("/image 입력시 이미지 블록을 추가하고 파일 업로드를 반영한다", async ({ page }) => {
+  await gotoWorkspaceDocument(page);
+
+  await focusEditorTail(page);
+  await page.keyboard.type("/image");
+
+  const imageBlock = page.getByTestId("grove-image-block").last();
+  await expect(imageBlock).toBeVisible();
+
+  const fileInput = imageBlock.locator('input[type="file"]');
+  await fileInput.setInputFiles({
+    name: "grove-seed.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aM9sAAAAASUVORK5CYII=",
+      "base64"
+    ),
+  });
+
+  await expect(imageBlock.locator("img")).toHaveAttribute("src", /^(data:|blob:|https?:)/);
+});
+
 test("새로고침 시 legacy 인라인 캔버스 블록이 무한 재요청하지 않는다", async ({ page }) => {
   test.setTimeout(90000);
   await signInAsDeveloper(page);

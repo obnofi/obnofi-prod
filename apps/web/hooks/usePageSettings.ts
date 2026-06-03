@@ -14,12 +14,9 @@ interface UsePageSettingsOptions {
   pageId: string;
   workspaceId: string;
   isOpen: boolean;
-  isPublic: boolean;
-  shareId: string | null;
   headingFontSizes: PageHeadingFontSizes;
   highlightColors: PageHighlightColor[];
   collaborationEnabled: boolean;
-  onShareUpdate: (isPublic: boolean, shareId: string | null) => void;
   onHeadingFontSizesChange: (sizes: PageHeadingFontSizes) => void;
   onHighlightColorsChange: (colors: PageHighlightColor[]) => void;
   onExport?: (format: PageExportFormat) => void;
@@ -30,19 +27,14 @@ export function usePageSettings({
   pageId,
   workspaceId,
   isOpen,
-  isPublic,
-  shareId,
   headingFontSizes,
   highlightColors,
   collaborationEnabled,
-  onShareUpdate,
   onHeadingFontSizesChange,
   onHighlightColorsChange,
   onExport,
   onClose,
 }: UsePageSettingsOptions) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [publishCopied, setPublishCopied] = useState(false);
   const [collabCopied, setCollabCopied] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isHeadingFontSizeOpen, setIsHeadingFontSizeOpen] = useState(false);
@@ -55,10 +47,6 @@ export function usePageSettings({
     useState<PageHeadingFontSizes>(headingFontSizes);
   const [editingHeadingLevel, setEditingHeadingLevel] = useState<HeadingLevel | null>(null);
   const highlightRequestIdRef = useRef(0);
-
-  const publishUrl = shareId
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/share/${shareId}`
-    : "";
 
   const collabUrl =
     typeof window !== "undefined"
@@ -90,32 +78,6 @@ export function usePageSettings({
   useEffect(() => {
     setDraftHeadingFontSizes(headingFontSizes);
   }, [headingFontSizes]);
-
-  // ── Publish handlers ────────────────────────────────────────────────────────
-  const handleTogglePublish = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/pages/${pageId}/share`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPublic: !isPublic }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        onShareUpdate(data.isPublic, data.shareId);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCopyPublishLink = async () => {
-    if (!publishUrl) return;
-    const copied = await copyToClipboard(publishUrl);
-    if (!copied) return;
-    setPublishCopied(true);
-    setTimeout(() => setPublishCopied(false), 2000);
-  };
 
   const handleCopyCollabLink = async () => {
     const copied = await copyToClipboard(collabUrl);
@@ -234,8 +196,6 @@ export function usePageSettings({
 
   return {
     // state
-    isLoading,
-    publishCopied,
     collabCopied,
     isExportOpen,
     setIsExportOpen,
@@ -253,10 +213,7 @@ export function usePageSettings({
     setDraftHeadingFontSizes,
     editingHeadingLevel,
     setEditingHeadingLevel,
-    publishUrl,
     // handlers
-    handleTogglePublish,
-    handleCopyPublishLink,
     handleCopyCollabLink,
     handleInviteCollaborator,
     handleRemoveCollaborator,

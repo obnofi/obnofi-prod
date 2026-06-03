@@ -187,7 +187,7 @@ export function GroveInsertionToolbar({
             <ToolbarAnimalIcon
               alt="Cursor"
               active={jungleCursor.variant === "highlighting"}
-              onSrc="/toolbar/cursor-on.png"
+              onSrc="/toolbar/cursor-highlighting.png"
               offSrc="/toolbar/cursor-off.png"
             />
           </button>

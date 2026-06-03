@@ -69,6 +69,8 @@ model User {
   comments              Comment[]
   cliTokens             CliToken[]
   pageCollaborations    PageCollaborator[]
+  publishedPages        PublishedPage[]
+  publishedPageLikes    PublishedPageLike[]
 }
 
 // ── CLI TOKEN ──────────────────────────────────────────
@@ -193,6 +195,7 @@ model Page {
   files          File[]
   yjsDocument    YjsDocument?
   collaborators  PageCollaborator[]
+  publishedPages PublishedPage[]
 
   @@index([workspaceId])
   @@index([workspaceId, type])
@@ -205,6 +208,52 @@ enum PageType {
   DOCUMENT
   CANVAS
   DATABASE
+}
+
+enum PublishedSnapshotType {
+  PAGE
+  CANVAS
+  GRAPH
+}
+
+model PublishedPage {
+  id              String                @id @default(cuid())
+  userId          String
+  pageId          String?
+  workspaceId     String?
+  snapshotType    PublishedSnapshotType
+  snapshotContent Json
+  title           String
+  description     String
+  tags            String[]              @default([])
+  likeCount       Int                   @default(0)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  deletedAt       DateTime?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  page  Page? @relation(fields: [pageId], references: [id], onDelete: SetNull)
+
+  likes PublishedPageLike[]
+
+  @@index([userId, createdAt])
+  @@index([pageId])
+  @@index([workspaceId])
+  @@index([snapshotType, createdAt])
+  @@index([deletedAt, createdAt])
+}
+
+model PublishedPageLike {
+  id              String   @id @default(cuid())
+  userId          String
+  publishedPageId String
+  createdAt       DateTime @default(now())
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publishedPage PublishedPage @relation(fields: [publishedPageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, publishedPageId])
+  @@index([publishedPageId, createdAt])
 }
 
 // ── DATABASE ──────────────────────────────────────────

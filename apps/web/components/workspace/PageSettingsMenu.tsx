@@ -21,11 +21,8 @@ interface PageSettingsMenuProps {
   pageType: PageType;
   headingFontSizes: PageHeadingFontSizes;
   highlightColors: PageHighlightColor[];
-  isPublic: boolean;
-  shareId: string | null;
   collaborationEnabled: boolean;
   lineIndicatorEnabled: boolean;
-  onShareUpdate: (isPublic: boolean, shareId: string | null) => void;
   onHeadingFontSizesChange: (sizes: PageHeadingFontSizes) => void;
   onHighlightColorsChange: (colors: PageHighlightColor[]) => void;
   onCollaborationEnabledChange: (enabled: boolean) => void;
@@ -39,11 +36,8 @@ export function PageSettingsMenu({
   pageType,
   headingFontSizes,
   highlightColors,
-  isPublic,
-  shareId,
   collaborationEnabled,
   lineIndicatorEnabled,
-  onShareUpdate,
   onHeadingFontSizesChange,
   onHighlightColorsChange,
   onCollaborationEnabledChange,
@@ -58,12 +52,9 @@ export function PageSettingsMenu({
     pageId,
     workspaceId,
     isOpen,
-    isPublic,
-    shareId,
     headingFontSizes,
     highlightColors,
     collaborationEnabled,
-    onShareUpdate,
     onHeadingFontSizesChange,
     onHighlightColorsChange,
     onExport,
@@ -94,12 +85,9 @@ export function PageSettingsMenu({
       {isOpen && (
         <div className="absolute right-0 top-full z-[9999] mt-1 w-72 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl">
           <PagePublishSection
-            isPublic={isPublic}
-            isLoading={settings.isLoading}
-            publishUrl={settings.publishUrl}
-            publishCopied={settings.publishCopied}
-            onTogglePublish={settings.handleTogglePublish}
-            onCopyPublishLink={settings.handleCopyPublishLink}
+            pageId={pageId}
+            workspaceId={workspaceId}
+            pageType={pageType}
           />
 
           <div className="h-px bg-[var(--color-border)]" />

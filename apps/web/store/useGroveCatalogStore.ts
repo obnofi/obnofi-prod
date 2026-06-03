@@ -13,7 +13,13 @@ interface GroveCatalogState {
   grovePages: Record<string, DatabasePage>;
   groveLoading: Record<string, boolean>;
   groveLoaded: Set<string>; // 이미 로드된 페이지 ID 추적
-  setGrovePage: (pageId: string, grovePage: DatabasePage | null) => void;
+  setGrovePage: (
+    pageId: string,
+    grovePage:
+      | DatabasePage
+      | null
+      | ((current: DatabasePage | null) => DatabasePage | null)
+  ) => void;
   setGroveLoading: (pageId: string, isLoading: boolean) => void;
   markGroveLoaded: (pageId: string) => void;
   isGroveLoaded: (pageId: string) => boolean;
@@ -59,7 +65,12 @@ export const useGroveCatalogStore = create<GroveCatalogState>((set, get) => ({
 
   setGrovePage: (pageId, grovePage) =>
     set((state) => {
-      if (!grovePage) {
+      const resolvedPage =
+        typeof grovePage === "function"
+          ? grovePage(state.grovePages[pageId] ?? null)
+          : grovePage;
+
+      if (!resolvedPage) {
         const nextPages = { ...state.grovePages };
         delete nextPages[pageId];
         return { grovePages: nextPages };
@@ -68,7 +79,7 @@ export const useGroveCatalogStore = create<GroveCatalogState>((set, get) => ({
       return {
         grovePages: {
           ...state.grovePages,
-          [pageId]: grovePage,
+          [pageId]: resolvedPage,
         },
       };
     }),

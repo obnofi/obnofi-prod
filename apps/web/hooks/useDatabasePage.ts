@@ -3,6 +3,8 @@
 import { useCallback, useEffect } from "react";
 import type {
   DatabasePage,
+  Page,
+  PropertyValue,
   PropertyType,
   PropertyValueData,
   SelectOption,
@@ -17,6 +19,12 @@ import {
   reshapeGroveProperty,
   sproutGroveProperty,
 } from "@/lib/groveCatalogApi";
+import { createDefaultPropertyValue } from "@/lib/database-utils";
+import {
+  DEFAULT_HIGHLIGHT_COLORS,
+  PAGE_ORDER_STEP,
+  generateOptimisticPageId,
+} from "@/lib/page/pageUtils";
 import { useGroveCatalogStore } from "@/store/useGroveCatalogStore";
 
 interface CreatePropertyInput {
@@ -33,6 +41,64 @@ interface UpdatePropertyInput {
 
 interface LoadDatabasePageOptions {
   force?: boolean;
+}
+
+function buildOptimisticSeed(grovePage: DatabasePage): Page & { propertyValues: PropertyValue[] } {
+  const lastOrder = grovePage.database.rows.reduce(
+    (maxOrder, row) => Math.max(maxOrder, row.order),
+    -PAGE_ORDER_STEP
+  );
+  const now = new Date().toISOString();
+  const rowId = generateOptimisticPageId();
+
+  return {
+    id: rowId,
+    title: "Untitled",
+    groveTitleLevel: 1,
+    bodyFontSizePt: 12,
+    headingFontSizes: { h1: 30, h2: 23, h3: 18, h4: 16, h5: 14 },
+    highlightColors: DEFAULT_HIGHLIGHT_COLORS,
+    content: { type: "doc", content: [{ type: "paragraph" }] },
+    type: "document",
+    icon: null,
+    coverImage: null,
+    parentId: grovePage.id,
+    order: lastOrder + PAGE_ORDER_STEP,
+    workspaceId: grovePage.workspaceId,
+    createdAt: now,
+    updatedAt: now,
+    yjsUpdatedAt: null,
+    isPublic: false,
+    shareId: null,
+    sharePassword: null,
+    databaseId: null,
+    parentDatabaseId: grovePage.database.id,
+    collaborationEnabled: true,
+    lineIndicatorEnabled: false,
+    propertyValues: grovePage.database.properties.map((property) => ({
+      id: `optimistic:${rowId}:${property.id}`,
+      pageId: rowId,
+      propertyId: property.id,
+      columnId: property.id,
+      value: createDefaultPropertyValue(property),
+    })),
+  };
+}
+
+function findPropertyValue(
+  grovePage: DatabasePage | null,
+  rowId: string,
+  propertyId: string
+): PropertyValue | null {
+  return (
+    grovePage?.database.rows
+      .find((row) => row.id === rowId)
+      ?.propertyValues?.find(
+        (propertyValue) =>
+          propertyValue.propertyId === propertyId ||
+          propertyValue.columnId === propertyId
+      ) ?? null
+  );
 }
 
 export function useDatabasePage(pageId: string | null | undefined) {
@@ -97,11 +163,9 @@ export function useDatabasePage(pageId: string | null | undefined) {
         return;
       }
 
-      const resolvedPage =
-        typeof nextPage === "function" ? nextPage(databasePage) : nextPage;
-      setGrovePage(pageId, resolvedPage);
+      setGrovePage(pageId, nextPage);
     },
-    [databasePage, pageId, setGrovePage]
+    [pageId, setGrovePage]
   );
 
   const updateDatabaseTitle = useCallback(
@@ -121,20 +185,65 @@ export function useDatabasePage(pageId: string | null | undefined) {
   );
 
   const createRow = useCallback(async () => {
-    if (!databasePage || !pageId) {
+    if (!pageId) {
       return undefined;
     }
 
-    const newRow = await plantGroveSeed(databasePage.database.id, "Untitled");
-    setGrovePage(pageId, {
-      ...databasePage,
-      database: {
-        ...databasePage.database,
-        rows: [...databasePage.database.rows, newRow],
-      },
+    const currentPage = useGroveCatalogStore.getState().grovePages[pageId] ?? null;
+    if (!currentPage) {
+      return undefined;
+    }
+
+    const optimisticSeed = buildOptimisticSeed(currentPage);
+    setGrovePage(pageId, (existingPage) => {
+      if (!existingPage) {
+        return existingPage;
+      }
+
+      return {
+        ...existingPage,
+        database: {
+          ...existingPage.database,
+          rows: [...existingPage.database.rows, optimisticSeed],
+        },
+      };
     });
-    return newRow.id;
-  }, [databasePage, pageId, setGrovePage]);
+
+    try {
+      const newRow = await plantGroveSeed(currentPage.database.id, optimisticSeed.title);
+      setGrovePage(pageId, (existingPage) => {
+        if (!existingPage) {
+          return existingPage;
+        }
+
+        return {
+          ...existingPage,
+          database: {
+            ...existingPage.database,
+            rows: existingPage.database.rows.map((row) =>
+              row.id === optimisticSeed.id ? newRow : row
+            ),
+          },
+        };
+      });
+      return newRow.id;
+    } catch {
+      setGrovePage(pageId, (existingPage) => {
+        if (!existingPage) {
+          return existingPage;
+        }
+
+        return {
+          ...existingPage,
+          database: {
+            ...existingPage.database,
+            rows: existingPage.database.rows.filter((row) => row.id !== optimisticSeed.id),
+          },
+        };
+      });
+      return undefined;
+    }
+  }, [pageId, setGrovePage]);
 
   const createProperty = useCallback(
     async (input: CreatePropertyInput) => {
@@ -180,11 +289,21 @@ export function useDatabasePage(pageId: string | null | undefined) {
       return;
     }
 
+    const previousTitle =
+      useGroveCatalogStore
+        .getState()
+        .grovePages[pageId]
+        ?.database.rows.find((row) => row.id === rowId)?.title ?? null;
+
     patchGroveSeedTitle(pageId, rowId, title);
     try {
       await renameGroveSeed(rowId, title);
     } catch {
-      await loadDatabasePage({ force: true });
+      if (previousTitle !== null) {
+        patchGroveSeedTitle(pageId, rowId, previousTitle);
+      } else {
+        await loadDatabasePage({ force: true });
+      }
     }
   }, [loadDatabasePage, pageId, patchGroveSeedTitle]);
 
@@ -194,6 +313,12 @@ export function useDatabasePage(pageId: string | null | undefined) {
         return;
       }
 
+      const previousValue = findPropertyValue(
+        useGroveCatalogStore.getState().grovePages[pageId] ?? null,
+        rowId,
+        propertyId
+      );
+
       patchGroveCellValue(pageId, rowId, propertyId, value);
       try {
         const updatedPropertyValue = await patchGroveCell(rowId, propertyId, value);
@@ -201,7 +326,11 @@ export function useDatabasePage(pageId: string | null | undefined) {
           patchGroveCellValue(pageId, rowId, propertyId, updatedPropertyValue);
         }
       } catch {
-        await loadDatabasePage({ force: true });
+        if (previousValue) {
+          patchGroveCellValue(pageId, rowId, propertyId, previousValue);
+        } else {
+          await loadDatabasePage({ force: true });
+        }
       }
     },
     [loadDatabasePage, pageId, patchGroveCellValue]

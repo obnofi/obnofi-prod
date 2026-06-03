@@ -38,6 +38,16 @@
   --color-graph-current:    #9065B0;
   --color-graph-current-subtle: #EAE4F2;
   --color-graph-unresolved: #CB912F;
+  --color-code-comment:     #8A867D;
+  --color-code-keyword:     #8A4D76;
+  --color-code-string:      #2D6C5B;
+  --color-code-number:      #8C6417;
+  --color-code-type:        #245E88;
+  --color-code-variable:    #6A4F2A;
+  --color-code-function:    #2E7D45;
+  --color-code-operator:    #787774;
+  --color-code-meta:        #6A5ACD;
+  --color-code-invalid:     #D9485F;
 
   /* Typography */
   --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
@@ -81,6 +91,16 @@ html.dark {
   --color-graph-current:    #B38CCF;
   --color-graph-current-subtle: #30243A;
   --color-graph-unresolved: #E1B15C;
+  --color-code-comment:     #7F7F7F;
+  --color-code-keyword:     #E091C4;
+  --color-code-string:      #6FD1B6;
+  --color-code-number:      #E1B15C;
+  --color-code-type:        #7FC7FF;
+  --color-code-variable:    #E7C88A;
+  --color-code-function:    #74D495;
+  --color-code-operator:    #A5A5A5;
+  --color-code-meta:        #B9A8FF;
+  --color-code-invalid:     #FF8F86;
   color-scheme: dark;
 }
 
@@ -219,6 +239,50 @@ html[data-jungle-cursor="active"] body * {
   list-style: none;
 }
 
+.code-block-content {
+  white-space: pre;
+}
+
+.code-block-content .tok-comment {
+  color: var(--color-code-comment);
+}
+
+.code-block-content .tok-keyword {
+  color: var(--color-code-keyword);
+}
+
+.code-block-content .tok-string {
+  color: var(--color-code-string);
+}
+
+.code-block-content .tok-number {
+  color: var(--color-code-number);
+}
+
+.code-block-content .tok-type {
+  color: var(--color-code-type);
+}
+
+.code-block-content .tok-variable {
+  color: var(--color-code-variable);
+}
+
+.code-block-content .tok-function {
+  color: var(--color-code-function);
+}
+
+.code-block-content .tok-operator {
+  color: var(--color-code-operator);
+}
+
+.code-block-content .tok-meta {
+  color: var(--color-code-meta);
+}
+
+.code-block-content .tok-invalid {
+  color: var(--color-code-invalid);
+}
+
 .editor .ProseMirror .grove-task-item__checkbox {
   display: inline-flex;
   align-items: center;
@@ -326,6 +390,107 @@ html[data-jungle-cursor="active"] body * {
 
 .grove-link-embed:hover {
   background: var(--color-hover);
+}
+
+.grove-image-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.grove-image-block__frame {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.grove-image-block__image {
+  display: block;
+  width: 100%;
+  max-height: 540px;
+  object-fit: contain;
+}
+
+.grove-image-block__empty {
+  display: flex;
+  min-height: 220px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  font-size: 14px;
+}
+
+.grove-image-block__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.grove-image-block__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.grove-image-block__button,
+.grove-image-block__url {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.grove-image-block__button:hover,
+.grove-image-block__url:focus-within {
+  background: var(--color-hover);
+}
+
+.grove-image-block__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.grove-image-block__url {
+  flex: 1 1 260px;
+}
+
+.grove-image-block__url input,
+.grove-image-block__caption {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  outline: none;
+}
+
+.grove-image-block__caption {
+  border-radius: var(--radius-md);
+  padding: 6px 0;
+  color: var(--color-text-secondary);
+}
+
+.grove-image-block__caption--readonly {
+  margin: 0;
+  font-size: 14px;
+}
+
+.grove-image-block__error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 12px;
 }
 
 .grove-github-embed {

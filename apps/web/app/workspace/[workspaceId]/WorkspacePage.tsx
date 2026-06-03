@@ -222,7 +222,6 @@ function WorkspacePageInner({ workspaceId, pageId }: WorkspacePageInnerProps) {
         collabActive={collabActive}
         onSaveRetry={() => void save()}
         onSelectPage={handlers.handleSelectPage}
-        onShareUpdate={handlers.handleShareUpdate}
         onHeadingFontSizesChange={handlers.handleHeadingFontSizesChange}
         onHighlightColorsChange={handlers.handleHighlightColorsChange}
         onCollaborationEnabledChange={handlers.handleCollaborationEnabledChange}

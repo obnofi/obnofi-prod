@@ -114,6 +114,8 @@ erDiagram
 | `YjsDocument` | 페이지별 YJS 협업 상태 저장 |
 | `PageCollaborator` | 페이지 공동 편집자 |
 | `CliToken` | CLI 인증 토큰 |
+| `PublishedPage` | Forest에 게시되는 immutable snapshot |
+| `PublishedPageLike` | Forest snapshot 저장(북마크) |
 
 ---
 

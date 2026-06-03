@@ -258,6 +258,188 @@ MossNote를 생성합니다.
 
 `anchor`: `{ "kind": "page" }` 또는 `{ "kind": "selection", "quote": "선택 텍스트", "from": 1, "to": 10 }`
 
+## Publish + Forest
+
+Forest는 공개 snapshot 피드입니다. 기존 `/share/[shareId]`가 원본 페이지 공개라면, Forest publish는 **게시 시점의 immutable snapshot**을 저장합니다.
+
+### `GET /api/published-pages`
+
+공개 Forest 피드를 조회합니다.
+
+쿼리:
+
+| 파라미터 | 필수 | 설명 |
+|---|---|---|
+| `sort` | 아니오 | `"latest"` 또는 `"popular"` |
+| `tag` | 아니오 | 태그 필터 |
+| `mine` | 아니오 | `"true"`이면 내 active publication 조회 모드 |
+| `pageId` | 아니오 | `mine=true`와 함께 쓰면 해당 페이지의 active snapshot 조회 |
+| `workspaceId` | 아니오 | `mine=true`와 함께 쓰면 해당 workspace graph snapshot 조회 |
+
+공개 피드 응답:
+
+```json
+{
+  "publications": [
+    {
+      "id": "pub_123",
+      "title": "My Page",
+      "description": "짧은 설명",
+      "tags": ["productivity", "notes"],
+      "likeCount": 4,
+      "createdAt": "2026-06-03T12:00:00.000Z",
+      "snapshotType": "page",
+      "author": {
+        "id": "user_1",
+        "name": "yui",
+        "image": null
+      },
+      "pageId": "page_1",
+      "workspaceId": "ws_1",
+      "viewerHasLiked": false
+    }
+  ],
+  "tags": ["notes", "productivity"]
+}
+```
+
+`mine=true` 응답:
+
+```json
+{
+  "publication": {
+    "id": "pub_123",
+    "title": "My Page",
+    "description": "짧은 설명",
+    "tags": ["productivity"],
+    "likeCount": 4,
+    "createdAt": "2026-06-03T12:00:00.000Z",
+    "snapshotType": "page",
+    "author": {
+      "id": "user_1",
+      "name": "yui",
+      "image": null
+    },
+    "pageId": "page_1",
+    "workspaceId": "ws_1",
+    "viewerHasLiked": false
+  }
+}
+```
+
+### `POST /api/published-pages`
+
+페이지/캔버스/그래프 snapshot을 게시합니다. **웹 세션 또는 Bearer 토큰 필수.**
+
+페이지/캔버스 게시 요청:
+
+```json
+{
+  "target": "page",
+  "pageId": "page_1",
+  "description": "짧은 설명",
+  "tags": ["notes", "workflow"]
+}
+```
+
+그래프 게시 요청:
+
+```json
+{
+  "target": "graph",
+  "workspaceId": "ws_1",
+  "focusedPageId": "page_1",
+  "description": "내 위키 그래프 snapshot",
+  "tags": ["graph", "knowledge"]
+}
+```
+
+성공 응답 (`201`):
+
+```json
+{
+  "publication": {
+    "id": "pub_123",
+    "title": "My Page",
+    "description": "짧은 설명",
+    "tags": ["notes"],
+    "likeCount": 0,
+    "createdAt": "2026-06-03T12:00:00.000Z",
+    "snapshotType": "page",
+    "author": {
+      "id": "user_1",
+      "name": "yui",
+      "image": null
+    },
+    "pageId": "page_1",
+    "workspaceId": "ws_1",
+    "viewerHasLiked": false
+  }
+}
+```
+
+### `GET /api/published-pages/[publishId]`
+
+공개 snapshot 상세를 조회합니다.
+
+성공 응답:
+
+```json
+{
+  "id": "pub_123",
+  "title": "My Page",
+  "description": "짧은 설명",
+  "tags": ["notes"],
+  "likeCount": 2,
+  "createdAt": "2026-06-03T12:00:00.000Z",
+  "snapshotType": "page",
+  "author": {
+    "id": "user_1",
+    "name": "yui",
+    "image": null
+  },
+  "pageId": "page_1",
+  "workspaceId": "ws_1",
+  "viewerHasLiked": false,
+  "snapshotContent": {
+    "title": "My Page",
+    "icon": "🌱",
+    "coverImage": null,
+    "content": { "type": "doc", "content": [] },
+    "updatedAt": "2026-06-03T12:00:00.000Z",
+    "pageType": "document"
+  }
+}
+```
+
+### `DELETE /api/published-pages/[publishId]`
+
+게시 취소합니다. soft delete이며 소유자만 가능.
+
+성공 응답:
+
+```json
+{ "success": true }
+```
+
+### `POST /api/published-pages/[publishId]/like`
+
+snapshot을 저장(좋아요/북마크)합니다. **웹 세션 또는 Bearer 토큰 필수.**
+
+성공 응답은 최신 publication 상세 일부를 그대로 반환합니다:
+
+```json
+{
+  "id": "pub_123",
+  "viewerHasLiked": true,
+  "likeCount": 3
+}
+```
+
+### `DELETE /api/published-pages/[publishId]/like`
+
+저장을 취소합니다.
+
 `position`: 페이지 표면 기준 좌표 `{ "x": number, "y": number }`
 
 ### `PATCH /api/pages/[pageId]/moss-notes/[mossNoteId]`
