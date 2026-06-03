@@ -123,7 +123,9 @@ function WorkspacePageInner({ workspaceId, pageId }: WorkspacePageInnerProps) {
   const {
     interimTranscript,
     isListening,
+    listeningState,
     isSupported: isSpeechSupported,
+    speechLevel,
     start: startSpeech,
     stop: stopSpeech,
   } = useSpeechRecognition({ onFinalResult: handleSpeechFinalResult });
@@ -152,8 +154,9 @@ function WorkspacePageInner({ workspaceId, pageId }: WorkspacePageInnerProps) {
   }, [closeDatabaseModal, closeGroveSideTab, pageId]);
 
   useEffect(() => {
+    const titleSaveTimerRefCurrent = titleSaveTimerRef;
     return () => {
-      const titleSaveTimer = titleSaveTimerRef.current;
+      const titleSaveTimer = titleSaveTimerRefCurrent.current;
       if (titleSaveTimer) {
         clearTimeout(titleSaveTimer);
       }
@@ -242,6 +245,8 @@ function WorkspacePageInner({ workspaceId, pageId }: WorkspacePageInnerProps) {
         interimTranscript={interimTranscript}
         isListening={isListening}
         isSpeechSupported={isSpeechSupported}
+        speechListeningState={listeningState}
+        speechLevel={speechLevel}
         scheduleSave={scheduleSave}
         onTitleChange={(newTitle) => {
           setTitle(newTitle);

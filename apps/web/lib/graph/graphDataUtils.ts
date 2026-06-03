@@ -21,10 +21,10 @@ export interface GraphLinkEdge {
 }
 
 const WIKILINK_REGEX = /\[\[([^[\]]+)\]\]/g;
-const MIN_NODE_SIZE = 8;
-const MAX_NODE_SIZE = 24;
-const MIN_EDGE_WIDTH = 0.4;
-const MAX_EDGE_WIDTH = 1.2;
+const MIN_NODE_SIZE = 16;
+const MAX_NODE_SIZE = 42;
+const MIN_EDGE_WIDTH = 0.6;
+const MAX_EDGE_WIDTH = 1.6;
 
 type RawReference = {
   pageId?: string;

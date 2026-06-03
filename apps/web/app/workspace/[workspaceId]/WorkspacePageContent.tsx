@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { Page, PageType } from "@obnofi/types";
 import { GroveInsertionToolbar } from "@/components/toolbar/GroveInsertionToolbar";
 import type { MossNoteDockHandle } from "@/components/workspace/MossNoteDock";
+import type { ParrotListeningState } from "@/hooks/useSpeechRecognition";
 import { DocumentPageBody } from "./DocumentPageBody";
 import type { RefObject, MutableRefObject } from "react";
 
@@ -49,6 +50,8 @@ export interface WorkspacePageContentProps {
   interimTranscript: string;
   isListening: boolean;
   isSpeechSupported: boolean;
+  speechListeningState: ParrotListeningState;
+  speechLevel: number;
   scheduleSave: () => void;
   onTitleChange: (newTitle: string) => void;
   onPageChromeUpdate: (input: Partial<Pick<Page, "icon" | "coverImage">>) => Promise<void>;
@@ -72,6 +75,8 @@ export function WorkspacePageContent({
   interimTranscript,
   isListening,
   isSpeechSupported,
+  speechListeningState,
+  speechLevel,
   scheduleSave,
   onTitleChange,
   onPageChromeUpdate,
@@ -124,6 +129,7 @@ export function WorkspacePageContent({
               lineIndicatorEnabled: activePage.lineIndicatorEnabled,
               interimTranscript,
               isSpeechListening: isListening,
+              speechListeningState,
               mossNoteDockRef,
               mossNoteSurfaceRef: grovePageSurfaceRef,
             }}
@@ -132,6 +138,9 @@ export function WorkspacePageContent({
             editor={toolbarEditor}
             isListening={isListening}
             isSpeechSupported={isSpeechSupported}
+            speechListeningState={speechListeningState}
+            speechLevel={speechLevel}
+            interimTranscript={interimTranscript}
             onToggleSpeech={onToggleSpeech}
             onToggleMossNote={() => mossNoteDockRef.current?.togglePlacement()}
           />

@@ -52,8 +52,8 @@ export function GraphControlPanel({
       </div>
       <div className="text-[11px] text-[var(--color-text-secondary)]">
         {allNodesCount >= 500
-          ? "Barnes-Hut 최적화가 활성화된 레이아웃입니다."
-          : "전체 워크스페이스 링크를 표시합니다."}
+          ? "Barnes-Hut 최적화 레이아웃입니다. 클릭으로 포커스, 더블클릭으로 페이지를 엽니다."
+          : "클릭으로 포커스, 더블클릭으로 페이지를 엽니다."}
       </div>
     </Panel>
   );

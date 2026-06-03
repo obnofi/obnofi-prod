@@ -7,6 +7,7 @@ import type { Page } from "@obnofi/types";
 import { useCollaboration } from "@/lib/collaboration/CollaborationContext";
 import type { MossNoteDockHandle } from "@/components/workspace/MossNoteDock";
 import type { RefObject } from "react";
+import type { ParrotListeningState } from "@/hooks/useSpeechRecognition";
 
 const Editor = dynamic(
   () => import("@/components/editor/Editor").then((mod) => mod.Editor),
@@ -36,6 +37,7 @@ export interface CollaborativeEditorSurfaceProps {
   onEditorReady: (editor: TiptapEditor | null) => void;
   interimTranscript: string;
   isSpeechListening: boolean;
+  speechListeningState: ParrotListeningState;
   mossNoteDockRef: RefObject<MossNoteDockHandle | null>;
   mossNoteSurfaceRef: RefObject<HTMLDivElement | null>;
 }
@@ -65,6 +67,7 @@ export function CollaborativeEditorSurface(props: CollaborativeEditorSurfaceProp
       onEditorReady={props.onEditorReady}
       interimTranscript={props.interimTranscript}
       isSpeechListening={props.isSpeechListening}
+      speechListeningState={props.speechListeningState}
       mossNoteDockRef={props.mossNoteDockRef}
       mossNoteSurfaceRef={props.mossNoteSurfaceRef}
     />

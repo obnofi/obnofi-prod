@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Plus, Clock } from "lucide-react";
+import { Plus, Clock, Trees } from "lucide-react";
 import type { SensorDescriptor, SensorOptions, DragEndEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core";
 import { PageTreeSkeleton, RecentSkeleton } from "@/components/workspace/SidebarSkeletons";
 import { SortablePageTreeItem } from "@/components/workspace/SortablePageTreeItem";
@@ -136,6 +137,21 @@ export function SidebarPageTree({
           </div>
         </div>
       ) : null}
+
+      <div className="border-t border-[var(--color-border)] px-2 py-2 shrink-0">
+        <div className="px-2 py-1 text-[11px] font-medium text-[var(--color-text-placeholder)] uppercase tracking-wide">
+          Community
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <Link
+            href="/forest"
+            className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[var(--color-hover)] text-[var(--color-text-secondary)] text-[13px]"
+          >
+            <Trees className="w-3.5 h-3.5" />
+            Forest
+          </Link>
+        </div>
+      </div>
     </>
   );
 }

@@ -3,14 +3,19 @@
 import { useState, type ReactNode } from "react";
 import Image from "next/image";
 import type { Editor } from "@tiptap/react";
-import { Database, Link2, StickyNote } from "lucide-react";
-import { LinkEmbedModal, normalizeUrl } from "@/components/toolbar/LinkEmbedModal";
+import { Link2, StickyNote } from "lucide-react";
+import { SpeechRecognitionButton } from "@/components/editor/SpeechRecognitionButton";
+import { LinkEmbedModal } from "@/components/toolbar/LinkEmbedModal";
 import { setJungleCursorVariant, useJungleCursor } from "@/lib/cursor/jungleCursor";
+import type { ParrotListeningState } from "@/hooks/useSpeechRecognition";
 
 interface GroveInsertionToolbarProps {
   editor?: Editor | null;
   isListening?: boolean;
   isSpeechSupported?: boolean;
+  speechListeningState?: ParrotListeningState;
+  speechLevel?: number;
+  interimTranscript?: string;
   onToggleSpeech?: () => void;
   onToggleMossNote?: () => void;
 }
@@ -41,9 +46,9 @@ function ToolbarAnimalIcon({
     <Image
       src={src}
       alt={alt}
-      width={30}
-      height={24}
-      className="h-6 w-auto shrink-0 object-contain"
+      width={25}
+      height={19}
+      className="h-[19px] w-auto shrink-0 object-contain"
       unoptimized
     />
   );
@@ -53,10 +58,14 @@ export function GroveInsertionToolbar({
   editor,
   isListening = false,
   isSpeechSupported = false,
+  speechListeningState = "idle",
+  speechLevel = 0,
+  interimTranscript = "",
   onToggleSpeech,
   onToggleMossNote,
 }: GroveInsertionToolbarProps) {
   const [isLinkEmbedModalOpen, setIsLinkEmbedModalOpen] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const canInsert = Boolean(editor?.isEditable);
   const jungleCursor = useJungleCursor();
 
@@ -65,31 +74,79 @@ export function GroveInsertionToolbar({
     command(editor);
   };
 
+  const handleOwlAi = async () => {
+    if (!editor || !canInsert || isAiLoading) return;
+
+    const userPrompt = window.prompt("AI에게 요청할 내용을 입력하세요");
+    if (!userPrompt?.trim()) return;
+
+    const { from, to } = editor.state.selection;
+    const selectedText = editor.state.doc.textBetween(from, to, " ");
+    const contextBefore = editor.state.doc.textBetween(Math.max(0, from - 500), from, " ");
+
+    setIsAiLoading(true);
+
+    try {
+      const response = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: userPrompt.trim(),
+          context: selectedText || contextBefore || undefined,
+          command: "continue",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate");
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("No response body");
+      }
+
+      const insertPos = to;
+      let currentPos = insertPos;
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n").filter((line) => line.trim());
+
+        for (const line of lines) {
+          if (!line.startsWith('0:"')) continue;
+
+          const textContent = line.slice(3, -1);
+          const unescaped = textContent
+            .replace(/\\n/g, "\n")
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, "\\");
+
+          editor.commands.insertContentAt(currentPos, unescaped);
+          currentPos += unescaped.length;
+        }
+      }
+
+      editor.commands.setTextSelection({ from: currentPos, to: currentPos });
+      editor.commands.focus();
+    } catch (error) {
+      console.error("Toolbar AI error:", error);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
   const items: ToolbarItem[] = [
-    {
-      id: "parrot",
-      label: "Parrot",
-      onClick: () => onToggleSpeech?.(),
-      disabled: !onToggleSpeech || !isSpeechSupported,
-      active: isListening,
-      icon: (
-        <ToolbarAnimalIcon
-          alt="Parrot"
-          active={isListening}
-          onSrc="/toolbar/parrot-on.png"
-          offSrc="/toolbar/parrot-off.png"
-        />
-      ),
-    },
     {
       id: "monkey",
       label: "Monkey",
       onClick: () =>
         runEditorCommand((activeEditor) => {
-          const chain = activeEditor.chain().focus();
-          (chain as typeof chain & { insertCodeBlock: () => typeof chain })
-            .insertCodeBlock()
-            .run();
+          activeEditor.chain().focus().insertCanvasEmbed().run();
         }),
       disabled: !canInsert,
       icon: (
@@ -105,7 +162,7 @@ export function GroveInsertionToolbar({
       label: "Elephant",
       onClick: () =>
         runEditorCommand((activeEditor) => {
-          activeEditor.chain().focus().insertMathBlock().run();
+          activeEditor.chain().focus().insertDatabaseEmbed().run();
         }),
       disabled: !canInsert,
       icon: (
@@ -119,13 +176,9 @@ export function GroveInsertionToolbar({
     {
       id: "owl",
       label: "Owl",
-      onClick: () =>
-        runEditorCommand((activeEditor) => {
-          const url = normalizeUrl(window.prompt("클리핑할 웹 주소를 입력하세요"));
-          if (!url) return;
-          activeEditor.chain().focus().insertWebClipBlock({ url, note: "" }).run();
-        }),
-      disabled: !canInsert,
+      onClick: handleOwlAi,
+      disabled: !canInsert || isAiLoading,
+      active: isAiLoading,
       icon: (
         <ToolbarAnimalIcon
           alt="Owl"
@@ -140,16 +193,6 @@ export function GroveInsertionToolbar({
       onClick: () => onToggleMossNote?.(),
       disabled: !onToggleMossNote,
       icon: <StickyNote className="h-4 w-4 shrink-0" />,
-    },
-    {
-      id: "undergrowth",
-      label: "Database",
-      onClick: () =>
-        runEditorCommand((activeEditor) => {
-          activeEditor.chain().focus().insertDatabaseEmbed().run();
-        }),
-      disabled: !canInsert,
-      icon: <Database className="h-4 w-4 shrink-0" />,
     },
     {
       id: "link-embed",
@@ -175,7 +218,11 @@ export function GroveInsertionToolbar({
             data-testid="toolbar-cursor"
             aria-pressed={jungleCursor.variant === "highlighting"}
             aria-label="Cursor"
-            onClick={() => setJungleCursorVariant("highlighting")}
+            onClick={() =>
+              setJungleCursorVariant(
+                jungleCursor.variant === "highlighting" ? "pointing" : "highlighting"
+              )
+            }
             title="Cursor"
             className={[
               "flex h-11 min-w-11 items-center justify-center rounded-2xl px-3 text-sm text-[var(--color-text-primary)] transition",
@@ -192,6 +239,16 @@ export function GroveInsertionToolbar({
             />
           </button>
         </div>
+        {onToggleSpeech ? (
+          <SpeechRecognitionButton
+            isListening={isListening}
+            isSupported={isSpeechSupported}
+            listeningState={speechListeningState}
+            speechLevel={speechLevel}
+            interimTranscript={interimTranscript}
+            onToggle={() => onToggleSpeech?.()}
+          />
+        ) : null}
         {items.map(({ id, label, icon, onClick, disabled, active }) => (
           <button
             key={id}

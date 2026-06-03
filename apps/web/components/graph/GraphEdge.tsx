@@ -14,7 +14,12 @@ export const GraphEdge = memo(function GraphEdge({
   target,
   data,
 }: EdgeProps) {
-  const edgeData = (data ?? {}) as { thickness?: number; isUnresolved?: boolean };
+  const edgeData = (data ?? {}) as {
+    thickness?: number;
+    isUnresolved?: boolean;
+    isActive?: boolean;
+    isDimmed?: boolean;
+  };
   const sourceNode = useInternalNode(String(source));
   const targetNode = useInternalNode(String(target));
 
@@ -39,10 +44,12 @@ export const GraphEdge = memo(function GraphEdge({
       id={String(id)}
       path={edgePath}
       style={{
-        stroke: "rgba(130, 130, 130, 0.28)",
-        strokeWidth: edgeData.thickness ?? 0.8,
+        stroke: edgeData.isActive
+          ? "rgba(46, 125, 69, 0.45)"
+          : "rgba(130, 130, 130, 0.28)",
+        strokeWidth: (edgeData.thickness ?? 0.8) * (edgeData.isActive ? 1.7 : 1),
         strokeDasharray: edgeData.isUnresolved ? "4 4" : undefined,
-        opacity: edgeData.isUnresolved ? 0.35 : 0.6,
+        opacity: edgeData.isDimmed ? 0.12 : edgeData.isUnresolved ? 0.35 : 0.6,
         animation: "graphEdgeFadeIn 0.8s cubic-bezier(0.22,1,0.36,1) 0.1s backwards",
       }}
     />

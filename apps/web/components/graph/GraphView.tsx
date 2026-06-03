@@ -89,9 +89,13 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
     onNodesChange,
     onEdgesChange,
     handleNodeClick,
+    handleNodeDoubleClick,
     handleNodeDragStart,
     handleNodeDrag,
     handleNodeDragStop,
+    handleNodeMouseEnter,
+    handleNodeMouseLeave,
+    handlePaneClick,
   } = useGraphFlowNodes({
     workspaceId,
     graphKey,
@@ -177,9 +181,13 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
             nodesConnectable={false}
             elementsSelectable={true}
             onNodeClick={handleNodeClick}
+            onNodeDoubleClick={handleNodeDoubleClick}
             onNodeDragStart={handleNodeDragStart}
             onNodeDrag={handleNodeDrag}
             onNodeDragStop={handleNodeDragStop}
+            onNodeMouseEnter={handleNodeMouseEnter}
+            onNodeMouseLeave={handleNodeMouseLeave}
+            onPaneClick={handlePaneClick}
             minZoom={0.1}
             maxZoom={1.8}
             fitView
@@ -218,4 +226,3 @@ export function GraphView({ workspaceId }: GraphViewProps) {
 }
 
 export { GraphViewCanvas };
-

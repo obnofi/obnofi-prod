@@ -1482,3 +1482,38 @@ html.jungle {
   background-color: var(--line-presence-color, #958DF1);
   pointer-events: none;
 }
+
+.parrot-wave-bar {
+  animation-name: parrotWaveIdle;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+.parrot-orbit-pulse {
+  animation: parrotOrbitPulse 1.8s ease-out infinite;
+}
+
+@keyframes parrotWaveIdle {
+  0%,
+  100% {
+    opacity: 0.48;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes parrotOrbitPulse {
+  0% {
+    opacity: 0.08;
+    transform: scale(0.86);
+  }
+  55% {
+    opacity: 0.2;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.22);
+  }
+}

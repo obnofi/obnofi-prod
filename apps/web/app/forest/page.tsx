@@ -1,4 +1,5 @@
 import { ForestFeedClient } from "@/components/published/ForestFeedClient";
+import { ForestShell } from "@/components/published/ForestShell";
 import { listForestTags, listPublishedSnapshots } from "@/lib/publishedPages";
 import { getSessionUserId } from "@/lib/request-auth";
 
@@ -19,11 +20,13 @@ export default async function ForestPage({
   ]);
 
   return (
-    <ForestFeedClient
-      initialPublications={publications}
-      initialTags={tags}
-      initialSort={sort}
-      initialTag={tag}
-    />
+    <ForestShell currentSection="forest">
+      <ForestFeedClient
+        initialPublications={publications}
+        initialTags={tags}
+        initialSort={sort}
+        initialTag={tag}
+      />
+    </ForestShell>
   );
 }

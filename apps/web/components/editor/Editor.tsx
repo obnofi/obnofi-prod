@@ -23,6 +23,7 @@ import { usePageCursorTracking } from "@/hooks/usePageCursorTracking";
 import { useJungleCursor } from "@/lib/cursor/jungleCursor";
 import type { PageHeadingFontSizes, PageHighlightColor } from "@obnofi/types";
 import type { MossNoteAnchor } from "@/lib/moss-notes";
+import type { ParrotListeningState } from "@/hooks/useSpeechRecognition";
 
 interface EditorProps {
   content: object | null;
@@ -44,6 +45,7 @@ interface EditorProps {
   onEditorReady?: (editor: TiptapEditor | null) => void;
   interimTranscript?: string;
   isSpeechListening?: boolean;
+  speechListeningState?: ParrotListeningState;
   mossNoteDockRef?: Ref<MossNoteDockHandle>;
   mossNoteSurfaceRef?: RefObject<HTMLElement>;
 }
@@ -66,6 +68,7 @@ export function Editor({
   onEditorReady,
   interimTranscript = "",
   isSpeechListening = false,
+  speechListeningState = "idle",
   mossNoteDockRef,
   mossNoteSurfaceRef,
 }: EditorProps) {
@@ -262,6 +265,7 @@ export function Editor({
         <SpeechInputIndicator
           isListening={isSpeechListening}
           interimTranscript={interimTranscript}
+          listeningState={speechListeningState}
         />
       </div>
 

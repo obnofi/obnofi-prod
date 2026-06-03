@@ -36,16 +36,16 @@ function isFinitePosition(value: number | undefined) {
 
 function getVisualRadius(node: { data: { size?: number; label?: unknown } }) {
   const size = node.data.size ?? 10;
-  return Math.max(10, size / 2);
+  return Math.max(14, size / 2);
 }
 
 function getCollisionRadius(node: { data: { size?: number; label?: unknown } }) {
-  return getVisualRadius(node) + 12;
+  return getVisualRadius(node) + 20;
 }
 
 function createSeedPosition(index: number, total: number) {
   const safeTotal = Math.max(1, total);
-  const baseSpacing = Math.max(70, Math.min(132, 52 + Math.sqrt(safeTotal) * 4));
+  const baseSpacing = Math.max(92, Math.min(168, 72 + Math.sqrt(safeTotal) * 5));
   const radius = Math.sqrt(index + 0.5) * baseSpacing;
   const angle = index * GOLDEN_ANGLE;
 
@@ -150,16 +150,16 @@ export function useGraphSimulation({
       .force(
         "charge",
         forceManyBody()
-          .strength(isBig ? -220 : -380)
-          .distanceMin(18)
-          .distanceMax(isBig ? 440 : 560)
+          .strength(isBig ? -280 : -460)
+          .distanceMin(24)
+          .distanceMax(isBig ? 520 : 680)
       )
       .force(
         "link",
         forceLink(simEdges)
           .id((node) => node.id)
-          .distance(() => (isBig ? 52 : 64))
-          .strength(isBig ? 0.16 : 0.22)
+          .distance(() => (isBig ? 74 : 88))
+          .strength(isBig ? 0.18 : 0.24)
       )
       .force(
         "collide",
