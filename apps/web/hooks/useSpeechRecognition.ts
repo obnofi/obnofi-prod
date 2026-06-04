@@ -90,10 +90,16 @@ export function useSpeechRecognition(
   const onFinalResultRef = useRef(options.onFinalResult);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const speechLevelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const interimTranscriptRef = useRef("");
+  const skippedFinalTextRef = useRef<string | null>(null);
 
   useEffect(() => {
     onFinalResultRef.current = options.onFinalResult;
   }, [options.onFinalResult]);
+
+  useEffect(() => {
+    interimTranscriptRef.current = interimTranscript;
+  }, [interimTranscript]);
 
   const isSupported =
     typeof window !== "undefined" &&
@@ -160,6 +166,7 @@ export function useSpeechRecognition(
     recognition.lang = "ko-KR";
 
     recognition.onstart = () => {
+      skippedFinalTextRef.current = null;
       setIsListening(true);
       setListeningState("resting");
       setSpeechLevel(0.18);
@@ -172,6 +179,15 @@ export function useSpeechRecognition(
         const result = event.results[i];
         const text = result[0].transcript;
         if (result.isFinal) {
+          const normalizedText = text.trim();
+          if (
+            normalizedText &&
+            skippedFinalTextRef.current &&
+            skippedFinalTextRef.current === normalizedText
+          ) {
+            skippedFinalTextRef.current = null;
+            continue;
+          }
           setTranscript((prev) => prev + text);
           bumpSpeechLevel(text);
           onFinalResultRef.current?.(text);
@@ -195,6 +211,7 @@ export function useSpeechRecognition(
 
     recognition.onend = () => {
       clearParrotTimers();
+      skippedFinalTextRef.current = null;
       setIsListening(false);
       setInterimTranscript("");
       setSpeechLevel(0);
@@ -207,6 +224,12 @@ export function useSpeechRecognition(
 
   const stop = useCallback(() => {
     clearParrotTimers();
+    const pendingText = interimTranscriptRef.current.trim();
+    if (pendingText) {
+      skippedFinalTextRef.current = pendingText;
+      setTranscript((prev) => prev + pendingText);
+      onFinalResultRef.current?.(pendingText);
+    }
     recognitionRef.current?.stop();
     recognitionRef.current = null;
     setIsListening(false);
