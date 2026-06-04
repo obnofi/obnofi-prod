@@ -4,6 +4,7 @@ import { useCallback, useEffect } from "react";
 import type {
   DatabasePage,
   Page,
+  Property,
   PropertyValue,
   PropertyType,
   PropertyValueData,
@@ -247,16 +248,32 @@ export function useDatabasePage(pageId: string | null | undefined) {
 
   const createProperty = useCallback(
     async (input: CreatePropertyInput) => {
-      if (!databasePage) {
+      if (!databasePage || !pageId) {
         return;
       }
 
-      const property = await sproutGroveProperty(databasePage.database.id, input);
-      if (pageId) {
+      const lastOrder = databasePage.database.properties.reduce(
+        (max, p) => Math.max(max, p.order),
+        -PAGE_ORDER_STEP
+      );
+      const optimisticProperty: Property = {
+        id: generateOptimisticPageId(),
+        databaseId: databasePage.database.id,
+        name: input.name,
+        type: input.type,
+        options: input.options,
+        order: lastOrder + PAGE_ORDER_STEP,
+      };
+
+      replaceGroveProperty(pageId, optimisticProperty);
+      try {
+        const property = await sproutGroveProperty(databasePage.database.id, input);
         replaceGroveProperty(pageId, property);
+      } catch {
+        removeGroveProperty(pageId, optimisticProperty.id);
       }
     },
-    [databasePage, pageId, replaceGroveProperty]
+    [databasePage, pageId, replaceGroveProperty, removeGroveProperty]
   );
 
   const updateProperty = useCallback(
@@ -265,8 +282,29 @@ export function useDatabasePage(pageId: string | null | undefined) {
         return;
       }
 
-      const updatedProperty = await reshapeGroveProperty(propertyId, input);
-      replaceGroveProperty(pageId, updatedProperty);
+      const currentProperty =
+        useGroveCatalogStore
+          .getState()
+          .grovePages[pageId]?.database.properties.find((p) => p.id === propertyId) ?? null;
+
+      if (!currentProperty) {
+        return;
+      }
+
+      const optimisticProperty: Property = {
+        ...currentProperty,
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.type !== undefined ? { type: input.type } : {}),
+        ...(input.options !== undefined ? { options: input.options } : {}),
+      };
+
+      replaceGroveProperty(pageId, optimisticProperty);
+      try {
+        const updatedProperty = await reshapeGroveProperty(propertyId, input);
+        replaceGroveProperty(pageId, updatedProperty);
+      } catch {
+        replaceGroveProperty(pageId, currentProperty);
+      }
     },
     [pageId, replaceGroveProperty]
   );

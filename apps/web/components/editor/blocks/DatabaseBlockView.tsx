@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
-import { useRouter } from "next/navigation";
 import { DatabasePageCard } from "@/components/database/DatabasePageCard";
 import { useUIStore } from "@/store/useUIStore";
 import { type ViewType } from "@obnofi/types";
@@ -21,7 +20,6 @@ interface GroveSurfaceSnapshot {
 export { type DatabaseNodeAttrs };
 
 export function DatabaseBlockView(props: ReactNodeViewProps) {
-  const router = useRouter();
   const openGrovePageSideTab = useUIStore((state) => state.openGrovePageSideTab);
   const attrs = props.node.attrs as DatabaseNodeAttrs;
   const { viewType, workspaceId, pageId } = attrs;
@@ -39,6 +37,37 @@ export function DatabaseBlockView(props: ReactNodeViewProps) {
     createDatabasePage,
     handleSelectionOpen,
   } = useDatabaseBlockData(attrs, propsRef, attrsRef);
+
+  const selection = useMemo(() => {
+    if (!props.editor.isEditable || pageId) {
+      return undefined;
+    }
+
+    return {
+      pages: databasePages,
+      selectedValue,
+      onChange: (nextPageId: string) => {
+        const nextPage = databasePages.find((candidate) => candidate.id === nextPageId);
+        updateDatabaseBlockAttrs({
+          pageId: nextPage?.id ?? null,
+          databaseId: nextPage?.databaseId ?? null,
+          autoCreate: false,
+        });
+      },
+      onCreate: () => {
+        void createDatabasePage();
+      },
+      onOpen: handleSelectionOpen,
+    };
+  }, [
+    createDatabasePage,
+    databasePages,
+    handleSelectionOpen,
+    pageId,
+    props.editor.isEditable,
+    selectedValue,
+    updateDatabaseBlockAttrs,
+  ]);
 
   const handleViewTypeChange = useCallback(
     (nextViewType: GroveSurfaceView) => {
@@ -77,29 +106,7 @@ export function DatabaseBlockView(props: ReactNodeViewProps) {
         readyTestId="inline-database-ready"
         emptyTestId="inline-database-empty"
         onOpenRow={(rowId) => openGrovePageSideTab(rowId, workspaceId)}
-        selection={
-          props.editor.isEditable
-            ? {
-                pages: databasePages,
-                selectedValue,
-                onChange: (nextPageId) => {
-                  const nextPage = databasePages.find((c) => c.id === nextPageId);
-                  updateDatabaseBlockAttrs({
-                    pageId: nextPage?.id ?? null,
-                    databaseId: nextPage?.databaseId ?? null,
-                    autoCreate: false,
-                  });
-                },
-                onCreate: () => { void createDatabasePage(); },
-                onOpen: handleSelectionOpen,
-              }
-            : undefined
-        }
-        onOpenDatabase={
-          workspaceId && pageId
-            ? () => router.push(`/workspace/${workspaceId}?page=${pageId}`)
-            : undefined
-        }
+        selection={selection}
         compact={false}
         editableTitle={props.editor.isEditable}
         viewType={viewType}
