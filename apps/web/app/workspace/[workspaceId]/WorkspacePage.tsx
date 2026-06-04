@@ -112,9 +112,11 @@ function WorkspacePageInner({ workspaceId, pageId }: WorkspacePageInnerProps) {
 
   // 최신 editor content를 ref에 보관 — useAutoSave가 getContent()로 접근
   const latestContentRef = useRef<object>({ type: "doc", content: [{ type: "paragraph" }] });
+  const latestContentByPageRef = useRef<Map<string, object>>(new Map());
   const handleEditorUpdate = useCallback((content: object) => {
     latestContentRef.current = content;
-  }, []);
+    latestContentByPageRef.current.set(pageId, content);
+  }, [pageId]);
 
   const handleSpeechFinalResult = useCallback((text: string) => {
     editorInstanceRef.current?.chain().focus().insertContent(text).run();
@@ -133,10 +135,16 @@ function WorkspacePageInner({ workspaceId, pageId }: WorkspacePageInnerProps) {
   const { scheduleSave, save } = useAutoSave({
     pageId,
     getContent: () => editorInstanceRef.current?.getJSON() ?? latestContentRef.current,
+    getContentForPage: (targetPageId) =>
+      latestContentByPageRef.current.get(targetPageId) ??
+      (targetPageId === pageId
+        ? editorInstanceRef.current?.getJSON() ?? latestContentRef.current
+        : latestContentRef.current),
     debounceMs: 5000,
     intervalMs: 45000,
     onSaved: (content) => {
       setCurrentPage((page) => (page ? { ...page, content } : page));
+      latestContentByPageRef.current.set(pageId, content);
     },
   });
 
@@ -176,9 +184,11 @@ function WorkspacePageInner({ workspaceId, pageId }: WorkspacePageInnerProps) {
 
   useEffect(() => {
     if (activePage) {
-      setTitle(activePage.title);
-      latestContentRef.current =
+      const nextContent =
         activePage.content ?? { type: "doc", content: [{ type: "paragraph" }] };
+      setTitle(activePage.title);
+      latestContentRef.current = nextContent;
+      latestContentByPageRef.current.set(activePage.id, nextContent);
     }
   }, [activePage]);
 

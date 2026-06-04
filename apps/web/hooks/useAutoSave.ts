@@ -6,6 +6,7 @@ import { useEditorSaveStore } from "@/store/useEditorSaveStore";
 interface UseAutoSaveOptions {
   pageId: string;
   getContent: () => object;
+  getContentForPage?: (pageId: string) => object;
   onSaved?: (content: object) => void;
   debounceMs?: number;
   intervalMs?: number;
@@ -22,6 +23,7 @@ function buildPersistKey(pageId: string, content: object) {
 export function useAutoSave({
   pageId,
   getContent,
+  getContentForPage,
   onSaved,
   debounceMs = 1500,
   intervalMs = 30_000,
@@ -34,6 +36,7 @@ export function useAutoSave({
   const queuedSaveRef = useRef(false);
   const isDirtyRef = useRef(isDirty);
   const getContentRef = useRef(getContent);
+  const getContentForPageRef = useRef(getContentForPage);
   const pageIdRef = useRef(pageId);
   const onSavedRef = useRef(onSaved);
   const inFlightPersistKeyRef = useRef<string | null>(null);
@@ -41,6 +44,7 @@ export function useAutoSave({
 
   useEffect(() => { isDirtyRef.current = isDirty; }, [isDirty]);
   useEffect(() => { getContentRef.current = getContent; }, [getContent]);
+  useEffect(() => { getContentForPageRef.current = getContentForPage; }, [getContentForPage]);
   useEffect(() => { pageIdRef.current = pageId; }, [pageId]);
   useEffect(() => { onSavedRef.current = onSaved; }, [onSaved]);
 
@@ -115,7 +119,7 @@ export function useAutoSave({
         queuedSaveRef.current = true;
         return;
       }
-      const content = getContentRef.current();
+      const content = getContentForPageRef.current?.(targetPageId) ?? getContentRef.current();
       const { background = false } = options ?? {};
       void persistContent(targetPageId, content, {
         background,
