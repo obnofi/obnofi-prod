@@ -6,6 +6,7 @@ import type { Editor } from "@tiptap/react";
 import { Link2, StickyNote } from "lucide-react";
 import { SpeechRecognitionButton } from "@/components/editor/SpeechRecognitionButton";
 import { LinkEmbedModal } from "@/components/toolbar/LinkEmbedModal";
+import { OwlChatPanel } from "@/components/editor/OwlChatPanel";
 import { setJungleCursorVariant, useJungleCursor } from "@/lib/cursor/jungleCursor";
 import type { ParrotListeningState } from "@/hooks/useSpeechRecognition";
 
@@ -23,6 +24,7 @@ interface GroveInsertionToolbarProps {
 type ToolbarItem = {
   id: string;
   label: string;
+  tooltip: string;
   icon: ReactNode;
   onClick: () => void;
   disabled?: boolean;
@@ -59,13 +61,11 @@ export function GroveInsertionToolbar({
   isListening = false,
   isSpeechSupported = false,
   speechListeningState = "idle",
-  speechLevel = 0,
-  interimTranscript = "",
   onToggleSpeech,
   onToggleMossNote,
 }: GroveInsertionToolbarProps) {
   const [isLinkEmbedModalOpen, setIsLinkEmbedModalOpen] = useState(false);
-  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isOwlOpen, setIsOwlOpen] = useState(false);
   const canInsert = Boolean(editor?.isEditable);
   const jungleCursor = useJungleCursor();
 
@@ -74,76 +74,16 @@ export function GroveInsertionToolbar({
     command(editor);
   };
 
-  const handleOwlAi = async () => {
-    if (!editor || !canInsert || isAiLoading) return;
-
-    const userPrompt = window.prompt("AI에게 요청할 내용을 입력하세요");
-    if (!userPrompt?.trim()) return;
-
-    const { from, to } = editor.state.selection;
-    const selectedText = editor.state.doc.textBetween(from, to, " ");
-    const contextBefore = editor.state.doc.textBetween(Math.max(0, from - 500), from, " ");
-
-    setIsAiLoading(true);
-
-    try {
-      const response = await fetch("/api/ai/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: userPrompt.trim(),
-          context: selectedText || contextBefore || undefined,
-          command: "continue",
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate");
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error("No response body");
-      }
-
-      const insertPos = to;
-      let currentPos = insertPos;
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n").filter((line) => line.trim());
-
-        for (const line of lines) {
-          if (!line.startsWith('0:"')) continue;
-
-          const textContent = line.slice(3, -1);
-          const unescaped = textContent
-            .replace(/\\n/g, "\n")
-            .replace(/\\"/g, '"')
-            .replace(/\\\\/g, "\\");
-
-          editor.commands.insertContentAt(currentPos, unescaped);
-          currentPos += unescaped.length;
-        }
-      }
-
-      editor.commands.setTextSelection({ from: currentPos, to: currentPos });
-      editor.commands.focus();
-    } catch (error) {
-      console.error("Toolbar AI error:", error);
-    } finally {
-      setIsAiLoading(false);
-    }
+  const handleOwlAi = () => {
+    if (!canInsert) return;
+    setIsOwlOpen((prev) => !prev);
   };
 
   const items: ToolbarItem[] = [
     {
       id: "monkey",
-      label: "Monkey",
+      label: "Clearing",
+      tooltip: "Clearing 캔버스 삽입",
       onClick: () =>
         runEditorCommand((activeEditor) => {
           activeEditor.chain().focus().insertCanvasEmbed().run();
@@ -159,7 +99,8 @@ export function GroveInsertionToolbar({
     },
     {
       id: "elephant",
-      label: "Elephant",
+      label: "Undergrowth",
+      tooltip: "Undergrowth 데이터베이스 삽입",
       onClick: () =>
         runEditorCommand((activeEditor) => {
           activeEditor.chain().focus().insertDatabaseEmbed().run();
@@ -175,10 +116,11 @@ export function GroveInsertionToolbar({
     },
     {
       id: "owl",
-      label: "Owl",
+      label: "Owl AI",
+      tooltip: "Owl AI 열기",
       onClick: handleOwlAi,
-      disabled: !canInsert || isAiLoading,
-      active: isAiLoading,
+      disabled: !canInsert,
+      active: isOwlOpen,
       icon: (
         <ToolbarAnimalIcon
           alt="Owl"
@@ -189,14 +131,16 @@ export function GroveInsertionToolbar({
     },
     {
       id: "moss-note",
-      label: "Memo",
+      label: "MossNote",
+      tooltip: "MossNote 배치",
       onClick: () => onToggleMossNote?.(),
       disabled: !onToggleMossNote,
       icon: <StickyNote className="h-4 w-4 shrink-0" />,
     },
     {
       id: "link-embed",
-      label: "Link",
+      label: "Link Embed",
+      tooltip: "링크 임베드 삽입",
       onClick: () => {
         if (!canInsert) return;
         setIsLinkEmbedModalOpen(true);
@@ -223,7 +167,7 @@ export function GroveInsertionToolbar({
                 jungleCursor.variant === "highlighting" ? "pointing" : "highlighting"
               )
             }
-            title="Cursor"
+            title="하이라이트 커서"
             className={[
               "flex h-11 min-w-11 items-center justify-center rounded-2xl px-3 text-sm text-[var(--color-text-primary)] transition",
               jungleCursor.variant === "highlighting"
@@ -244,12 +188,10 @@ export function GroveInsertionToolbar({
             isListening={isListening}
             isSupported={isSpeechSupported}
             listeningState={speechListeningState}
-            speechLevel={speechLevel}
-            interimTranscript={interimTranscript}
             onToggle={() => onToggleSpeech?.()}
           />
         ) : null}
-        {items.map(({ id, label, icon, onClick, disabled, active }) => (
+        {items.map(({ id, label, tooltip, icon, onClick, disabled, active }) => (
           <button
             key={id}
             type="button"
@@ -258,7 +200,7 @@ export function GroveInsertionToolbar({
             aria-label={label}
             disabled={disabled}
             onClick={onClick}
-            title={label}
+            title={tooltip}
             className={[
               "flex h-11 min-w-11 items-center justify-center gap-2 rounded-2xl px-3 text-sm text-[var(--color-text-primary)] transition",
               active
@@ -278,6 +220,9 @@ export function GroveInsertionToolbar({
           editor?.chain().focus().insertLinkEmbedBlock({ url }).run();
         }}
       />
+      {isOwlOpen && (
+        <OwlChatPanel editor={editor} onClose={() => setIsOwlOpen(false)} />
+      )}
     </div>
   );
 }
