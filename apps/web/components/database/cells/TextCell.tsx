@@ -37,7 +37,7 @@ export function TextCell({ value, onChange, placeholder }: TextCellProps) {
       onChange={handleChange}
       onBlur={handleBlur}
       placeholder={placeholder}
-      className="w-full rounded-md border border-transparent bg-transparent px-2 py-1.5 text-sm text-[#111110] outline-none transition focus:border-zinc-300 focus:bg-white dark:text-zinc-100 dark:focus:border-zinc-700 dark:focus:bg-zinc-900"
+      className="h-8 w-full rounded-md border border-transparent bg-transparent px-2 text-[13px] text-[var(--color-text-primary)] outline-none transition placeholder:text-[var(--color-text-placeholder)] focus:bg-[var(--color-background)] focus:ring-1 focus:ring-[var(--color-border)]"
     />
   );
 }

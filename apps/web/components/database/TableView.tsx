@@ -112,7 +112,7 @@ export function TableView({
   return (
     <div className="flex h-full flex-col overflow-hidden" style={{ cursor: jungleCursor.cursorCss }}>
       <div className="flex-1 overflow-auto">
-        <table className="w-full border-collapse">
+        <table className="w-full border-collapse text-[13px]">
           <TableHead
             headerGroups={table.getHeaderGroups()}
             properties={_properties}
@@ -128,7 +128,7 @@ export function TableView({
               <tr
                 key={row.id}
                 onClick={(event) => handleRowClick(event, row)}
-                className={`group border-b border-[var(--color-border)] transition-colors hover:bg-[var(--color-hover)] ${
+                className={`group border-b border-[var(--color-border)] transition-colors hover:bg-[var(--color-hover)]/70 ${
                   onOpenRow && !row.getIsGrouped() ? "cursor-pointer" : ""
                 }`}
               >
@@ -145,14 +145,14 @@ export function TableView({
                       onClick={() => handleCellEnter(row.original.id, cell.column.id)}
                       onBlurCapture={handleCellLeave}
                       title={occupyingUsers.map((user) => user.userName).join(", ") || undefined}
-                      className={`border-r border-[var(--color-border)] px-3 py-1.5 ${
+                      className={`align-middle border-r border-[var(--color-border)] px-1 py-0 ${
                         isTitleColumn
-                          ? "sticky left-0 z-10 bg-[var(--color-background)] px-4 py-2 transition-colors group-hover:bg-[var(--color-hover)]"
+                          ? "sticky left-0 z-10 bg-[var(--color-background)] px-2 transition-colors group-hover:bg-[var(--color-hover)]/70"
                           : ""
                       }`}
                       style={{
                         ...(row.depth > 0 && isTitleColumn
-                          ? { paddingLeft: `${16 + row.depth * 20}px` }
+                          ? { paddingLeft: `${12 + row.depth * 20}px` }
                           : undefined),
                         ...(primaryOccupant
                           ? { boxShadow: `inset 0 0 0 2px ${primaryOccupant.color}` }
@@ -169,14 +169,14 @@ export function TableView({
 
             {/* New row */}
             <tr>
-              <td colSpan={table.getVisibleLeafColumns().length + 1} className="px-4 py-2">
+              <td colSpan={table.getVisibleLeafColumns().length + 1} className="px-2 py-1.5">
                 <button
                   type="button"
                   onClick={onCreateRow}
-                  className="flex items-center gap-1.5 text-[13px] text-[var(--color-text-secondary)] transition hover:text-[var(--color-text-primary)]"
+                  className="flex h-8 items-center gap-1.5 rounded-md px-2 text-[13px] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-text-primary)]"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  New
+                  New seed
                 </button>
               </td>
             </tr>

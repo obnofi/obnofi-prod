@@ -13,10 +13,10 @@ export function CheckboxCell({ value, onChange }: CheckboxCellProps) {
       <button
         type="button"
         onClick={() => onChange(!value)}
-        className={`flex h-5 w-5 items-center justify-center rounded border transition-colors ${
+        className={`flex h-[18px] w-[18px] items-center justify-center rounded-[4px] border transition-colors ${
           value
-            ? "border-[#2E7D45] bg-[#2E7D45] text-white"
-            : "border-zinc-300 bg-white hover:border-zinc-400 dark:border-zinc-600 dark:bg-zinc-800"
+            ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-white"
+            : "border-[var(--color-border)] bg-[var(--color-background)] hover:border-[var(--color-text-secondary)]"
         }`}
       >
         {value && <Check className="h-3.5 w-3.5" />}

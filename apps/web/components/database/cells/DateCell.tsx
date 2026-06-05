@@ -34,7 +34,7 @@ export function DateCell({ value, endValue, onChange }: DateCellProps) {
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((o) => !o)}
-        className={`flex w-full items-center gap-1.5 rounded border border-transparent px-2 py-1.5 text-left text-sm transition hover:bg-[var(--color-hover)] ${value ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"}`}
+        className={`flex h-8 w-full items-center gap-1.5 rounded-md border border-transparent px-2 text-left text-[13px] transition hover:bg-[var(--color-hover)] ${value ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"}`}
       >
         <Calendar className="h-3.5 w-3.5 shrink-0" />
         <span className="truncate">
@@ -45,7 +45,7 @@ export function DateCell({ value, endValue, onChange }: DateCellProps) {
       </button>
 
       <DropdownPortal triggerRef={triggerRef} isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <div className="w-64 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-lg">
+        <div className="w-64 rounded-md border border-[var(--color-border)] bg-[var(--color-background)] p-3 shadow-lg">
           <div className="space-y-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-[var(--color-text-secondary)]">Start date</label>

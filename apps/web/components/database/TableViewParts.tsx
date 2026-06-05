@@ -38,7 +38,7 @@ export function AddPropertyPopover({ onConfirm, onClose }: AddPropertyPopoverPro
   return (
     <>
       <div className="fixed inset-0 z-[99998]" onClick={onClose} />
-      <div className="absolute right-0 top-full z-[99999] mt-1 w-64 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-xl">
+      <div className="absolute right-0 top-full z-[99999] mt-1 w-64 rounded-md border border-[var(--color-border)] bg-[var(--color-background)] p-3 shadow-xl">
         <div className="mb-3 flex items-center justify-between">
           <span className="text-xs font-semibold text-[var(--color-text-primary)]">속성 추가</span>
           <button type="button" onClick={onClose}>
@@ -54,7 +54,7 @@ export function AddPropertyPopover({ onConfirm, onClose }: AddPropertyPopoverPro
           onChange={(e) => setNewPropName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && confirm()}
           placeholder="속성 이름"
-          className="mb-2 w-full rounded border border-[var(--color-border)] bg-[var(--color-background)] px-2.5 py-1.5 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] placeholder:text-[var(--color-text-placeholder)]"
+          className="mb-2 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-2.5 py-1.5 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] placeholder:text-[var(--color-text-placeholder)]"
         />
 
         <div className="mb-3 grid grid-cols-2 gap-1">
@@ -84,7 +84,7 @@ export function AddPropertyPopover({ onConfirm, onClose }: AddPropertyPopoverPro
         <button
           type="button"
           onClick={confirm}
-          className="w-full rounded bg-[var(--color-accent)] py-1.5 text-xs font-medium text-white hover:bg-[var(--color-accent-hover)] transition"
+          className="w-full rounded-md bg-[var(--color-accent)] py-1.5 text-xs font-medium text-white transition hover:bg-[var(--color-accent-hover)]"
         >
           추가
         </button>
@@ -155,9 +155,9 @@ export function TableHead({
             return (
               <th
                 key={header.id}
-                className={`relative bg-[var(--color-surface)] px-0 py-0 text-left border-r border-[var(--color-border)] ${
+                className={`relative border-r border-[var(--color-border)] bg-[var(--color-surface)] px-0 py-0 text-left ${
                   isTitleColumn
-                    ? `sticky left-0 z-10 ${compact ? "w-48" : "w-64"} px-4 py-2.5 text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-secondary)]`
+                    ? `sticky left-0 z-20 ${compact ? "w-48" : "w-64"} px-3 py-2 text-[11px] font-medium text-[var(--color-text-secondary)]`
                     : compact
                     ? "w-32 min-w-[7rem]"
                     : "w-40 min-w-[9rem]"
@@ -167,7 +167,7 @@ export function TableHead({
                   <button
                     type="button"
                     onClick={header.column.getToggleSortingHandler()}
-                    className="inline-flex items-center gap-1 hover:text-[var(--color-text-primary)]"
+                    className="inline-flex items-center gap-1.5 text-[11px] font-medium hover:text-[var(--color-text-primary)]"
                   >
                     <span>
                       {flexRender(header.column.columnDef.header, header.getContext())}
@@ -209,13 +209,13 @@ export function TableHead({
 
           {/* Add property button */}
           <th
-            className="relative bg-[var(--color-surface)] w-10 px-2 py-2.5"
+            className="relative w-10 bg-[var(--color-surface)] px-2 py-2"
             ref={addPropRef}
           >
             <button
               type="button"
               onClick={openAddProp}
-              className="flex h-5 w-5 items-center justify-center rounded text-[var(--color-text-secondary)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-text-primary)]"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-secondary)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-text-primary)]"
               title="속성 추가"
             >
               <Plus className="h-3.5 w-3.5" />

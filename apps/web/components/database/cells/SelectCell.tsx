@@ -24,11 +24,11 @@ export function SelectCell({ value, options, onChange, allowEmpty = true }: Sele
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-1 rounded border border-transparent px-2 py-1.5 text-left text-sm transition hover:bg-[var(--color-hover)]"
+        className="flex h-8 w-full items-center justify-between gap-1 rounded-md border border-transparent px-2 text-left text-[13px] transition hover:bg-[var(--color-hover)]"
       >
         {selectedOption ? (
           <span
-            className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium"
+            className="inline-flex items-center rounded px-2 py-0.5 text-[12px] font-medium"
             style={{ backgroundColor: getOptionBgColor(selectedOption.color), color: getOptionTextColor(selectedOption.color) }}
           >
             {selectedOption.label}
@@ -40,7 +40,7 @@ export function SelectCell({ value, options, onChange, allowEmpty = true }: Sele
       </button>
 
       <DropdownPortal triggerRef={triggerRef} isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <div className="min-w-[10rem] max-w-xs rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-lg">
+        <div className="min-w-[10rem] max-w-xs rounded-md border border-[var(--color-border)] bg-[var(--color-background)] py-1 shadow-lg">
           {allowEmpty && (
             <button
               type="button"

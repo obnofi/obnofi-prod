@@ -27,14 +27,14 @@ export function MultiSelectCell({ value, options, onChange }: MultiSelectCellPro
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((o) => !o)}
-        className="flex w-full min-h-[36px] items-center gap-1 rounded border border-transparent px-2 py-1 text-left text-sm transition hover:bg-[var(--color-hover)]"
+        className="flex min-h-8 w-full items-center gap-1 rounded-md border border-transparent px-2 py-1 text-left text-[13px] transition hover:bg-[var(--color-hover)]"
       >
         <div className="flex flex-wrap items-center gap-1 flex-1">
           {selectedOptions.length > 0 ? (
             selectedOptions.map((option) => (
               <span
                 key={option.id}
-                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium"
+                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[12px] font-medium"
                 style={{ backgroundColor: getOptionBgColor(option.color), color: getOptionTextColor(option.color) }}
               >
                 {option.label}
@@ -54,7 +54,7 @@ export function MultiSelectCell({ value, options, onChange }: MultiSelectCellPro
       </button>
 
       <DropdownPortal triggerRef={triggerRef} isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <div className="min-w-[10rem] max-w-xs rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-lg">
+        <div className="min-w-[10rem] max-w-xs rounded-md border border-[var(--color-border)] bg-[var(--color-background)] py-1 shadow-lg">
           {options.length === 0 ? (
             <div className="px-3 py-2 text-sm text-[var(--color-text-secondary)]">No options</div>
           ) : (

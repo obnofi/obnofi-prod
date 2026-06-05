@@ -13,7 +13,7 @@ export function ComputedCell({ value, options }: ComputedCellProps) {
   const displayValue = formatPropertyValue(value, options);
 
   return (
-    <div className="px-2 py-1.5 text-sm text-zinc-500 dark:text-zinc-400">
+    <div className="flex h-8 items-center px-2 text-[13px] text-[var(--color-text-secondary)]">
       {displayValue || "—"}
     </div>
   );

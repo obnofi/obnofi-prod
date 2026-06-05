@@ -23,12 +23,12 @@ export function StatusCell({ value, options, onChange }: StatusCellProps) {
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-1 rounded border border-transparent px-2 py-1.5 text-left text-sm transition hover:bg-[var(--color-hover)]"
+        className="flex h-8 w-full items-center justify-between gap-1 rounded-md border border-transparent px-2 text-left text-[13px] transition hover:bg-[var(--color-hover)]"
       >
         {selectedOption ? (
           <div className="flex w-full items-center gap-2 rounded px-2 py-1" style={{ backgroundColor: getOptionBgColor(selectedOption.color) }}>
             <div className="h-2 w-2 rounded-full" style={{ backgroundColor: getOptionTextColor(selectedOption.color) }} />
-            <span className="text-sm font-medium" style={{ color: getOptionTextColor(selectedOption.color) }}>{selectedOption.label}</span>
+            <span className="text-[12px] font-medium" style={{ color: getOptionTextColor(selectedOption.color) }}>{selectedOption.label}</span>
           </div>
         ) : (
           <span className="text-[var(--color-text-secondary)]">Empty</span>
@@ -37,7 +37,7 @@ export function StatusCell({ value, options, onChange }: StatusCellProps) {
       </button>
 
       <DropdownPortal triggerRef={triggerRef} isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <div className="min-w-[10rem] max-w-xs rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-lg">
+        <div className="min-w-[10rem] max-w-xs rounded-md border border-[var(--color-border)] bg-[var(--color-background)] py-1 shadow-lg">
           <button type="button" onClick={() => { onChange(null); setIsOpen(false); }} className="w-full px-3 py-2 text-left text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-hover)]">
             Empty
           </button>
