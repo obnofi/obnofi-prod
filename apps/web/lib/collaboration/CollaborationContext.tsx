@@ -35,7 +35,7 @@ interface CollaborationContextValue {
   ydoc: Y.Doc | null;
   provider: WebsocketProvider | null;
   isSynced: boolean;
-  pageType: "document" | "canvas" | "database" | null;
+  pageType: "document" | "canvas" | "database" | "mindmap" | null;
   awarenessCount: number;
   awarenessStates: Array<CursorAwarenessState & { clientId: number; image?: string | null }>;
   updateCursor: (fields: Partial<UserCursor> | null) => void;
@@ -73,7 +73,7 @@ export function CollaborationProvider({
 }: {
   pageId: string;
   active: boolean;
-  pageType?: "document" | "canvas" | "database" | null;
+  pageType?: "document" | "canvas" | "database" | "mindmap" | null;
   children: ReactNode;
 }) {
   const { data: session, status: sessionStatus } = useSession();

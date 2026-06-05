@@ -2,18 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Trash2, FileText, Palette, Database } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import {
   creatablePageTypes,
   creatablePageLabels,
 } from "@/lib/pageCreation";
+import { typeIcons } from "@/components/workspace/sidebarConstants";
 import type { PageType } from "@obnofi/types";
-
-const typeIcons: Record<PageType, React.ReactNode> = {
-  document: <FileText className="w-4 h-4" />,
-  canvas: <Palette className="w-4 h-4" />,
-  database: <Database className="w-4 h-4" />,
-};
 
 // ── PageTreeMenuPortal ────────────────────────────────────────────────────────
 

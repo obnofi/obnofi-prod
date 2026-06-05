@@ -2,7 +2,7 @@
 
 import { startTransition } from "react";
 import dynamic from "next/dynamic";
-import { ChevronRight, FileText, Palette, Database } from "lucide-react";
+import { ChevronRight, FileText, Network, Palette, Database } from "lucide-react";
 import type { Page, PageType } from "@obnofi/types";
 import { CollaborationAvatars } from "@/components/workspace/CollaborationAvatars";
 import { SaveStatusIndicator } from "@/components/workspace/SaveStatusIndicator";
@@ -20,6 +20,7 @@ const typeIcons: Record<PageType, React.ReactNode> = {
   document: <FileText className="w-4 h-4" />,
   canvas: <Palette className="w-4 h-4" />,
   database: <Database className="w-4 h-4" />,
+  mindmap: <Network className="w-4 h-4" />,
 };
 
 export interface WorkspacePageHeaderProps {

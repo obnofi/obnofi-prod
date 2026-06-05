@@ -3,6 +3,7 @@
 import { type RefObject } from "react";
 import {
   FileText,
+  Network,
   Palette,
   Database,
   Plus,
@@ -28,6 +29,7 @@ const childTypeIcons: Record<PageType, React.ReactNode> = {
   document: <FileText className="h-4 w-4" />,
   canvas: <Palette className="h-4 w-4" />,
   database: <Database className="h-4 w-4" />,
+  mindmap: <Network className="h-4 w-4" />,
 };
 
 export interface DocumentPageBodyProps {

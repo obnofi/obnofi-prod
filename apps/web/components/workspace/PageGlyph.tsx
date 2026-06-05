@@ -1,5 +1,5 @@
 import type { Page, PageType } from "@obnofi/types";
-import { Database, FileText, Palette } from "lucide-react";
+import { Database, FileText, Network, Palette } from "lucide-react";
 
 interface PageGlyphProps {
   page?: Pick<Page, "icon" | "type"> | null;
@@ -12,6 +12,7 @@ const glyphByType: Record<PageType, React.ComponentType<{ className?: string }>>
   document: FileText,
   canvas: Palette,
   database: Database,
+  mindmap: Network,
 };
 
 export function PageGlyph({

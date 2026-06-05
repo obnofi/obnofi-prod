@@ -37,6 +37,21 @@ const DatabaseWorkspace = dynamic(
   }
 );
 
+const MindGroveBoard = dynamic(
+  () =>
+    import("@/components/mindmap/MindGroveBoard").then(
+      (mod) => mod.MindGroveBoard
+    ),
+  {
+    loading: () => (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-accent)]" />
+      </div>
+    ),
+    ssr: false,
+  }
+);
+
 export interface WorkspacePageContentProps {
   activePage: Page;
   pageId: string;
@@ -169,6 +184,15 @@ export function WorkspacePageContent({
             onToggleMossNote={() => mossNoteDockRef.current?.togglePlacement()}
           />
         </>
+      )}
+
+      {activePage.type === "mindmap" && (
+        <div className="h-full">
+          <MindGroveBoard
+            pageId={pageId}
+            initialContent={activePage.content}
+          />
+        </div>
       )}
     </div>
   );

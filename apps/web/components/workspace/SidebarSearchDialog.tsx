@@ -4,13 +4,14 @@ import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Search, X } from "lucide-react";
 import { searchModeLabels, type SearchMode, type PageSearchResult } from "@/lib/sidebarPageTree";
-import { FileText, Palette, Database } from "lucide-react";
+import { FileText, Network, Palette, Database } from "lucide-react";
 import type { PageType } from "@obnofi/types";
 
 const typeIcons: Record<PageType, React.ReactNode> = {
   document: <FileText className="w-4 h-4" />,
   canvas: <Palette className="w-4 h-4" />,
   database: <Database className="w-4 h-4" />,
+  mindmap: <Network className="w-4 h-4" />,
 };
 
 interface SearchDialogProps {

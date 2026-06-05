@@ -3,7 +3,7 @@
 import { useRef, useCallback } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronDown, Plus, MoreHorizontal, FileText, Palette, Database } from "lucide-react";
+import { ChevronDown, Plus, MoreHorizontal, FileText, Network, Palette, Database } from "lucide-react";
 import { getUserColor } from "@/lib/collaborationUtils";
 import { getUserInitials, PAGE_TREE_INDENT, type FlattenedPageNode } from "@/lib/sidebarPageTree";
 import type { PageType } from "@obnofi/types";
@@ -12,6 +12,7 @@ const typeIcons: Record<PageType, React.ReactNode> = {
   document: <FileText className="w-4 h-4" />,
   canvas: <Palette className="w-4 h-4" />,
   database: <Database className="w-4 h-4" />,
+  mindmap: <Network className="w-4 h-4" />,
 };
 
 interface PageTreeItemProps {
