@@ -1,6 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Page, PropertyType, ViewType } from "@obnofi/types";
 import type { ReactNodeViewProps } from "@tiptap/react";
+import { buildEmptyDatabasePage } from "@/lib/database/emptyDatabasePage";
+import {
+  buildOptimisticPage,
+  generateOptimisticPageId,
+} from "@/lib/page/pageUtils";
+import {
+  appendCachedPage,
+  removeCachedPage,
+  replaceCachedPage,
+} from "@/lib/page/pageStoreSync";
+import { useGroveCatalogStore } from "@/store/useGroveCatalogStore";
 
 type GroveSurfaceView = Extract<ViewType, "table" | "gallery" | "board" | "calendar">;
 
@@ -20,7 +31,6 @@ export interface DatabaseNodeAttrs {
 export function useDatabaseBlockData(
   attrs: DatabaseNodeAttrs,
   propsRef: React.MutableRefObject<ReactNodeViewProps>,
-  attrsRef: React.MutableRefObject<DatabaseNodeAttrs>
 ) {
   const { workspaceId, parentPageId, autoCreate, pageId, databaseId } = attrs;
   const [databasePages, setDatabasePages] = useState<Page[]>([]);
@@ -70,22 +80,82 @@ export function useDatabaseBlockData(
     if (!workspaceId || !parentPageId || isCreatingRef.current) return;
     isCreatingRef.current = true;
     setIsCreating(true);
-    const response = await fetch("/api/pages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: "Grove Catalog", type: "database", parentId: parentPageId, workspaceId }),
-    });
-    isCreatingRef.current = false;
-    setIsCreating(false);
-    if (!response.ok) return;
-    const createdPage = (await response.json()) as Page;
+    const optimisticDatabaseId = generateOptimisticPageId();
+    const optimisticPage = buildOptimisticPage(
+      {
+        title: "Grove Catalog",
+        type: "database",
+        parentId: parentPageId,
+        workspaceId,
+        databaseId: optimisticDatabaseId,
+      },
+      []
+    );
+    const optimisticDatabasePage = buildEmptyDatabasePage(
+      optimisticPage,
+      optimisticDatabaseId
+    );
+
+    appendCachedPage(optimisticPage);
+    setDatabasePages((current) => [...current, optimisticPage]);
+    const groveCatalogStore = useGroveCatalogStore.getState();
+    groveCatalogStore.setGrovePage(optimisticPage.id, optimisticDatabasePage);
+    groveCatalogStore.markGroveLoaded(optimisticPage.id);
     updateDatabaseBlockAttrs({
-      pageId: createdPage.id,
-      databaseId: createdPage.databaseId ?? null,
+      pageId: optimisticPage.id,
+      databaseId: optimisticDatabaseId,
       autoCreate: false,
     });
-    await loadDatabasePages();
-  }, [loadDatabasePages, parentPageId, updateDatabaseBlockAttrs, workspaceId]);
+
+    try {
+      const response = await fetch("/api/pages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Grove Catalog",
+          type: "database",
+          parentId: parentPageId,
+          workspaceId,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to create database page");
+      }
+
+      const createdPage = (await response.json()) as Page;
+      const createdDatabasePage = buildEmptyDatabasePage(
+        createdPage,
+        createdPage.databaseId ?? optimisticDatabaseId
+      );
+
+      replaceCachedPage(optimisticPage.id, createdPage);
+      setDatabasePages((current) =>
+        current.map((page) => (page.id === optimisticPage.id ? createdPage : page))
+      );
+      groveCatalogStore.setGrovePage(optimisticPage.id, null);
+      groveCatalogStore.setGrovePage(createdPage.id, createdDatabasePage);
+      groveCatalogStore.markGroveLoaded(createdPage.id);
+      updateDatabaseBlockAttrs({
+        pageId: createdPage.id,
+        databaseId: createdPage.databaseId ?? null,
+        autoCreate: false,
+      });
+    } catch {
+      removeCachedPage(optimisticPage.id);
+      setDatabasePages((current) =>
+        current.filter((page) => page.id !== optimisticPage.id)
+      );
+      groveCatalogStore.setGrovePage(optimisticPage.id, null);
+      updateDatabaseBlockAttrs({
+        pageId: null,
+        databaseId: null,
+        autoCreate: false,
+      });
+    } finally {
+      isCreatingRef.current = false;
+      setIsCreating(false);
+    }
+  }, [parentPageId, updateDatabaseBlockAttrs, workspaceId]);
 
   useEffect(() => {
     if (!propsRef.current.editor.isEditable || !autoCreate || pageId) return;
