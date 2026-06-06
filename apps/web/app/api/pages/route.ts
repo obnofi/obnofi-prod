@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@obnofi/db";
-import { getExampleDatabaseColumns } from "@/lib/database-utils";
 import {
   getAuthenticatedUserId,
   resolveWorkspaceForUser,
@@ -11,7 +10,6 @@ import {
   PAGE_SELECT,
   toPage,
   toPrismaPageType,
-  toPrismaPropertyType,
   toPrismaViewType,
   type PrismaPageRow,
 } from "@/lib/prisma-transforms";
@@ -107,8 +105,6 @@ export async function POST(request: NextRequest) {
       type === "document" ? Boolean(lineIndicatorEnabled ?? false) : false;
 
     if (type === "database") {
-      const defaultColumns = getExampleDatabaseColumns();
-
       const { page: newPage, databaseId } = await prisma.$transaction(
         async (tx) => {
           const page = await tx.page.create({
@@ -124,16 +120,6 @@ export async function POST(request: NextRequest) {
 
           const database = await tx.database.create({
             data: { pageId: page.id },
-          });
-
-          await tx.property.createMany({
-            data: defaultColumns.map((col, order) => ({
-              databaseId: database.id,
-              name: col.name,
-              type: toPrismaPropertyType(col.type),
-              options: col.options ? (col.options as object[]) : undefined,
-              order,
-            })),
           });
 
           await tx.view.create({

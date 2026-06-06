@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@obnofi/db";
-import { getExampleDatabaseColumns } from "@/lib/database-utils";
 import {
   PAGE_SELECT_WITH_PROPERTY_VALUES,
   toDatabase,
-  toPrismaPropertyType,
   toPrismaViewType,
 } from "@/lib/prisma-transforms";
 
@@ -45,20 +43,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(toDatabase(fullDb!));
     }
 
-    const defaultColumns = getExampleDatabaseColumns();
-
     const fullDb = await prisma.$transaction(async (tx) => {
       const newDb = await tx.database.create({ data: { pageId } });
-
-      await tx.property.createMany({
-        data: defaultColumns.map((col, idx) => ({
-          databaseId: newDb.id,
-          name: col.name,
-          type: toPrismaPropertyType(col.type),
-          options: col.options ? (col.options as object[]) : undefined,
-          order: idx,
-        })),
-      });
 
       await tx.view.create({
         data: {
