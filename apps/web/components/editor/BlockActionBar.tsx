@@ -124,7 +124,7 @@ export function BlockActionBar({ editor, container }: BlockActionBarProps) {
         className="grove-block-action-button"
         aria-label="블록 이동"
         title="블록 이동"
-        onMouseDown={(event) => event.stopPropagation()}
+        onMouseDown={(event) => { event.preventDefault(); event.stopPropagation(); }}
         onPointerDown={(event) => {
           if (event.button !== 0) {
             return;

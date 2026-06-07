@@ -82,15 +82,19 @@ export const BlockActionsExtension = Extension.create({
         },
       selectBlockNode:
         (blockId: string) =>
-        ({ state, dispatch }) => {
-          const block = findBlockById(state.doc, blockId);
+        ({ dispatch, view }) => {
+          const block = findBlockById(view.state.doc, blockId);
           if (!block) {
             return false;
           }
 
+          // Focus BEFORE dispatch: ensures selectionToDOM runs after the transaction
+          // (ProseMirror skips selectionToDOM when view is not focused)
+          view.focus();
+
           dispatch(
-            state.tr
-              .setSelection(NodeSelection.create(state.doc, block.pos))
+            view.state.tr
+              .setSelection(NodeSelection.create(view.state.doc, block.pos))
               .setMeta(blockActionsPluginKey, {
                 hoveredBlockId: blockId,
                 draggedBlockId: null,
