@@ -10,9 +10,11 @@ This file is the authoritative guide for AI agents (Claude, Cursor, Copilot, etc
 
 This is **not a simple app**. The repository contains three separate runtimes:
 
-- **Root** — Next.js 15 App Router (frontend)
-- **`server/`** — Fastify + Prisma + WebSocket (backend)
-- **`ai/`** — Python orchestration layer
+- **Root / `apps/web/`** — Next.js 15 App Router (frontend + API routes)
+- **`apps/ws-server/`** — Fastify + WebSocket, Yjs 문서 동기화 전용
+- **`packages/db/`** — Prisma 스키마 + DB 클라이언트
+- **`packages/types/`** — 프런트/서버 공유 타입
+- **`apps/web/ai/`** — Python 오케스트레이터 (실사용 연결 제한적)
 
 Do not treat this as a monorepo with shared configs. Each runtime has its own `package.json`, `tsconfig.json`, and environment variables.
 
@@ -23,7 +25,7 @@ Do not treat this as a monorepo with shared configs. Each runtime has its own `p
 Read these files **in this order** before starting any task:
 
 1. **`DB.md`** — Database notes and schema overview. Required before any feature that touches data.
-2. **`server/prisma/schema.prisma`** — Source of truth for the actual schema. Cross-reference with `DB.md`.
+2. **`packages/db/prisma/schema.prisma`** — Source of truth for the actual schema. Cross-reference with `DB.md`.
 3. **`DESIGN.md`** — Design system, Jungle System naming conventions, and visual rules.
 4. **`APIDOCS.md`** — All API endpoint specs. Required before adding or modifying any route.
 5. **`docs/architecture.md`** — Data model and architecture notes.
@@ -80,7 +82,7 @@ When adding new features, extend this metaphor. Do not use generic names (`creat
 
 Before implementing any new feature:
 
-- [ ] Read `DB.md` and `server/prisma/schema.prisma`
+- [ ] Read `DB.md` and `packages/db/prisma/schema.prisma`
 - [ ] Confirm whether a schema migration is needed
 - [ ] Check `APIDOCS.md` — add new endpoints to the spec before implementing
 - [ ] Check `DESIGN.md` for relevant tokens and components
@@ -155,30 +157,38 @@ Filters, sorts, groupBy, column widths, and visible properties are all in `View.
 
 | Task type | Start here |
 |---|---|
-| Page editing, workspace UX | `app/workspace/`, `components/editor/`, `components/sidebar/`, `store/` |
+| Page editing, workspace UX | `app/workspace/`, `components/editor/`, `components/workspace/`, `store/` |
 | Workspace sidebar | `components/workspace/WorkspaceSidebar.tsx`, `hooks/useSidebarSearch.ts`, `hooks/useSidebarDrag.ts`, `hooks/useSidebarNavigation.ts`, `hooks/usePageSettings.ts`, `hooks/useWorkspaceSidebar.ts` |
 | Page settings menu | `components/workspace/PageSettingsMenu.tsx` |
-| Database or views | `components/database/`, `lib/database/`, `app/api/databases/`, `server/prisma/schema.prisma` |
+| Database or views | `components/database/`, `lib/database/`, `app/api/databases/`, `packages/db/prisma/schema.prisma` |
 | Database table accessors | `lib/database/tableAccessors.ts` |
 | Database property meta/values | `lib/database/propertyMeta.ts`, `lib/database/propertyValues.ts`, `lib/database/selectOptions.ts` |
 | Database view utils | `lib/databaseViewUtils.ts`, `components/database/DatabaseViewTable.tsx`, `components/database/DatabaseViewGrid.tsx` |
 | Database query panel | `components/database/DatabaseQueryPanel.tsx` |
-| Collaboration / realtime | `server/src/ws/`, `lib/collaboration/` |
+| Database client state (GroveCatalog) | `store/useGroveCatalogStore.ts`, `lib/groveCatalogApi.ts`, `hooks/useDatabasePage.ts`, `hooks/useDatabaseRealtime.ts`, `store/useDatabaseViewStore.ts` |
+| Database engine (query/filter/formula) | `lib/database/queryEngine.ts`, `lib/database/filterEvaluator.ts`, `lib/database/computedPropertyEngine.ts` |
+| Collaboration / realtime (Yjs) | `apps/ws-server/src/collaboration/`, `lib/collaboration/` |
 | Realtime sync utils | `lib/realtime/timerUtils.ts`, `lib/realtime/presenceUtils.ts`, `lib/realtime/channelUtils.ts` |
 | Collaboration awareness | `lib/collaboration/useCollaborationAwareness.ts`, `lib/collaboration/wsUrl.ts` |
 | Collaboration provider lifecycle | `lib/collaboration/useProviderConnection.ts`, `lib/collaboration/usePresenceSync.ts` |
-| Crawlers / scheduled jobs | `server/src/jobs/`, `server/src/jobs/crawlers/` |
-| AI prompting / orchestration | `ai/`, `app/api/ai/generate/route.ts` |
+| AI text transforms (generate) | `app/api/ai/generate/route.ts`, `components/editor/AiCommandList.tsx`, `components/editor/extensions/AiExtension.ts` |
+| AI chat (Owl) | `app/api/ai/owl/route.ts`, `components/editor/OwlChatPanel.tsx` |
+| AI Python orchestrator | `apps/web/ai/orchestrator.py`, `apps/web/ai/prompts/` |
 | Public sharing | `app/share/`, `components/share/` |
+| Forest (public feed + publishing) | `app/forest/`, `app/p/[publishId]/`, `components/published/`, `lib/publishedPages.ts`, `lib/publishedPageTypes.ts`, `app/api/published-pages/` |
 | Graph view | `components/graph/`, `lib/graph/` |
-| Graph layout/data | `lib/graph/graphLayout.ts`, `lib/graph/graphDataUtils.ts`, `components/graph/useGraphPages.ts`, `components/graph/useGraphFlowNodes.ts` |
+| Graph layout/data | `lib/graph/graphLayout.ts`, `lib/graph/graphDataUtils.ts`, `components/graph/useGraphPages.ts`, `components/graph/useGraphFlowNodes.ts`, `components/graph/graphStore.ts`, `components/graph/useGraphSimulation.ts` |
 | Canvas (Clearing) | `components/canvas/`, `lib/canvas/` |
 | Canvas board hooks | `hooks/useClearingBoardState.ts`, `hooks/useClearingSync.ts`, `hooks/useClearingBootstrap.ts`, `hooks/useClearingPersistence.ts`, `hooks/useClearingPointerHandlers.ts`, `hooks/useClearingDragHandlers.ts`, `hooks/useClearingActions.ts`, `hooks/useClearingKeyboard.ts` |
 | Canvas drawing (simple canvas) | `hooks/useCanvasDrawing.ts` |
 | Canvas utilities | `lib/canvas/clearingBoardUtils.ts`, `lib/canvas/clearingBoardElementBuilders.ts`, `lib/canvas/clearingBoardSupabase.ts`, `lib/canvas/clearingBoardTypes.ts` |
+| Canvas timer / presence panel | `components/canvas/TimerWidget.tsx`, `components/canvas/ClearingPresencePanel.tsx`, `components/canvas/CursorChat.tsx` |
 | Sticky note (canvas) | `components/elements/StickyNote.tsx`, `lib/canvas/stickyNoteColors.ts`, `lib/canvas/stickyNoteUtils.ts`, `lib/canvas/stickyToolUtils.ts` |
-| Clearing toolbar | `components/toolbar/ClearingToolbar.tsx`, `components/toolbar/ClearingToolbarParts.tsx`, `lib/editor/clearingToolbarConstants.ts` |
-| Speech-to-text (Parrot / 앵무새) | `hooks/useSpeechRecognition.ts`, `components/editor/SpeechRecognitionButton.tsx` |
+| Clearing toolbar | `components/toolbar/ClearingToolbar.tsx`, `components/toolbar/ClearingToolbarParts.tsx`, `lib/editor/clearingToolbarConstants.tsx` |
+| MossNote (inline annotations) | `components/workspace/MossNoteDock.tsx`, `components/workspace/MossNoteCard.tsx`, `components/workspace/MossNoteContextMenu.tsx`, `hooks/useMossNotes.ts`, `lib/moss-notes.ts`, `components/workspace/mossNoteUtils.ts` |
+| MindGrove (mind map) | `components/mindmap/MindGroveBoard.tsx`, `components/mindmap/MindGroveNode.tsx` |
+| DB Diagram block | `src/components/blocks/db-diagram/`, `src/components/editor/extensions/DbDiagramExtension.tsx`, `src/hooks/useDbDiagramSync.ts` |
+| Speech-to-text (Parrot / 앵무새) | `hooks/useSpeechRecognition.ts`, `components/editor/SpeechRecognitionButton.tsx`, `components/editor/SpeechInputIndicator.tsx` |
 | Slash command data/types | `lib/editor/slashCommandTypes.ts`, `lib/editor/slashCommandItemsCore.ts`, `lib/editor/slashCommandItemsExtended.ts` |
 | Block drag/drop | `lib/editor/blockDragHandlers.ts`, `lib/editor/blockUtils.ts`, `lib/editor/blockDomUtils.ts`, `lib/editor/blockActionsPlugin.ts` |
 | Column layout block | `components/editor/blocks/ColumnLayoutBlock.tsx`, `lib/editor/columnBlockDragPlugin.ts` |
@@ -187,7 +197,6 @@ Filters, sorts, groupBy, column widths, and visible properties are all in `View.
 | Insertion toolbar | `components/toolbar/GroveInsertionToolbar.tsx`, `components/toolbar/LinkEmbedModal.tsx` |
 | Page export (HTML/PDF) | `lib/exportPage.ts` (facade), `lib/export/htmlTemplate.ts`, `lib/export/domUtils.ts` |
 | GroveSideTab data | `hooks/useGroveSideTabPage.ts` |
-| MossNote dock | `components/workspace/MossNoteDock.tsx`, `hooks/useMossNotes.ts`, `components/workspace/MossNoteCard.tsx` |
 | WorkspacePage handlers | `hooks/useWorkspacePageHandlers.ts`, `app/workspace/[workspaceId]/WorkspacePageContent.tsx` |
 | Markdown → Tiptap | `lib/markdownToTiptap.ts`, `lib/markdown/patterns.ts`, `lib/markdown/inlineParsers.ts`, `lib/markdown/blockParsers.ts` |
 | Page store utils | `lib/page/pageUtils.ts`, `lib/page/pageFetch.ts` |
@@ -241,8 +250,9 @@ Interim text is displayed in gray next to the mic button — it is **not** inser
 
 ## Environment Variables
 
-- Frontend: see `.env.local.example` at root
-- Backend: see `server/.env.example`
+- Frontend: see `.env.local.example` at root (또는 `apps/web/.env.local`)
+- DB: `packages/db/.env` (`DATABASE_URL` 등)
+- ws-server: 별도 `.env` 없음 — 환경변수는 `apps/ws-server/src/index.ts` 참고
 
 Never commit actual secrets. Never hardcode env values in source files.
 
