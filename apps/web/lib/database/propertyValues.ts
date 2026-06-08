@@ -80,8 +80,6 @@ export function formatPropertyValue(
       return new Date(value.value).toLocaleDateString();
     case "person":
       return value.userId ?? "";
-    case "people":
-      return value.userIds.join(", ");
     case "checkbox":
       return value.value ? "Yes" : "No";
     case "url":

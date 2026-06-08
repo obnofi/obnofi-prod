@@ -214,7 +214,6 @@ export type PropertyValueData =
   | { type: "status"; optionId: string | null }
   | { type: "date"; value: string | null; endValue?: string | null; includeTime?: boolean }
   | { type: "person"; userId: string | null }
-  | { type: "people"; userIds: string[] }
   | { type: "checkbox"; value: boolean }
   | { type: "url"; value: string }
   | { type: "email"; value: string }
