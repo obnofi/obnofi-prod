@@ -403,7 +403,7 @@ model Comment {
   updatedAt DateTime @updatedAt
 
   page    Page      @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  author  User      @relation(fields: [authorId], references: [id])
+  author  User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   parent  Comment?  @relation("CommentThread", fields: [parentId], references: [id])
   replies Comment[] @relation("CommentThread")
 
