@@ -8,11 +8,8 @@ import {
   Layers,
   Check,
   Users,
-  Zap,
-  Lock,
   LayoutGrid,
   PenTool,
-  Code,
 } from "lucide-react";
 import { SiteLogo } from "@/components/branding/SiteLogo";
 import { FeatureCard, RoleCard, FAQItem } from "@/components/landing/LandingCards";
@@ -123,9 +120,9 @@ interface HowItWorksSectionProps {
 
 export function HowItWorksSection({ howRef, howIn }: HowItWorksSectionProps) {
   const steps = [
-    { num: "01", title: "빠른 프로토타이핑", desc: "아이디어를 몇 분 안에 클릭 가능한 프로토타입과 실용적인 도구로 전환하세요. 워크플로우에 맞는 프로덕션 앱으로 출시하세요.", icon: <Zap size={20} /> },
-    { num: "02", title: "함께 만들기", desc: "프로덕트 팀이 프로토타입을 만드는 동안 엔지니어는 기준을 유지합니다. 커서가 보이는 실시간 협업과 즉각적인 동기화.", icon: <Users size={20} /> },
-    { num: "03", title: "실제 도구 출시", desc: "인증, 실시간 동기화, 유연한 뷰가 포함된 올인원 플랫폼. 프로토타입에서 프로덕션까지 며칠이면 충분합니다.", icon: <Zap size={20} /> },
+    { num: "01", title: "씨앗을 심으세요", desc: "새 페이지를 만들고 블록과 슬래시 커맨드로 자유롭게 작성하세요. AI 보조 작성과 음성 입력(Parrot)으로 더 빠르게.", icon: <FileText size={20} /> },
+    { num: "02", title: "구조로 엮으세요", desc: "데이터베이스, 무한 캔버스, 그래프 뷰로 흩어진 생각을 연결하고 한눈에 정리하세요.", icon: <LayoutGrid size={20} /> },
+    { num: "03", title: "함께 완성하세요", desc: "Yjs 기반 실시간 협업으로 팀원의 커서를 보며 편집하고, 공개 링크로 결과를 공유하세요.", icon: <Users size={20} /> },
   ];
 
   return (
@@ -134,7 +131,7 @@ export function HowItWorksSection({ howRef, howIn }: HowItWorksSectionProps) {
         <div className={`pt-32 pb-24 text-center reveal${howIn ? " in" : ""}`}>
           <p className="text-sm mb-4" style={{ color: "#2E7D45", letterSpacing: "0.12em", fontWeight: 600 }}>이용 방법</p>
           <h2 className="font-bold" style={{ fontSize: "clamp(32px, 4vw, 48px)", letterSpacing: "-0.03em", color: "#1A1A1A" }}>
-            병목 없이 함께 만들어요
+            아이디어를 한곳에서 완성하세요
           </h2>
         </div>
         <div className="grid md:grid-cols-3 gap-8 pb-32">
@@ -162,16 +159,55 @@ export function FeaturesGridSection() {
       <div className="max-w-6xl mx-auto px-6 lg:px-12">
         <div className="text-center mb-16">
           <p className="text-sm mb-4" style={{ color: "#2E7D45", letterSpacing: "0.12em", fontWeight: 600 }}>기능</p>
-          <h2 className="font-bold" style={{ fontSize: "clamp(32px, 4vw, 48px)", letterSpacing: "-0.03em", color: "#1A1A1A" }}>필요한 모든 것</h2>
+          <h2 className="font-bold" style={{ fontSize: "clamp(32px, 4vw, 48px)", letterSpacing: "-0.03em", color: "#1A1A1A" }}>생각의 모양에 따라 골라 쓰세요</h2>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <FeatureCard icon={<FileText size={20} />} title="블록 기반 편집기" description="슬래시 커맨드, 드래그 앤 드롭 블록, 풍부한 서식. 마법 같은 문서 작성 경험." />
-          <FeatureCard icon={<LayoutGrid size={20} />} title="유연한 데이터베이스" description="테이블, 보드, 갤러리, 캘린더, 타임라인 뷰. 데이터를 필터, 정렬, 그룹화하세요." />
-          <FeatureCard icon={<Layers size={20} />} title="무한 캔버스" description="브레인스토밍을 위한 FigJam 스타일 화이트보드. 스티키 노트, 커넥터, 실시간 커서." />
-          <FeatureCard icon={<Database size={20} />} title="그래프 뷰" description="Obsidian 스타일 지식 그래프. 페이지 간 연결을 시각화하세요." />
-          <FeatureCard icon={<Zap size={20} />} title="실시간 협업" description="Yjs 기반 동기화. 팀원의 커서를 보고, 편집이 즉시 반영됩니다." />
-          <FeatureCard icon={<Lock size={20} />} title="공개 공유" description="커스텀 링크로 페이지 공유. 보기, 댓글, 편집 권한을 제어하세요." />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <FeatureCard icon={<FileText size={20} />} title="글로 쓰기" description="블록 에디터로 자유롭게. 제목, 목록, 코드 블록까지." />
+          <FeatureCard icon={<PenTool size={20} />} title="펼쳐서 그리기" description="무한 캔버스에 마음대로 그리고 붙이세요." />
+          <FeatureCard icon={<Database size={20} />} title="연결 보기" description="내 글들이 어떻게 이어지는지 한눈에." />
+          <FeatureCard icon={<Users size={20} />} title="같이 쓰기" description="동시에 편집해도 충돌 없이. 실시간으로 함께." />
         </div>
+      </div>
+    </section>
+  );
+}
+
+interface ProblemSectionProps {
+  problemRef: React.Ref<HTMLDivElement>;
+  problemIn: boolean;
+}
+
+export function ProblemSection({ problemRef, problemIn }: ProblemSectionProps) {
+  return (
+    <section style={{ background: "#FFFFFF", padding: "140px 0" }}>
+      <div ref={problemRef} className={`max-w-3xl mx-auto px-6 lg:px-12 text-center reveal${problemIn ? " in" : ""}`}>
+        <p className="text-sm mb-4" style={{ color: "#2E7D45", letterSpacing: "0.12em", fontWeight: 600 }}>왜 Obnofi인가</p>
+        <h2 className="font-bold mb-6" style={{ fontSize: "clamp(32px, 4vw, 48px)", letterSpacing: "-0.03em", color: "#1A1A1A" }}>
+          탭이 몇 개 열려 있나요?
+        </h2>
+        <p className="text-lg leading-relaxed mx-auto" style={{ color: "#787774", maxWidth: "52ch" }}>
+          메모는 여기, 할 일은 저기, 아이디어 스케치는 또 다른 앱에. 생각이 정리되기 전에 도구 사이에서 길을 잃습니다. Obnofi는 그 흐름을 끊지 않습니다.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+interface EmotionSectionProps {
+  emotionRef: React.Ref<HTMLDivElement>;
+  emotionIn: boolean;
+}
+
+export function EmotionSection({ emotionRef, emotionIn }: EmotionSectionProps) {
+  return (
+    <section style={{ background: "linear-gradient(160deg, #1F3D2A 0%, #2E7D45 100%)", padding: "160px 0" }}>
+      <div ref={emotionRef} className={`max-w-3xl mx-auto px-6 lg:px-12 text-center reveal${emotionIn ? " in" : ""}`}>
+        <h2 className="font-bold mb-5" style={{ fontSize: "clamp(32px, 4.5vw, 52px)", letterSpacing: "-0.03em", color: "#FFFCED", lineHeight: 1.25 }}>
+          기억은 흐릿해지지만,<br />기록은 남습니다.
+        </h2>
+        <p className="text-lg" style={{ color: "rgba(255,252,237,0.7)" }}>
+          지금 드는 생각, 일단 여기에 두세요.
+        </p>
       </div>
     </section>
   );
@@ -193,10 +229,10 @@ export function RolesSection({ rolesRef, rolesIn }: RolesSectionProps) {
           </h2>
         </div>
         <div className={`grid sm:grid-cols-2 lg:grid-cols-4 gap-6 reveal${rolesIn ? " in" : ""}`}>
-          <RoleCard icon={<LayoutGrid size={18} />} title="PM을 위해" features={["몇 분 안에 인터랙티브 프로토타입", "실제 데이터로 신뢰할 수 있는 데모", "핸드오프를 위한 GitHub 동기화", "워크플로우 도구 통합"]} />
-          <RoleCard icon={<PenTool size={18} />} title="디자이너를 위해" features={["창의적 제어를 위한 디자인 모드", "일관된 워크스페이스 테마", "프로덕션 준비 구조", "정적인 목업 그 이상"]} />
-          <RoleCard icon={<Code size={18} />} title="개발자를 위해" features={["프로토타입을 통한 명확한 요구사항", "엣지 케이스를 일찍 발견", "표준 기술 스택", "PR 리뷰를 위한 GitHub 동기화"]} />
-          <RoleCard icon={<Users size={18} />} title="마케터를 위해" features={["빠르게 랜딩 페이지 출시", "일관성을 위한 공유 테마", "폼을 도구에 연결", "개발 없이 실험"]} />
+          <RoleCard icon={<PenTool size={18} />} title="기록하는 사람을 위해" features={["블록 기반 편집기와 슬래시 커맨드", "AI 보조 작성", "음성 입력 (Parrot)", "URL 가져오기"]} />
+          <RoleCard icon={<LayoutGrid size={18} />} title="정리하는 사람을 위해" features={["6가지 데이터베이스 뷰", "필터·정렬·그룹화", "위키 링크로 페이지 연결", "관계형 데이터베이스"]} />
+          <RoleCard icon={<Layers size={18} />} title="발상하는 사람을 위해" features={["무한 캔버스 (Clearing)", "스티키 노트와 커넥터", "마인드맵 (MindGrove)", "그래프 뷰"]} />
+          <RoleCard icon={<Users size={18} />} title="함께 일하는 팀을 위해" features={["실시간 협업 커서", "공개 링크 공유", "Forest 공개 피드", "다크·라이트·정글 테마"]} />
         </div>
       </div>
     </section>
@@ -239,9 +275,9 @@ export function FaqSection({ faqRef, faqIn }: FaqSectionProps) {
         </div>
         <div className={`reveal${faqIn ? " in" : ""}`}>
           <FAQItem question="데이터 소유권은 어떻게 되나요?" answer="데이터는 완전히 당신의 것입니다. 페이지와 데이터베이스를 언제든지 내보낼 수 있습니다. 종속 없이 콘텐츠에 항상 접근하고 이동할 수 있습니다." />
-          <FAQItem question="어떤 보안 조치가 있나요?" answer="Obnofi는 저장 및 전송 중 데이터에 업계 표준 암호화를 적용합니다. 역할 기반 접근 제어, 감사 로그, 정기 보안 검토를 지원합니다." />
+          <FAQItem question="어떤 보안 조치가 있나요?" answer="인증된 사용자만 자신의 워크스페이스에 접근할 수 있으며, 모든 통신은 HTTPS로 암호화됩니다. 페이지는 직접 공개 링크로 공유하기 전까지 비공개로 유지됩니다." />
           <FAQItem question="Obnofi는 Notion과 어떻게 다른가요?" answer="Notion이 문서와 데이터베이스에 집중하는 반면, Obnofi는 FigJam 스타일 캔버스와 Obsidian 스타일 그래프 뷰를 하나의 원활한 경험으로 통합합니다 — Yjs 기반 실시간 협업도 포함됩니다." />
-          <FAQItem question="팀은 어떤 지원을 받을 수 있나요?" answer="모든 사용자는 문서와 커뮤니티 지원을 받을 수 있습니다. 팀 플랜에는 빠른 응답 시간과 전담 온보딩 지원이 포함된 우선 지원이 제공됩니다." />
+          <FAQItem question="어떤 지원을 받을 수 있나요?" answer="문서와 커뮤니티를 통해 도움을 받을 수 있습니다. 워크스페이스 안에서 AI 채팅(Owl)으로 작성과 편집에 대한 도움도 바로 받을 수 있습니다." />
         </div>
       </div>
     </section>
@@ -262,11 +298,11 @@ export function CtaSection({ ctaRef, ctaIn }: CtaSectionProps) {
         className={`relative z-10 max-w-2xl mx-auto px-6 lg:px-12 py-32 text-center w-full reveal${ctaIn ? " in" : ""}`}
       >
         <h2 className="font-bold mb-5" style={{ fontSize: "clamp(36px, 5vw, 56px)", letterSpacing: "-0.03em", color: "#1A1A1A" }}>
-          지금 시작하세요
+          나만의 두 번째 뇌를<br />만들어보세요.
         </h2>
         <p className="text-lg mb-10" style={{ color: "rgba(55,53,47,0.5)" }}>가입 즉시 무료. 카드 번호 없음.</p>
         <Link href="/auth/signin" className="inline-flex items-center gap-2 font-semibold px-9 py-4 rounded-xl text-white" style={{ background: "#2E7D45", fontSize: "16px" }}>
-          무료로 시작하기 <ArrowRight size={18} />
+          사용하기 <ArrowRight size={18} />
         </Link>
       </div>
     </section>

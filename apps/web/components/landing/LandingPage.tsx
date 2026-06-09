@@ -11,8 +11,10 @@ import {
 import {
   LANDING_STYLES,
   LandingNav,
+  ProblemSection,
   HowItWorksSection,
   FeaturesGridSection,
+  EmotionSection,
   RolesSection,
   FeaturesMarqueeSection,
   FaqSection,
@@ -30,6 +32,8 @@ export function LandingPage() {
   const { ref: ctaRef,   inView: ctaIn   } = useInView(0.1);
   const { ref: rolesRef, inView: rolesIn } = useInView(0.1);
   const { ref: faqRef,   inView: faqIn   } = useInView(0.1);
+  const { ref: problemRef, inView: problemIn } = useInView(0.1);
+  const { ref: emotionRef, inView: emotionIn } = useInView(0.1);
 
   return (
     <>
@@ -54,16 +58,14 @@ export function LandingPage() {
 
           <div ref={heroRef} className="relative z-10" style={{ maxWidth: "72ch" }}>
             <p className={`text-sm mb-6 reveal${heroIn ? " in" : ""}`} style={{ color: "#2E7D45", letterSpacing: "0.14em", fontWeight: 600 }}>
-              더 빠르게 출시하세요
+              생각을 위한 하나의 공간
             </p>
             <h1 className={`font-bold mb-6 leading-tight reveal reveal-delay-1${heroIn ? " in" : ""}`} style={{ fontSize: "clamp(40px, 6vw, 72px)", letterSpacing: "-0.03em", color: "#1A1A1A" }}>
-              빠르게 프로토타입하고.<br />
-              일찍 검증하고.<br />
-              <span style={{ color: "#2E7D45" }}>기다리지 말고 출시하세요.</span>
+              <span style={{ color: "#2E7D45" }}>끊기지 않는 사고흐름</span>
             </h1>
             <p className={`text-lg mb-10 mx-auto reveal reveal-delay-2${heroIn ? " in" : ""}`} style={{ color: "rgba(55,53,47,0.6)", maxWidth: "48ch", lineHeight: 1.7 }}>
-              Notion 스타일 편집기, FigJam 스타일 캔버스, Obsidian 스타일 그래프가 하나로.
-              팀과 함께 아이디어를 구조화하고 실시간으로 완성하세요.
+              메모하고, 그리고, 연결하세요.
+              도구를 바꿀 필요 없이, 한 곳에서 전부 됩니다.
             </p>
             <div className={`flex items-center justify-center gap-3 reveal reveal-delay-3${heroIn ? " in" : ""}`}>
               <Link href="/auth/signin" className="inline-flex items-center gap-2 font-semibold px-7 py-3.5 rounded-xl text-white" style={{ background: "#2E7D45", fontSize: "15px" }}>
@@ -82,6 +84,8 @@ export function LandingPage() {
             <AppWindowMockup />
           </div>
         </section>
+
+        <ProblemSection problemRef={problemRef} problemIn={problemIn} />
 
         <HowItWorksSection howRef={howRef} howIn={howIn} />
 
@@ -128,11 +132,11 @@ export function LandingPage() {
                 데이터를<br />원하는 방식으로
               </h2>
               <p className="text-lg leading-relaxed mb-8" style={{ color: "#787774", maxWidth: "36ch" }}>
-                테이블, 보드, 갤러리, 캘린더, 타임라인 — 같은 데이터를
-                5가지 뷰로 자유롭게 전환. 필터와 정렬로 인사이트를 꺼내세요.
+                테이블, 보드, 갤러리, 리스트, 캘린더, 타임라인 — 같은 데이터를
+                6가지 뷰로 자유롭게 전환. 필터와 정렬로 인사이트를 꺼내세요.
               </p>
               <ul className="space-y-3">
-                {["5가지 뷰 전환", "필터와 정렬", "관계형 데이터베이스", "속성 타입 10+ 종류"].map((item, i) => (
+                {["6가지 뷰 전환", "필터와 정렬", "관계형 데이터베이스", "속성 타입 10+ 종류"].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm" style={{ color: "#787774" }}>
                     <Check size={14} style={{ color: "#2E7D45" }} />
                     {item}
@@ -148,6 +152,8 @@ export function LandingPage() {
         <FeaturesMarqueeSection />
 
         <FaqSection faqRef={faqRef} faqIn={faqIn} />
+
+        <EmotionSection emotionRef={emotionRef} emotionIn={emotionIn} />
 
         <CtaSection ctaRef={ctaRef} ctaIn={ctaIn} />
 
