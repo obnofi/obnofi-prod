@@ -163,8 +163,10 @@ export function GrovePageCanopy({
     }
   };
 
+  const revealOnHover = !page.icon && !hideControls;
+
   return (
-    <div className="mb-6">
+    <div className={`group mb-6${revealOnHover ? " min-h-[34px]" : ""}`}>
       <input
         ref={canopyInputRef}
         name="canopy-image-upload"
@@ -205,7 +207,13 @@ export function GrovePageCanopy({
       ) : null}
 
       {!hideControls ? (
-        <div className="flex flex-wrap items-center gap-2">
+        <div
+          className={`flex flex-wrap items-center gap-2${
+            revealOnHover && !isEmojiPickerOpen
+              ? " opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover:opacity-100"
+              : ""
+          }`}
+        >
           <div className="relative" ref={emojiPickerRef}>
             <GlyphTriggerButton
               page={page}

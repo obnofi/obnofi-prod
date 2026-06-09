@@ -32,10 +32,13 @@ export function GlyphTriggerButton({
       <button
         type="button"
         onClick={onClick}
-        className="flex h-16 w-16 items-center justify-center rounded-[18px] bg-transparent text-4xl transition hover:bg-[var(--color-hover)]"
+        className="group/glyph relative flex h-16 w-16 items-center justify-center rounded-[18px] bg-transparent text-4xl transition hover:bg-[var(--color-hover)]"
         aria-label="페이지 아이콘 변경"
       >
         <PageGlyph page={page} emojiClassName="text-4xl leading-none" />
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 rounded-b-[18px] bg-[var(--color-hover)] py-0.5 text-center text-[10px] font-medium leading-none text-[var(--color-text-secondary)] opacity-0 transition-opacity duration-150 group-hover/glyph:opacity-100">
+          변경
+        </span>
       </button>
     );
   }
