@@ -7,10 +7,17 @@ import {
   forceLink,
   forceManyBody,
   forceSimulation,
+  forceX,
+  forceY,
+  type Force,
   type SimulationLinkDatum,
   type SimulationNodeDatum,
 } from "d3-force";
 import type { Edge, Node } from "@xyflow/react";
+import {
+  DEFAULT_FORCE_SETTINGS,
+  type GraphForceSettings,
+} from "@/components/graph/graphStore";
 
 interface SimulationNode extends SimulationNodeDatum {
   id: string;
@@ -82,6 +89,7 @@ interface UseGraphSimulationParams {
   setNodes: React.Dispatch<
     React.SetStateAction<Array<Node<{ size?: number }, "graphNode">>>
   >;
+  forces?: GraphForceSettings;
 }
 
 export function useGraphSimulation({
@@ -89,6 +97,7 @@ export function useGraphSimulation({
   edges,
   graphKey,
   setNodes,
+  forces = DEFAULT_FORCE_SETTINGS,
 }: UseGraphSimulationParams) {
   const simulationRef = useRef<ReturnType<typeof forceSimulation<SimulationNode>> | null>(null);
   const nodeMapRef = useRef<Map<string, SimulationNode>>(new Map());
@@ -96,6 +105,7 @@ export function useGraphSimulation({
   const currentNodesRef = useRef(nodes);
   const currentEdgesRef = useRef(edges);
   const draggingIdsRef = useRef<Set<string>>(new Set());
+  const forcesRef = useRef(forces);
 
   useEffect(() => {
     currentNodesRef.current = nodes;
@@ -104,6 +114,10 @@ export function useGraphSimulation({
   useEffect(() => {
     currentEdgesRef.current = edges;
   }, [edges]);
+
+  useEffect(() => {
+    forcesRef.current = forces;
+  }, [forces]);
 
   const hasNodes = nodes.length > 0;
 
@@ -146,11 +160,15 @@ export function useGraphSimulation({
       target: edge.target,
     }));
 
+    const settings = forcesRef.current;
+    // 큰 그래프에서는 반발력을 살짝 줄여 폭주를 막는다.
+    const repel = isBig ? -settings.repelStrength * 0.6 : -settings.repelStrength;
+
     const simulation = forceSimulation(simNodes)
       .force(
         "charge",
         forceManyBody()
-          .strength(isBig ? -280 : -460)
+          .strength(repel)
           .distanceMin(24)
           .distanceMax(isBig ? 520 : 680)
       )
@@ -158,8 +176,8 @@ export function useGraphSimulation({
         "link",
         forceLink(simEdges)
           .id((node) => node.id)
-          .distance(() => (isBig ? 74 : 88))
-          .strength(isBig ? 0.18 : 0.24)
+          .distance(() => (isBig ? settings.linkDistance * 0.84 : settings.linkDistance))
+          .strength(isBig ? settings.linkStrength * 0.75 : settings.linkStrength)
       )
       .force(
         "collide",
@@ -169,6 +187,8 @@ export function useGraphSimulation({
           .iterations(isBig ? 2 : 4)
       )
       .force("center", forceCenter(0, 0))
+      .force("x", forceX(0).strength(settings.centerGravity))
+      .force("y", forceY(0).strength(settings.centerGravity))
       .alpha(0.72)
       .alphaDecay(isBig ? 0.07 : 0.05)
       .velocityDecay(0.55);
@@ -259,4 +279,42 @@ export function useGraphSimulation({
       simulation.alphaTarget(0).alpha(0.04);
     }
   }, [nodes]);
+
+  // 힘 설정 슬라이더 조정 시 시뮬레이션을 재생성하지 않고 라이브로 갱신한다.
+  useEffect(() => {
+    const simulation = simulationRef.current;
+    if (!simulation) {
+      return;
+    }
+
+    const isBig = (currentNodesRef.current?.length ?? 0) >= 500;
+
+    const charge = simulation.force("charge") as
+      | (Force<SimulationNode, undefined> & {
+          strength: (value: number) => unknown;
+        })
+      | undefined;
+    charge?.strength(isBig ? -forces.repelStrength * 0.6 : -forces.repelStrength);
+
+    const link = simulation.force("link") as
+      | (ReturnType<typeof forceLink<SimulationNode, SimulationEdge>>)
+      | undefined;
+    link
+      ?.distance(() =>
+        isBig ? forces.linkDistance * 0.84 : forces.linkDistance
+      )
+      .strength(isBig ? forces.linkStrength * 0.75 : forces.linkStrength);
+
+    const xForce = simulation.force("x") as
+      | ReturnType<typeof forceX<SimulationNode>>
+      | undefined;
+    const yForce = simulation.force("y") as
+      | ReturnType<typeof forceY<SimulationNode>>
+      | undefined;
+    xForce?.strength(forces.centerGravity);
+    yForce?.strength(forces.centerGravity);
+
+    isRunningRef.current = true;
+    simulation.alpha(0.3).restart();
+  }, [forces]);
 }

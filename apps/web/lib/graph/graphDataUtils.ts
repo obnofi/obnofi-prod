@@ -1,4 +1,6 @@
-import type { Page } from "@obnofi/types";
+import type { Page, PageType } from "@obnofi/types";
+
+export type GraphNodeType = PageType | "unresolved";
 
 export interface GraphLinkNode extends Record<string, unknown> {
   id: string;
@@ -10,7 +12,10 @@ export interface GraphLinkNode extends Record<string, unknown> {
   pageId: string | null;
   connectionCount: number;
   size: number;
+  nodeType: GraphNodeType;
 }
+
+export type GraphEdgeKind = "hierarchy" | "reference" | "embed";
 
 export interface GraphLinkEdge {
   source: string;
@@ -18,6 +23,7 @@ export interface GraphLinkEdge {
   isUnresolved: boolean;
   linkCount: number;
   thickness: number;
+  kind: GraphEdgeKind;
 }
 
 const WIKILINK_REGEX = /\[\[([^[\]]+)\]\]/g;
@@ -29,6 +35,22 @@ const MAX_EDGE_WIDTH = 2.5;
 type RawReference = {
   pageId?: string;
   title?: string;
+  kind: "reference" | "embed";
+};
+
+// 본문에 다른 페이지를 끼워 넣는 임베드 블록들. 모두 attrs.pageId 로 대상 페이지를 가리킨다.
+const EMBED_NODE_TYPES = new Set([
+  "canvasEmbed",
+  "mindMapEmbed",
+  "databaseNode",
+  "subPageEmbed",
+  "linkedDatabaseEmbed",
+]);
+
+const EDGE_KIND_PRIORITY: Record<GraphEdgeKind, number> = {
+  hierarchy: 1,
+  embed: 2,
+  reference: 3,
 };
 
 function normalizeLinkTarget(value: string) {
@@ -69,7 +91,7 @@ function collectReferences(value: unknown, references: RawReference[]) {
 
   if (typeof value === "string") {
     for (const match of value.matchAll(WIKILINK_REGEX)) {
-      references.push({ title: readLinkTitle(match[1]) });
+      references.push({ title: readLinkTitle(match[1]), kind: "reference" });
     }
     return;
   }
@@ -87,7 +109,7 @@ function collectReferences(value: unknown, references: RawReference[]) {
 
   if (typeof record.text === "string") {
     for (const match of record.text.matchAll(WIKILINK_REGEX)) {
-      references.push({ title: readLinkTitle(match[1]) });
+      references.push({ title: readLinkTitle(match[1]), kind: "reference" });
     }
   }
 
@@ -96,7 +118,21 @@ function collectReferences(value: unknown, references: RawReference[]) {
     references.push({
       pageId: typeof attrs.pageId === "string" ? attrs.pageId : undefined,
       title: typeof attrs.pageTitle === "string" ? attrs.pageTitle : undefined,
+      kind: "reference",
     });
+  }
+
+  // 임베드 블록(캔버스/마인드맵/데이터베이스/서브페이지)도 페이지 간 연결로 취급한다.
+  if (
+    typeof record.type === "string" &&
+    EMBED_NODE_TYPES.has(record.type) &&
+    record.attrs &&
+    typeof record.attrs === "object"
+  ) {
+    const attrs = record.attrs as Record<string, unknown>;
+    if (typeof attrs.pageId === "string" && attrs.pageId) {
+      references.push({ pageId: attrs.pageId, kind: "embed" });
+    }
   }
 
   if (Array.isArray(record.marks)) {
@@ -115,6 +151,7 @@ function collectReferences(value: unknown, references: RawReference[]) {
       const attrs = markRecord.attrs as Record<string, unknown>;
       references.push({
         pageId: typeof attrs.pageId === "string" ? attrs.pageId : undefined,
+        kind: "reference",
       });
     }
   }
@@ -132,6 +169,7 @@ export function createGraphFromPages(
 ): { allNodes: GraphLinkNode[]; allEdges: GraphLinkEdge[] } {
   const nodeMap = new Map<string, GraphLinkNode>();
   const edgeWeights = new Map<string, number>();
+  const edgeKinds = new Map<string, GraphEdgeKind>();
   const titleToPageId = new Map<string, string>();
   const pageIds = new Set<string>();
   const unresolvedLabels = new Map<string, string>();
@@ -154,15 +192,25 @@ export function createGraphFromPages(
       pageId: page.id,
       connectionCount: 0,
       size: MIN_NODE_SIZE,
+      nodeType: page.type,
     });
   });
 
-  const addEdge = (sourceId: string, targetId: string, isUnresolved: boolean) => {
+  const addEdge = (
+    sourceId: string,
+    targetId: string,
+    isUnresolved: boolean,
+    kind: GraphEdgeKind
+  ) => {
     if (sourceId === targetId) {
       return;
     }
     const key = `${sourceId}::${targetId}`;
     edgeWeights.set(key, (edgeWeights.get(key) ?? 0) + 1);
+    const existingKind = edgeKinds.get(key);
+    if (!existingKind || EDGE_KIND_PRIORITY[kind] > EDGE_KIND_PRIORITY[existingKind]) {
+      edgeKinds.set(key, kind);
+    }
     outgoingCounts.set(sourceId, (outgoingCounts.get(sourceId) ?? 0) + 1);
     incomingCounts.set(targetId, (incomingCounts.get(targetId) ?? 0) + 1);
 
@@ -177,6 +225,7 @@ export function createGraphFromPages(
         pageId: null,
         connectionCount: 0,
         size: MIN_NODE_SIZE,
+        nodeType: "unresolved",
       });
     }
   };
@@ -184,7 +233,7 @@ export function createGraphFromPages(
   pages.forEach((page) => {
     // parent-child hierarchy edges
     if (page.parentId && pageIds.has(page.parentId)) {
-      addEdge(page.id, page.parentId, false);
+      addEdge(page.id, page.parentId, false, "hierarchy");
     }
 
     const references: RawReference[] = [];
@@ -208,7 +257,7 @@ export function createGraphFromPages(
       }
 
       if (targetId) {
-        addEdge(page.id, targetId, isUnresolved);
+        addEdge(page.id, targetId, isUnresolved, reference.kind);
       }
     });
   });
@@ -244,6 +293,7 @@ export function createGraphFromPages(
       isUnresolved: target.startsWith("unresolved:"),
       linkCount,
       thickness: scaleValue(linkCount, maxEdgeWeight, MIN_EDGE_WIDTH, MAX_EDGE_WIDTH),
+      kind: edgeKinds.get(key) ?? "reference",
     };
   });
 

@@ -38,6 +38,10 @@
   --color-graph-current:    #9065B0;
   --color-graph-current-subtle: #EAE4F2;
   --color-graph-unresolved: #CB912F;
+  --color-graph-document:   #4B7BB5;
+  --color-graph-canvas:     #2E9E83;
+  --color-graph-database:   #C77D34;
+  --color-graph-mindmap:    #B0588F;
   --color-code-comment:     #8A867D;
   --color-code-keyword:     #8A4D76;
   --color-code-string:      #2D6C5B;
@@ -91,6 +95,10 @@ html.dark {
   --color-graph-current:    #B38CCF;
   --color-graph-current-subtle: #30243A;
   --color-graph-unresolved: #E1B15C;
+  --color-graph-document:   #6FA8DC;
+  --color-graph-canvas:     #57C9AB;
+  --color-graph-database:   #E0A458;
+  --color-graph-mindmap:    #D67FB4;
   --color-code-comment:     #7F7F7F;
   --color-code-keyword:     #E091C4;
   --color-code-string:      #6FD1B6;
@@ -129,6 +137,10 @@ html.jungle {
   --color-graph-current:    #8D5E8E;
   --color-graph-current-subtle: #EDE0EE;
   --color-graph-unresolved: #AD7E32;
+  --color-graph-document:   #4B7BB5;
+  --color-graph-canvas:     #2E9E83;
+  --color-graph-database:   #C77D34;
+  --color-graph-mindmap:    #B0588F;
   color-scheme: light;
 }
 

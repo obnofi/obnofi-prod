@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Background,
   Controls,
@@ -13,7 +13,7 @@ import {
   type EdgeTypes,
   type NodeTypes,
 } from "@xyflow/react";
-import { Loader2, Orbit } from "lucide-react";
+import { Loader2, Orbit, RefreshCw } from "lucide-react";
 import { GraphNode, type GraphCanvasNodeData } from "@/components/graph/GraphNode";
 import { GraphEdge } from "@/components/graph/GraphEdge";
 import { useGraphStore } from "@/components/graph/graphStore";
@@ -22,6 +22,10 @@ import { useGraphPages } from "@/components/graph/useGraphPages";
 import { useGraphFlowNodes } from "@/components/graph/useGraphFlowNodes";
 import { GraphControlPanel } from "@/components/graph/GraphControlPanel";
 import { GraphViewHeader } from "@/components/graph/GraphViewHeader";
+import {
+  GraphContextMenu,
+  type GraphContextMenuState,
+} from "@/components/graph/GraphContextMenu";
 
 interface GraphViewProps {
   workspaceId: string;
@@ -35,13 +39,19 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
   const focusedNoteId = useGraphStore((state) => state.focusedNoteId);
   const localDepth = useGraphStore((state) => state.localDepth);
   const isLocalMode = useGraphStore((state) => state.isLocalMode);
+  const showOrphans = useGraphStore((state) => state.showOrphans);
+  const pinnedNoteId = useGraphStore((state) => state.pinnedNoteId);
   const setGraphData = useGraphStore((state) => state.setGraphData);
   const setFocusedNote = useGraphStore((state) => state.setFocusedNote);
   const setLocalDepth = useGraphStore((state) => state.setLocalDepth);
   const setLocalMode = useGraphStore((state) => state.setLocalMode);
+  const setPinnedNote = useGraphStore((state) => state.setPinnedNote);
   const { fitView } = useReactFlow();
+  const router = useRouter();
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<GraphContextMenuState | null>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
   const queryPageId = searchParams.get("page");
 
   useEffect(() => {
@@ -50,9 +60,19 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
     }
   }, [queryPageId, setFocusedNote]);
 
-  const { pages, isLoading, error } = useGraphPages(workspaceId, queryPageId, setFocusedNote);
+  const { pages, isLoading, error, reload } = useGraphPages(
+    workspaceId,
+    queryPageId,
+    setFocusedNote
+  );
 
-  const graphData = useGraphData({ pages, focusedNoteId, localDepth, isLocalMode });
+  const graphData = useGraphData({
+    pages,
+    focusedNoteId,
+    localDepth,
+    isLocalMode,
+    showOrphans,
+  });
 
   useEffect(() => {
     setGraphData(graphData.nodes, graphData.edges);
@@ -113,23 +133,64 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
     return () => window.clearTimeout(timeout);
   }, [fitView, graphKey, nodes.length]);
 
-  const handleLocalModeToggle = useCallback(() => {
-    setLocalMode(!isLocalMode);
-  }, [isLocalMode, setLocalMode]);
-
-  const handleDepthChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setLocalDepth(Number(event.target.value));
-    },
-    [setLocalDepth]
-  );
-
   const minimapNodeColor = useCallback((node: ReactFlowNode) => {
     const data = node.data as GraphCanvasNodeData;
-    if (data.isCurrentNote) return "rgba(210, 210, 210, 0.9)";
-    if (data.isOrphan) return "rgba(90, 90, 90, 0.5)";
-    return "rgba(140, 140, 140, 0.7)";
+    if (data.isCurrentNote || data.isPinned) return "var(--color-accent)";
+    if (data.isOrphan) return "var(--color-text-placeholder)";
+    switch (data.nodeType) {
+      case "canvas":
+        return "var(--color-graph-canvas)";
+      case "database":
+        return "var(--color-graph-database)";
+      case "mindmap":
+        return "var(--color-graph-mindmap)";
+      case "unresolved":
+        return "var(--color-graph-unresolved)";
+      default:
+        return "var(--color-graph-document)";
+    }
   }, []);
+
+  const handleNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: ReactFlowNode) => {
+      event.preventDefault();
+      const rect = mainRef.current?.getBoundingClientRect();
+      const data = node.data as GraphCanvasNodeData;
+      setContextMenu({
+        nodeId: node.id,
+        pageId: typeof data.pageId === "string" ? data.pageId : null,
+        label: typeof data.label === "string" ? data.label : "노드",
+        x: event.clientX - (rect?.left ?? 0),
+        y: event.clientY - (rect?.top ?? 0),
+      });
+    },
+    []
+  );
+
+  const closeContextMenu = useCallback(() => setContextMenu(null), []);
+
+  const handleOpenPage = useCallback(
+    (pageId: string) => {
+      router.push(`/workspace/${workspaceId}?page=${pageId}`);
+    },
+    [router, workspaceId]
+  );
+
+  const handleFocusLocal = useCallback(
+    (nodeId: string) => {
+      setFocusedNote(nodeId);
+      setPinnedNote(nodeId);
+      setLocalMode(true);
+    },
+    [setFocusedNote, setPinnedNote, setLocalMode]
+  );
+
+  const handleTogglePin = useCallback(
+    (nodeId: string) => {
+      setPinnedNote(nodeId === pinnedNoteId ? null : nodeId);
+    },
+    [pinnedNoteId, setPinnedNote]
+  );
 
   return (
     <>
@@ -140,7 +201,10 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
         edgeCount={graphData.edges.length}
       />
 
-      <main className="relative flex-1 overflow-hidden bg-[var(--color-background)]">
+      <main
+        ref={mainRef}
+        className="relative flex-1 overflow-hidden bg-[var(--color-background)]"
+      >
         {toastMessage ? (
           <div className="pointer-events-none absolute left-1/2 top-4 z-[10000] -translate-x-1/2 rounded-lg bg-[var(--color-tooltip-bg)] px-3 py-2 text-xs text-white shadow-lg">
             {toastMessage}
@@ -152,8 +216,18 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
             <Loader2 className="h-6 w-6 animate-spin text-[var(--color-accent)]" />
           </div>
         ) : error ? (
-          <div className="flex h-full items-center justify-center px-6 text-sm text-[var(--color-danger)]">
-            {error}
+          <div className="flex h-full items-center justify-center px-6 text-center">
+            <div className="flex flex-col items-center gap-4">
+              <p className="text-sm text-[var(--color-danger)]">{error}</p>
+              <button
+                type="button"
+                onClick={reload}
+                className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs font-medium text-[var(--color-text-primary)] transition hover:bg-[var(--color-hover)]"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                다시 시도
+              </button>
+            </div>
           </div>
         ) : graphData.allNodes.length === 0 ? (
           <div className="flex h-full items-center justify-center px-6 text-center">
@@ -187,20 +261,19 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
             onNodeDragStop={handleNodeDragStop}
             onNodeMouseEnter={handleNodeMouseEnter}
             onNodeMouseLeave={handleNodeMouseLeave}
-            onPaneClick={handlePaneClick}
+            onNodeContextMenu={handleNodeContextMenu}
+            onPaneClick={() => {
+              handlePaneClick();
+              closeContextMenu();
+            }}
+            onMoveStart={closeContextMenu}
             minZoom={0.1}
             maxZoom={1.8}
             fitView
             onlyRenderVisibleElements
             className="graph-view-flow"
           >
-            <GraphControlPanel
-              isLocalMode={isLocalMode}
-              localDepth={localDepth}
-              allNodesCount={graphData.allNodes.length}
-              onLocalModeToggle={handleLocalModeToggle}
-              onDepthChange={handleDepthChange}
-            />
+            <GraphControlPanel allNodesCount={graphData.allNodes.length} />
             <MiniMap
               pannable
               zoomable
@@ -212,6 +285,17 @@ function GraphViewCanvas({ workspaceId }: GraphViewProps) {
             <Background gap={28} size={0.7} color="var(--color-border)" />
           </ReactFlow>
         )}
+
+        {contextMenu ? (
+          <GraphContextMenu
+            menu={contextMenu}
+            isPinned={contextMenu.nodeId === pinnedNoteId}
+            onOpenPage={handleOpenPage}
+            onFocusLocal={handleFocusLocal}
+            onTogglePin={handleTogglePin}
+            onClose={closeContextMenu}
+          />
+        ) : null}
       </main>
     </>
   );
