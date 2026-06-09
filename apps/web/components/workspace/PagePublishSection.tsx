@@ -10,6 +10,7 @@ interface PagePublishSectionProps {
   pageId: string;
   workspaceId: string;
   pageType: PageType;
+  hideLabel?: boolean;
 }
 
 function parseTags(input: string) {
@@ -77,6 +78,7 @@ export function PagePublishSection({
   pageId,
   workspaceId,
   pageType,
+  hideLabel = false,
 }: PagePublishSectionProps) {
   const basic = useBasicPublish(pageId);
 
@@ -190,10 +192,11 @@ export function PagePublishSection({
 
   return (
     <div className="px-1 py-1.5">
-      {/* ── 기본 게시 ─────────────────────────────────────────── */}
-      <p className="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-placeholder)]">
-        게시
-      </p>
+      {!hideLabel ? (
+        <p className="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-placeholder)]">
+          게시
+        </p>
+      ) : null}
 
       <div className="rounded-md px-2 py-2">
         <div className="flex items-center justify-between gap-3">

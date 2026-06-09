@@ -20,6 +20,7 @@ interface PageCollabSectionProps {
   onCollabInviteEmailChange: (email: string) => void;
   onInviteCollaborator: (e: React.FormEvent) => void;
   onRemoveCollaborator: (userId: string) => void;
+  hideLabel?: boolean;
 }
 
 export function PageCollabSection({
@@ -39,12 +40,15 @@ export function PageCollabSection({
   onCollabInviteEmailChange,
   onInviteCollaborator,
   onRemoveCollaborator,
+  hideLabel = false,
 }: PageCollabSectionProps) {
   return (
     <div className="px-1 py-1.5">
-      <p className="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-placeholder)]">
-        공동 편집
-      </p>
+      {!hideLabel ? (
+        <p className="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-placeholder)]">
+          공동 편집
+        </p>
+      ) : null}
 
       {/* 공동 편집 켜기/끄기 */}
       <div className="flex items-center justify-between rounded-md px-2 py-2 hover:bg-[var(--color-hover)]">

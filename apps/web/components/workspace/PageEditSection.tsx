@@ -50,6 +50,9 @@ interface PageEditSectionProps {
   onSetDraftHeadingFontSizes: (sizes: PageHeadingFontSizes) => void;
   onHighlightColorsToggle: (color: PageHighlightColor) => void;
   onHandleExport: (format: PageExportFormat) => void;
+  hideLabel?: boolean;
+  showExportSection?: boolean;
+  showDangerZone?: boolean;
 }
 
 export function PageEditSection({
@@ -71,6 +74,9 @@ export function PageEditSection({
   onSetDraftHeadingFontSizes,
   onHighlightColorsToggle,
   onHandleExport,
+  hideLabel = false,
+  showExportSection = true,
+  showDangerZone = true,
 }: PageEditSectionProps) {
   const exportRef = useRef<HTMLDivElement>(null);
 
@@ -78,9 +84,11 @@ export function PageEditSection({
     <>
       {/* ── 편집 섹션 ── */}
       <div className="px-1 py-1.5">
-        <p className="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-placeholder)]">
-          편집
-        </p>
+        {!hideLabel ? (
+          <p className="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-placeholder)]">
+            편집
+          </p>
+        ) : null}
 
         {pageType === "document" ? (
           <div>
@@ -213,66 +221,72 @@ export function PageEditSection({
         ) : null}
       </div>
 
-      <div className="h-px bg-[var(--color-border)]" />
+      {showExportSection || showDangerZone ? (
+        <>
+          <div className="h-px bg-[var(--color-border)]" />
+          <div className="px-1 py-1.5">
+            {showExportSection ? (
+              <div ref={exportRef}>
+                <button
+                  type="button"
+                  onClick={onToggleExportOpen}
+                  disabled={!onExport}
+                  className={`flex w-full items-center justify-between rounded-md px-2 py-2 ${
+                    onExport
+                      ? "hover:bg-[var(--color-hover)]"
+                      : "cursor-not-allowed opacity-40"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Download className="h-4 w-4 text-[var(--color-text-secondary)]" />
+                    <span className="text-[13px] font-medium text-[var(--color-text-primary)]">
+                      내보내기
+                    </span>
+                  </div>
+                  <ChevronRight
+                    className={`h-3.5 w-3.5 text-[var(--color-text-placeholder)] transition-transform ${
+                      isExportOpen && onExport ? "rotate-90" : ""
+                    }`}
+                  />
+                </button>
 
-      {/* ── 내보내기 + 삭제 ── */}
-      <div className="px-1 py-1.5">
-        <div ref={exportRef}>
-          <button
-            type="button"
-            onClick={onToggleExportOpen}
-            disabled={!onExport}
-            className={`flex w-full items-center justify-between rounded-md px-2 py-2 ${
-              onExport
-                ? "hover:bg-[var(--color-hover)]"
-                : "cursor-not-allowed opacity-40"
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <Download className="h-4 w-4 text-[var(--color-text-secondary)]" />
-              <span className="text-[13px] font-medium text-[var(--color-text-primary)]">
-                내보내기
-              </span>
-            </div>
-            <ChevronRight
-              className={`h-3.5 w-3.5 text-[var(--color-text-placeholder)] transition-transform ${
-                isExportOpen && onExport ? "rotate-90" : ""
-              }`}
-            />
-          </button>
+                {isExportOpen && onExport ? (
+                  <div className="ml-6 mt-0.5 flex flex-col gap-0.5 border-l border-[var(--color-border)] pl-2">
+                    <button
+                      type="button"
+                      onClick={() => onHandleExport("pdf")}
+                      className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-[var(--color-hover)]"
+                    >
+                      <FileText className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
+                      <span className="text-[13px] text-[var(--color-text-primary)]">PDF</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onHandleExport("html")}
+                      className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-[var(--color-hover)]"
+                    >
+                      <FileCode className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
+                      <span className="text-[13px] text-[var(--color-text-primary)]">HTML</span>
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
-          {isExportOpen && onExport && (
-            <div className="ml-6 mt-0.5 flex flex-col gap-0.5 border-l border-[var(--color-border)] pl-2">
+            {showDangerZone ? (
               <button
-                type="button"
-                onClick={() => onHandleExport("pdf")}
-                className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-[var(--color-hover)]"
+                disabled
+                className="flex w-full cursor-not-allowed items-center gap-2.5 rounded-md px-2 py-2 opacity-40"
               >
-                <FileText className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
-                <span className="text-[13px] text-[var(--color-text-primary)]">PDF</span>
+                <Trash2 className="h-4 w-4 text-red-500" />
+                <span className="text-[13px] font-medium text-red-500">
+                  휴지통으로 이동
+                </span>
               </button>
-              <button
-                type="button"
-                onClick={() => onHandleExport("html")}
-                className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-[var(--color-hover)]"
-              >
-                <FileCode className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
-                <span className="text-[13px] text-[var(--color-text-primary)]">HTML</span>
-              </button>
-            </div>
-          )}
-        </div>
-
-        <button
-          disabled
-          className="flex w-full cursor-not-allowed items-center gap-2.5 rounded-md px-2 py-2 opacity-40"
-        >
-          <Trash2 className="h-4 w-4 text-red-500" />
-          <span className="text-[13px] font-medium text-red-500">
-            휴지통으로 이동
-          </span>
-        </button>
-      </div>
+            ) : null}
+          </div>
+        </>
+      ) : null}
     </>
   );
 }
