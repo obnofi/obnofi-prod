@@ -39,6 +39,7 @@ export type ClearingPointerHandlerOptions = {
   activeEmojiStamp: string | null;
   selectionBounds: { x: number; y: number; width: number; height: number } | null;
   setViewport: (patch: Partial<ViewportState>) => void;
+  setPropertyPanelElementId: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedElement: (id: string | null) => void;
   setTool: (tool: string) => void;
   setContextMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>;
@@ -65,7 +66,7 @@ export function useClearingPointerHandlers(opts: ClearingPointerHandlerOptions) 
     currentUserRef, presenceChannelRef, lastCursorSyncRef,
     viewport, elements, elementLookup, selectedIds, selectedElementId,
     tool, lineStyle,
-    setViewport, setSelectedElement, setConnectorCursor,
+    setViewport, setPropertyPanelElementId, setSelectedElement, setConnectorCursor,
     setActiveThreadTarget, setSelectionBounds,
     selectSingle, toggleSelectedId,
     updateElement, updateElements,
@@ -79,6 +80,7 @@ export function useClearingPointerHandlers(opts: ClearingPointerHandlerOptions) 
       if (!boardRef.current) return;
       const element = elementLookup[elementId];
       if (!element) return;
+      setPropertyPanelElementId(null);
 
       const selectedConnector = selectedElementId ? elementLookup[selectedElementId] : null;
       if (tool === "select" && selectedConnector?.type === "connector" && elementId !== selectedElementId) {
@@ -138,7 +140,7 @@ export function useClearingPointerHandlers(opts: ClearingPointerHandlerOptions) 
       };
     },
     [boardRef, dragStateRef, elementLookup, elements, opts, selectSingle, selectedElementId,
-     selectedIds, setActiveThreadTarget, setSelectedElement, toggleSelectedId, tool,
+     selectedIds, setActiveThreadTarget, setPropertyPanelElementId, setSelectedElement, toggleSelectedId, tool,
      updateElement, viewport.x, viewport.y, viewport.zoom]
   );
 

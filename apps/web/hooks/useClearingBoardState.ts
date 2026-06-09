@@ -56,6 +56,7 @@ export function useClearingBoardState(title?: string) {
   const [floatingStamps, setFloatingStamps] = useState<FloatingEmojiStamp[]>([]);
   const [isTitleEditing, setIsTitleEditing] = useState(false);
   const [titleDraft, setTitleDraft] = useState(title ?? "");
+  const [propertyPanelElementId, setPropertyPanelElementId] = useState<string | null>(null);
   const [activeThreadTarget, setActiveThreadTarget] = useState<{
     elementId: string | null;
     x: number;
@@ -90,6 +91,7 @@ export function useClearingBoardState(title?: string) {
     floatingStamps, setFloatingStamps,
     isTitleEditing, setIsTitleEditing,
     titleDraft, setTitleDraft,
+    propertyPanelElementId, setPropertyPanelElementId,
     activeThreadTarget, setActiveThreadTarget,
     connectorCursor, setConnectorCursor,
   };

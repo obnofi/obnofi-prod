@@ -64,6 +64,18 @@ export function ClearingBoard({
   const currentUserId = currentUser?.id ?? null;
 
   const elementLookup = useMemo(() => Object.fromEntries(elements.map((e) => [e.id, e])), [elements]);
+  const propertyPanelElement = useMemo(() => {
+    if (!s.propertyPanelElementId) return null;
+    return elementLookup[s.propertyPanelElementId] ?? null;
+  }, [elementLookup, s.propertyPanelElementId]);
+  const canOpenProperties = propertyPanelElement?.type === "shape" || propertyPanelElement?.type === "connector"
+    ? true
+    : (() => {
+        const targetId = selectedElementId ?? selectedIds[0] ?? null;
+        if (!targetId) return false;
+        const target = elementLookup[targetId];
+        return target?.type === "shape" || target?.type === "connector";
+      })();
   const remoteCanvasCursors = useMemo(
     () => awarenessStates.filter(
       (st) => st.userId !== localUserId && st.userCursor?.type === "canvas" &&
@@ -129,7 +141,7 @@ export function ClearingBoard({
     presenceChannelRef: s.presenceChannelRef, lastCursorSyncRef: s.lastCursorSyncRef,
     viewport, elements, elementLookup, selectedIds, selectedElementId,
     tool, lineStyle, activeEmojiStamp: s.activeEmojiStamp, selectionBounds,
-    setViewport, setSelectedElement, setTool,
+    setViewport, setPropertyPanelElementId: s.setPropertyPanelElementId, setSelectedElement, setTool,
     setContextMenu: s.setContextMenu, setActiveThreadTarget: s.setActiveThreadTarget,
     setConnectorCursor: s.setConnectorCursor, setActiveEmojiStamp: s.setActiveEmojiStamp,
     setFloatingStamps: s.setFloatingStamps, setSelectionBounds, setSelectedIds,
@@ -145,6 +157,17 @@ export function ClearingBoard({
     addElement, selectSingle, setSelectedElement, updateElement,
     pushHistory, persistElement, elementLookup,
   });
+
+  const handleElementContextMenu = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>, elementId: string) => {
+      event.preventDefault();
+      event.stopPropagation();
+      selectSingle(elementId);
+      setSelectedElement(elementId);
+      s.setContextMenu({ x: event.clientX, y: event.clientY });
+    },
+    [s, selectSingle, setSelectedElement]
+  );
 
   const commitClearingTitle = useCallback(() => {
     const nextTitle = s.titleDraft.trim() || "Jungle Clearing";
@@ -164,9 +187,17 @@ export function ClearingBoard({
 
   const overlayProps = {
     contextMenu: s.contextMenu,
-    onCloseContextMenu: () => s.setContextMenu(null),
+    canOpenProperties,
     onContextBringForward: () => { selectedIds.forEach((id) => { const t = elementLookup[id]; if (t) updateElement(id, { zIndex: t.zIndex + 1 }); }); s.setContextMenu(null); },
     onContextDelete: () => { pushHistory(); selectedIds.forEach((id) => removeElement(id)); clearSelection(); s.setContextMenu(null); },
+    onContextOpenProperties: () => {
+      const targetId = selectedElementId ?? selectedIds[0] ?? null;
+      const target = targetId ? elementLookup[targetId] : null;
+      if (target?.type === "shape" || target?.type === "connector") {
+        s.setPropertyPanelElementId(target.id);
+      }
+      s.setContextMenu(null);
+    },
     onContextSendBackward: () => { selectedIds.forEach((id) => { const t = elementLookup[id]; if (t) updateElement(id, { zIndex: t.type === "section" ? -1000 : t.zIndex - 1 }); }); s.setContextMenu(null); },
     activeThreadTarget: s.activeThreadTarget, comments: s.comments,
     viewportX: viewport.x, viewportY: viewport.y,
@@ -257,6 +288,7 @@ export function ClearingBoard({
               e.preventDefault();
               setViewport({ zoom: clampZoom(viewport.zoom - e.deltaY * 0.0012) });
             }}
+            onElementContextMenu={handleElementContextMenu}
             onElementPointerDown={pointerHandlers.handleElementPointerDown}
             onConnectorStart={pointerHandlers.handleConnectorHandleStart}
             onVote={actions.handleVote}
@@ -271,9 +303,17 @@ export function ClearingBoard({
             onRedo={redo} onResetViewport={resetViewport} onSetTool={setTool}
             onStrokeWidthChange={s.setDrawingStrokeWidth} onUndo={undo}
           />
+
+          {embedded ? (
+            <div className="pointer-events-none absolute bottom-3 right-3 top-14 z-30 flex justify-end overflow-y-auto">
+              <div className="pointer-events-auto" onPointerDown={(e) => e.stopPropagation()}>
+                <PropertiesPanel elementId={s.propertyPanelElementId} />
+              </div>
+            </div>
+          ) : null}
         </main>
 
-        {!embedded ? <PropertiesPanel /> : null}
+        {!embedded ? <PropertiesPanel elementId={s.propertyPanelElementId} /> : null}
       </div>
 
       <ClearingBoardOverlays {...overlayProps} />

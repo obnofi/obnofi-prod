@@ -59,6 +59,7 @@ type ClearingBoardCanvasProps = {
   onPointerUp: () => void;
   onPointerLeave: () => void;
   onWheel: (event: React.WheelEvent<HTMLDivElement>) => void;
+  onElementContextMenu: (event: React.MouseEvent<HTMLDivElement>, elementId: string) => void;
   onElementPointerDown: (event: React.PointerEvent<HTMLDivElement>, elementId: string) => void;
   onConnectorStart: (event: React.PointerEvent<HTMLButtonElement>, elementId: string, position: ConnectorHandlePosition) => void;
   onVote: (elementId: string) => void;
@@ -85,7 +86,7 @@ export function ClearingBoardCanvas({
   drawingColor, drawingStrokeWidth, uploadingImage, canUndo, canRedo,
   embedded, connectorCursor,
   onDrop, onContextMenu, onPointerDown, onPointerMove, onPointerUp, onPointerLeave, onWheel,
-  onElementPointerDown, onConnectorStart, onVote, onCommentPinClick, onPathCreated,
+  onElementContextMenu, onElementPointerDown, onConnectorStart, onVote, onCommentPinClick, onPathCreated,
   onAddElement, onAddComment, onDrawingColorChange, onEmojiStampSelect,
   onLineStyleChange, onOpenImagePicker, onRedo, onResetViewport, onSetTool,
   onStrokeWidthChange, onUndo,
@@ -201,6 +202,7 @@ export function ClearingBoardCanvas({
                 isSectionSelected={containingSectionId ? selectedIdSet.has(containingSectionId) : false}
                 isSelected={selectedIdSet.has(element.id)}
                 linkedElements={elementLookup}
+                onContextMenu={onElementContextMenu}
                 onPointerDown={onElementPointerDown}
                 onConnectorStart={onConnectorStart}
                 onVote={onVote}

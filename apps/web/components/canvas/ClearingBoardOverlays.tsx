@@ -10,9 +10,10 @@ type ThreadTarget = { elementId: string | null; x: number; y: number } | null;
 
 type ClearingBoardOverlaysProps = {
   contextMenu: ContextMenuState;
-  onCloseContextMenu: () => void;
+  canOpenProperties: boolean;
   onContextBringForward: () => void;
   onContextDelete: () => void;
+  onContextOpenProperties: () => void;
   onContextSendBackward: () => void;
 
   activeThreadTarget: ThreadTarget;
@@ -38,9 +39,10 @@ type ClearingBoardOverlaysProps = {
 
 export function ClearingBoardOverlays({
   contextMenu,
-  onCloseContextMenu,
+  canOpenProperties,
   onContextBringForward,
   onContextDelete,
+  onContextOpenProperties,
   onContextSendBackward,
   activeThreadTarget,
   comments,
@@ -62,7 +64,9 @@ export function ClearingBoardOverlays({
           y={contextMenu.y}
           onBringForward={onContextBringForward}
           onDelete={onContextDelete}
+          onOpenProperties={onContextOpenProperties}
           onSendBackward={onContextSendBackward}
+          showProperties={canOpenProperties}
         />
       ) : null}
 

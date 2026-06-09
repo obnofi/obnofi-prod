@@ -8,6 +8,8 @@ import {
   PEN_COLORS,
   SHAPE_OPTIONS,
   STROKE_WIDTHS,
+  STROKE_WIDTH_MIN,
+  STROKE_WIDTH_MAX,
   PenToolIcon,
   Highlighter,
   type ShapeTool,
@@ -108,27 +110,41 @@ export function PenDropdown({
         </div>
 
         <div>
-          <p className="mb-2 text-xs font-medium text-[var(--color-text-secondary)]">Stroke Width</p>
-          <div className="flex flex-col gap-1">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-medium text-[var(--color-text-secondary)]">Stroke Width</p>
+            <span className="text-xs tabular-nums text-[var(--color-text-secondary)]">{strokeWidth}px</span>
+          </div>
+
+          {/* Preset chips: Thin / Medium / Bold */}
+          <div className="mb-2 flex gap-1 rounded-xl bg-[var(--color-background)] p-1">
             {STROKE_WIDTHS.map(({ value, label, width }) => (
               <button
                 key={value}
-                className={`flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition ${
+                className={`flex flex-1 flex-col items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs transition ${
                   strokeWidth === value
                     ? "bg-[var(--color-accent-subtle)] text-[var(--color-accent)]"
-                    : "text-[var(--color-text-primary)] hover:bg-[var(--color-hover)]"
+                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                 }`}
                 type="button"
                 onClick={() => onStrokeWidthSelect(value)}
               >
-                <div
-                  className="rounded-full bg-current"
-                  style={{ width: Math.max(16, width * 2), height: width }}
-                />
+                <div className="rounded-full bg-current" style={{ width: 24, height: width }} />
                 <span>{label}</span>
               </button>
             ))}
           </div>
+
+          {/* Fine slider */}
+          <input
+            aria-label="Stroke width"
+            className="w-full accent-[var(--color-accent)]"
+            max={STROKE_WIDTH_MAX}
+            min={STROKE_WIDTH_MIN}
+            step={1}
+            type="range"
+            value={strokeWidth}
+            onChange={(event) => onStrokeWidthSelect(Number(event.target.value))}
+          />
         </div>
       </div>
     </>

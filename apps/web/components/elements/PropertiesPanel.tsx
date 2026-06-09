@@ -1,23 +1,21 @@
 "use client";
 
 import { useMemo } from "react";
-import { useCanvasStore } from "@/store/useCanvasStore";
 import { useElementStore } from "@/store/useElementStore";
 import type { ConnectorElement, LineStyle, ShapeElement } from "@obnofi/types/clearing";
 
-export function PropertiesPanel() {
-  const { selectedElementId } = useCanvasStore();
+export function PropertiesPanel({ elementId }: { elementId: string | null }) {
   const { elements, updateElement } = useElementStore();
 
   const selectedShape = useMemo(() => {
-    const target = elements.find((element) => element.id === selectedElementId);
+    const target = elements.find((element) => element.id === elementId);
     return target?.type === "shape" ? (target as ShapeElement) : null;
-  }, [elements, selectedElementId]);
+  }, [elementId, elements]);
 
   const selectedConnector = useMemo(() => {
-    const target = elements.find((element) => element.id === selectedElementId);
+    const target = elements.find((element) => element.id === elementId);
     return target?.type === "connector" ? (target as ConnectorElement) : null;
-  }, [elements, selectedElementId]);
+  }, [elementId, elements]);
 
   if (!selectedShape && !selectedConnector) {
     return null;

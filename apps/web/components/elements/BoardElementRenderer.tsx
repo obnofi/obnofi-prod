@@ -19,6 +19,7 @@ export function BoardElementRenderer({
   isSelected,
   linkedElements,
   commentCount,
+  onContextMenu,
   onPointerDown,
   onConnectorStart,
   onVote,
@@ -30,6 +31,7 @@ export function BoardElementRenderer({
   isSelected: boolean;
   linkedElements: Record<string, Element>;
   commentCount: number;
+  onContextMenu: (event: React.MouseEvent<HTMLDivElement>, elementId: string) => void;
   onPointerDown: (event: React.PointerEvent<HTMLDivElement>, elementId: string) => void;
   onConnectorStart?: (event: React.PointerEvent<HTMLButtonElement>, elementId: string, position: ConnectorHandlePosition) => void;
   onVote: (elementId: string) => void;
@@ -47,6 +49,7 @@ export function BoardElementRenderer({
       <div
         className="pointer-events-auto absolute"
         style={{ left: points.x, top: points.y, width: points.width, height: points.height }}
+        onContextMenu={(event) => onContextMenu(event, element.id)}
         onPointerDown={(event) => onPointerDown(event, element.id)}
       >
         <div className="absolute inset-0 cursor-pointer" style={{ background: "transparent" }} />
@@ -100,6 +103,7 @@ export function BoardElementRenderer({
     className: `pointer-events-auto group absolute cursor-grab active:cursor-grabbing ${
       isInsideSelectedSection ? "ring-2 ring-[var(--color-accent)]/50 ring-offset-2" : ""
     }`,
+    onContextMenu: (event: React.MouseEvent<HTMLDivElement>) => onContextMenu(event, element.id),
     onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => onPointerDown(event, element.id),
     style: {
       left: element.x,

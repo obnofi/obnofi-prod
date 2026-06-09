@@ -58,8 +58,7 @@ export function useClearingActions({
   const handlePathCreated = async (element: Element) => {
     pushHistory();
     addElement(element);
-    selectSingle(element.id);
-    setSelectedElement(element.id);
+    // 펜 stroke은 그린 직후 자동 선택하지 않는다 — 바운딩 박스(히트박스)가 즉시 노출되는 걸 방지.
     await persistElement(element);
   };
 

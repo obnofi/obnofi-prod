@@ -25,6 +25,7 @@ export type ClearingBoardPointerDownOptions = {
   lineStyle: string;
   activeEmojiStamp: string | null;
   setViewport: (patch: Partial<ViewportState>) => void;
+  setPropertyPanelElementId: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedElement: (id: string | null) => void;
   setTool: (tool: string) => void;
   setContextMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>;
@@ -44,7 +45,7 @@ export function useClearingBoardPointerDown({
   lastScenePointRef, viewportRef, draftConnectorApiRef,
   currentRoomRef, currentUserRef, presenceChannelRef,
   viewport, elements, tool, lineStyle, activeEmojiStamp,
-  setSelectedElement, setTool, setContextMenu,
+  setPropertyPanelElementId, setSelectedElement, setTool, setContextMenu,
   setActiveThreadTarget, setActiveEmojiStamp, setFloatingStamps,
   setSelectionBounds, clearSelection, selectSingle,
   addElement, pushHistory, persistElement,
@@ -53,6 +54,7 @@ export function useClearingBoardPointerDown({
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (!boardRef.current) return;
       setContextMenu(null);
+      setPropertyPanelElementId(null);
       if (event.target !== event.currentTarget) return;
       if (!event.shiftKey) { clearSelection(); setSelectedElement(null); }
 
@@ -154,7 +156,7 @@ export function useClearingBoardPointerDown({
       draftConnectorApiRef, drawStateRef, elements, lassoStateRef, lastScenePointRef,
       lineStyle, panStateRef, persistElement, presenceChannelRef, pushHistory,
       selectSingle, setActiveEmojiStamp, setActiveThreadTarget, setContextMenu,
-      setFloatingStamps, setSelectedElement, setSelectionBounds, setTool,
+      setFloatingStamps, setPropertyPanelElementId, setSelectedElement, setSelectionBounds, setTool,
       tool, viewport.x, viewport.y, viewport.zoom, viewportRef,
     ]
   );

@@ -75,12 +75,12 @@ export const PEN_COLORS = [
 ] as const;
 
 export const STROKE_WIDTHS = [
-  { value: 1,  label: "Thin",    width: 2 },
-  { value: 2,  label: "Regular", width: 3 },
-  { value: 4,  label: "Medium",  width: 4 },
-  { value: 8,  label: "Thick",   width: 6 },
-  { value: 16, label: "Bold",    width: 8 },
-  { value: 24, label: "Heavy",   width: 10 },
+  { value: 2,  label: "Thin",   width: 2 },
+  { value: 6,  label: "Medium", width: 5 },
+  { value: 12, label: "Bold",   width: 8 },
 ] as const;
+
+export const STROKE_WIDTH_MIN = 1;
+export const STROKE_WIDTH_MAX = 24;
 
 export { PenToolIcon, Highlighter };
