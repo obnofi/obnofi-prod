@@ -10,7 +10,6 @@ import { ButtonInsertModal } from "@/components/editor/extensions/ButtonInsertMo
 import { PageLinkModal } from "@/components/editor/extensions/PageLinkModal";
 import { BlockActionBar } from "@/components/editor/BlockActionBar";
 import { CollaboratorBlockAvatars } from "@/components/editor/CollaboratorBlockAvatars";
-import { SpeechInputIndicator } from "@/components/editor/SpeechInputIndicator";
 import { TextHighlightToolbar } from "@/components/editor/TextHighlightToolbar";
 import { RemotePageCursors } from "@/components/editor/RemotePageCursors";
 import { SlashCommandBroadcast } from "@/components/editor/SlashCommandBroadcast";
@@ -111,9 +110,6 @@ export function Editor({
   pageId,
   onContentContainerReady,
   onEditorReady,
-  interimTranscript = "",
-  isSpeechListening = false,
-  speechListeningState = "idle",
   mossNoteDockRef,
   mossNoteSurfaceRef,
 }: EditorProps) {
@@ -402,11 +398,6 @@ export function Editor({
             onSubmit={submitCursorChat}
           />
         ) : null}
-        <SpeechInputIndicator
-          isListening={isSpeechListening}
-          interimTranscript={interimTranscript}
-          listeningState={speechListeningState}
-        />
       </div>
 
       {editable && pageId ? (

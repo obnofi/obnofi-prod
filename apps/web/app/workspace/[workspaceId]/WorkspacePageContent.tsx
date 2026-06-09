@@ -125,6 +125,12 @@ export function WorkspacePageContent({
 
   return (
     <div className="relative flex-1 overflow-hidden bg-[var(--color-background)]">
+      {isListening ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-40 rounded-[28px] border-[8px] border-[var(--color-accent)] parrot-screen-frame"
+        />
+      ) : null}
       {activePage.type === "document" && (
         <>
           <DocumentPageBody

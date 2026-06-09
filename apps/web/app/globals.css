@@ -1995,6 +1995,19 @@ html.jungle {
   animation: parrotOrbitPulse 1.8s ease-out infinite;
 }
 
+.parrot-screen-frame {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-accent) 22%, transparent),
+    0 0 52px color-mix(in srgb, var(--color-accent) 28%, transparent);
+  animation: parrotFrameGlow 3.8s cubic-bezier(0.4, 0.08, 0.2, 1) infinite;
+}
+
+.parrot-visualizer-bar {
+  transform-origin: center center;
+  animation: parrotVisualizerBounce 960ms cubic-bezier(0.42, 0, 0.3, 1) infinite;
+  transform: scaleY(var(--parrot-base-scale, 1));
+}
+
 @keyframes parrotWaveIdle {
   0%,
   100% {
@@ -2017,5 +2030,39 @@ html.jungle {
   100% {
     opacity: 0;
     transform: scale(1.22);
+  }
+}
+
+@keyframes parrotFrameGlow {
+  0%,
+  100% {
+    opacity: 0.72;
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--color-accent) 18%, transparent),
+      0 0 36px color-mix(in srgb, var(--color-accent) 20%, transparent);
+  }
+  35% {
+    opacity: 0.96;
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--color-accent) 24%, transparent),
+      0 0 64px color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+  68% {
+    opacity: 1;
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--color-accent) 28%, transparent),
+      0 0 72px color-mix(in srgb, var(--color-accent) 34%, transparent);
+  }
+}
+
+@keyframes parrotVisualizerBounce {
+  0%,
+  100% {
+    transform: scaleY(var(--parrot-base-scale, 1));
+    filter: brightness(0.98);
+  }
+  50% {
+    transform: scaleY(var(--parrot-active-scale, var(--parrot-base-scale, 1)));
+    filter: brightness(1.02);
   }
 }
