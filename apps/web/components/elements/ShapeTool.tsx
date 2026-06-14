@@ -202,7 +202,7 @@ export function ShapeTool({
 
   return (
     <div
-      className="group relative h-full w-full cursor-grab active:cursor-grabbing"
+      className="group relative h-full w-full cursor-grab active:cursor-grabbing transform-gpu transition-[box-shadow,transform] duration-150 will-change-transform"
       style={{
         opacity: element.style.opacity,
       }}

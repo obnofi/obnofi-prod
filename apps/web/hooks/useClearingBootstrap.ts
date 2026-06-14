@@ -87,7 +87,10 @@ export function useClearingBootstrap({
     (element: Element) => {
       const existing = useElementStore.getState().elements.find((c) => c.id === element.id);
       const serialized = JSON.stringify(element);
-      if (existing && JSON.stringify(existing) === serialized) return;
+      if (existing) {
+        const skippedSerialized = skipRemoteUpsertsRef.current.get(element.id);
+        if ((skippedSerialized ?? JSON.stringify(existing)) === serialized) return;
+      }
       skipRemoteUpsertsRef.current.set(element.id, serialized);
       upsertElement(element);
     },

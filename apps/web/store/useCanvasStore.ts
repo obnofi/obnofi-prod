@@ -15,7 +15,8 @@ export type CanvasTool =
   | "marker"
   | "connector"
   | "section"
-  | "comment";
+  | "comment"
+  | "laser";
 
 export type Viewport = {
   x: number;

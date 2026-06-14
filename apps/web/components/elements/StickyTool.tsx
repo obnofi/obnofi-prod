@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useElementStore } from "@/store/useElementStore";
+import { useCanvasStore } from "@/store/useCanvasStore";
+import { useSelectionStore } from "@/store/useSelectionStore";
 import { ResizeHandles } from "@/components/elements/ResizeHandles";
 import type { ResizeHandlePosition } from "@/components/elements/ResizeHandles";
 import { VoteBadge } from "@/components/elements/VoteBadge";
@@ -11,7 +13,6 @@ import {
   buildResizedFrame,
   TONE_COLORS,
   MIN_STICKY_HEIGHT,
-  MIN_STICKY_WIDTH,
   STICKY_VERTICAL_CHROME,
   type ToneKey,
 } from "@/lib/canvas/stickyToolUtils";
@@ -32,6 +33,8 @@ export function StickyTool({
   const heightRef = useRef(element.height);
   const [isEditing, setIsEditing] = useState(false);
   const { updateElement } = useElementStore();
+  const { selectSingle } = useSelectionStore();
+  const setSelectedElement = useCanvasStore((state) => state.setSelectedElement);
 
   const tone = TONE_COLORS[element.content.tone as ToneKey] ?? TONE_COLORS.sun;
 
@@ -135,13 +138,19 @@ export function StickyTool({
 
   return (
     <div
-      className={`relative h-full rounded-[22px] border p-5 shadow-sm transition ${
+      className={`relative h-full rounded-[22px] border p-5 shadow-sm transform-gpu transition-[box-shadow,transform] duration-150 will-change-transform ${
         isSelected ? "ring-2 ring-[var(--color-accent)]" : "ring-0"
       }`}
       style={{ backgroundColor: tone.surface, borderColor: tone.border, color: tone.text }}
       onDoubleClick={(event) => {
         event.stopPropagation();
         setIsEditing(true);
+      }}
+      onPointerDown={(event) => {
+        if (isEditing || event.button !== 0) return;
+
+        selectSingle(element.id);
+        setSelectedElement(element.id);
       }}
     >
       <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] opacity-40">

@@ -113,7 +113,7 @@ export function buildElement(
       },
       content: {
         kind: "sticky",
-        text: "Map the user journey\nFrame key decisions\nKeep the grove tidy",
+        text: "",
         tone: "sun",
       },
     };
@@ -171,7 +171,7 @@ export function buildElement(
       },
       content: {
         kind: "vine",
-        text: "Branch out",
+        text: "",
         fontSize: 22,
         weight: 600,
         fill: "#FFFFFF",

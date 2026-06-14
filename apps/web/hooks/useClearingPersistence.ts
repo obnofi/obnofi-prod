@@ -161,8 +161,8 @@ export function useClearingPersistence({
 
     for (const element of elements) {
       const previous = previousById.get(element.id);
-      if (!previous || JSON.stringify(previous) !== JSON.stringify(element)) {
-        const serialized = JSON.stringify(element);
+      const serialized = JSON.stringify(element);
+      if (!previous || JSON.stringify(previous) !== serialized) {
         if (skipRemoteUpsertsRef.current.get(element.id) === serialized) {
           skipRemoteUpsertsRef.current.delete(element.id);
           continue;

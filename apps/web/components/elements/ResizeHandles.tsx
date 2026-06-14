@@ -39,7 +39,7 @@ export function ResizeHandles({
         <button
           key={handle.position}
           aria-label={`Resize from ${handle.position}`}
-          className={`absolute h-4 w-4 rounded-full border-2 border-white bg-[var(--color-accent)] shadow-sm ${handle.className}`}
+          className={`absolute z-40 h-4 w-4 rounded-full border-2 border-white bg-[var(--color-accent)] shadow-sm touch-none select-none ${handle.className}`}
           style={{ cursor: handle.cursor }}
           type="button"
           onPointerDown={(event) => onHandlePointerDown(event, handle.position)}

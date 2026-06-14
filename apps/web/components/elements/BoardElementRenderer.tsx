@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { catmullRomToBezierPath } from "@/lib/pathUtils";
 import { ConnectorHandles, type ConnectorHandlePosition } from "@/components/elements/ConnectorHandles";
 import { EmbedElement } from "@/components/elements/EmbedElement";
@@ -14,19 +15,7 @@ import type { Element, StickyElement, VineElement } from "@obnofi/types/clearing
 import { useElementStore } from "@/store/useElementStore";
 import { resolveColor, getConnectorPoints } from "@/lib/boardElementUtils";
 
-export function BoardElementRenderer({
-  element,
-  isSelected,
-  linkedElements,
-  commentCount,
-  onContextMenu,
-  onPointerDown,
-  onConnectorStart,
-  onVote,
-  scale,
-  containingSectionId,
-  isSectionSelected,
-}: {
+type BoardElementRendererProps = {
   element: Element;
   isSelected: boolean;
   linkedElements: Record<string, Element>;
@@ -38,7 +27,21 @@ export function BoardElementRenderer({
   scale: number;
   containingSectionId?: string | null;
   isSectionSelected?: boolean;
-}) {
+};
+
+function BoardElementRendererInner({
+  element,
+  isSelected,
+  linkedElements,
+  commentCount,
+  onContextMenu,
+  onPointerDown,
+  onConnectorStart,
+  onVote,
+  scale,
+  containingSectionId,
+  isSectionSelected,
+}: BoardElementRendererProps) {
   const { updateElement } = useElementStore();
 
   if (element.type === "connector") {
@@ -100,7 +103,7 @@ export function BoardElementRenderer({
   const isInsideSelectedSection = isSectionSelected && containingSectionId && !isSelected;
 
   const sharedProps = {
-    className: `pointer-events-auto group absolute cursor-grab active:cursor-grabbing ${
+    className: `pointer-events-auto group absolute cursor-grab active:cursor-grabbing transform-gpu transition-shadow duration-150 will-change-transform ${
       isInsideSelectedSection ? "ring-2 ring-[var(--color-accent)]/50 ring-offset-2" : ""
     }`,
     onContextMenu: (event: React.MouseEvent<HTMLDivElement>) => onContextMenu(event, element.id),
@@ -113,6 +116,7 @@ export function BoardElementRenderer({
       zIndex: element.zIndex,
       transform: `rotate(${element.rotation}deg)`,
       opacity: element.style.opacity,
+      contain: "layout paint style",
     },
   } satisfies React.HTMLAttributes<HTMLDivElement>;
 
@@ -149,7 +153,7 @@ export function BoardElementRenderer({
       ) : null}
 
       {element.type === "vine" ? (
-        <VineTool autoEdit={element.content.text.length === 0} element={element as VineElement} isSelected={isSelected} />
+        <VineTool autoEdit={element.content.text.length === 0} element={element as VineElement} isSelected={isSelected} scale={scale} />
       ) : null}
 
       {element.type === "image" ? (
@@ -190,3 +194,31 @@ export function BoardElementRenderer({
     </div>
   );
 }
+
+function areBoardElementRendererPropsEqual(
+  prev: BoardElementRendererProps,
+  next: BoardElementRendererProps
+) {
+  if (prev.element !== next.element) return false;
+  if (prev.isSelected !== next.isSelected) return false;
+  if (prev.commentCount !== next.commentCount) return false;
+  if (prev.scale !== next.scale) return false;
+  if (prev.containingSectionId !== next.containingSectionId) return false;
+  if (prev.isSectionSelected !== next.isSectionSelected) return false;
+  if (prev.onContextMenu !== next.onContextMenu) return false;
+  if (prev.onPointerDown !== next.onPointerDown) return false;
+  if (prev.onConnectorStart !== next.onConnectorStart) return false;
+  if (prev.onVote !== next.onVote) return false;
+
+  // Connectors depend on the latest linked element positions to redraw smoothly.
+  if (prev.element.type === "connector" || next.element.type === "connector") {
+    return prev.linkedElements === next.linkedElements;
+  }
+
+  return true;
+}
+
+export const BoardElementRenderer = memo(
+  BoardElementRendererInner,
+  areBoardElementRendererPropsEqual
+);

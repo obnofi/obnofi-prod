@@ -5,6 +5,11 @@ import { createBrowserSupabaseClient, isSupabaseConfigured } from "@/lib/supabas
 import { useElementStore } from "@/store/useElementStore";
 import type { TextElement } from "@obnofi/types/clearing";
 
+const MIN_TEXT_WIDTH = 180;
+const MAX_TEXT_WIDTH = 480;
+const MIN_TEXT_HEIGHT = 48;
+const TEXT_HORIZONTAL_CHROME = 20;
+
 async function persistText(element: TextElement, patch?: Partial<TextElement>) {
   if (!isSupabaseConfigured()) {
     return;
@@ -58,8 +63,13 @@ export function TextTool({
 }) {
   const contentRef = useRef<HTMLDivElement>(null);
   const draftRef = useRef(element.content.text);
+  const hasTriggeredAutoEditRef = useRef(false);
   const [isEditing, setIsEditing] = useState(autoEdit || element.content.text.length === 0);
   const { updateElement } = useElementStore();
+
+  useEffect(() => {
+    hasTriggeredAutoEditRef.current = false;
+  }, [element.id]);
 
   useEffect(() => {
     if (!isEditing) {
@@ -68,9 +78,10 @@ export function TextTool({
   }, [element.content.text, isEditing]);
 
   useEffect(() => {
-    if (!autoEdit || isEditing) {
+    if (!autoEdit || isEditing || hasTriggeredAutoEditRef.current) {
       return;
     }
+    hasTriggeredAutoEditRef.current = true;
     setIsEditing(true);
   }, [autoEdit, isEditing]);
 
@@ -82,26 +93,49 @@ export function TextTool({
     contentRef.current.focus();
     document.getSelection()?.selectAllChildren(contentRef.current);
     document.getSelection()?.collapseToEnd();
+    syncBoxSize();
   }, [isEditing]);
 
-  const syncBoxSize = () => {
+  const measureBoxSize = () => {
     if (!contentRef.current) {
-      return;
+      return { width: element.width, height: element.height };
     }
 
-    const nextHeight = Math.max(48, contentRef.current.scrollHeight);
-    const nextWidth = Math.max(180, Math.min(480, contentRef.current.scrollWidth + 20));
+    const measuredWidth = Math.max(
+      MIN_TEXT_WIDTH,
+      Math.min(MAX_TEXT_WIDTH, contentRef.current.scrollWidth + TEXT_HORIZONTAL_CHROME)
+    );
+    const measuredHeight = Math.max(MIN_TEXT_HEIGHT, contentRef.current.scrollHeight);
+
+    return {
+      width: Math.max(element.width, measuredWidth),
+      height: Math.max(element.height, measuredHeight),
+    };
+  };
+
+  const syncBoxSize = () => {
+    const nextBox = measureBoxSize();
+    if (
+      Math.abs(nextBox.width - element.width) <= 1 &&
+      Math.abs(nextBox.height - element.height) <= 1
+    ) {
+      return nextBox;
+    }
+
     updateElement(element.id, {
-      width: nextWidth,
-      height: nextHeight,
+      width: nextBox.width,
+      height: nextBox.height,
       updatedAt: new Date().toISOString(),
     });
+
+    return nextBox;
   };
 
   const commitText = () => {
+    const nextBox = measureBoxSize();
     const patch: Partial<TextElement> = {
-      width: element.width,
-      height: contentRef.current ? Math.max(48, contentRef.current.scrollHeight) : element.height,
+      width: nextBox.width,
+      height: nextBox.height,
       content: {
         ...element.content,
         text: draftRef.current,
@@ -127,7 +161,7 @@ export function TextTool({
     >
       <div
         ref={contentRef}
-        className={`min-h-[48px] whitespace-pre-wrap break-words rounded-xl px-2 py-1 leading-tight outline-none ${
+        className={`whitespace-pre-wrap break-words rounded-xl px-2 py-1 leading-tight outline-none ${
           isSelected ? "ring-2 ring-[var(--color-accent)]" : ""
         }`}
         contentEditable={isEditing}
