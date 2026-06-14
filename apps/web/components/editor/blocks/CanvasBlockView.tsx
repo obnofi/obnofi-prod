@@ -107,24 +107,26 @@ export function CanvasBlockView(props: ReactNodeViewProps) {
         data-state={
           isLoading ? "loading" : embeddedPage ? "ready" : isCreating ? "creating" : "empty"
         }
-        className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 not-prose dark:border-zinc-800 dark:bg-zinc-900/70"
+        className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] not-prose"
       >
-        <div
-          data-export-ignore="true"
-          className="flex items-center justify-end gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800"
-        >
-          {workspaceId && embeddedPage ? (
-            <button
-              type="button"
-              data-testid="inline-canvas-open"
-              onClick={() => router.push(`/workspace/${workspaceId}?page=${embeddedPage.id}`)}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
-            >
-              Open
-              <ExternalLink className="h-3.5 w-3.5" />
-            </button>
-          ) : null}
-        </div>
+        {props.editor.isEditable ? (
+          <div
+            data-export-ignore="true"
+            className="flex items-center justify-end gap-2 border-b border-[var(--color-border)] px-4 py-3"
+          >
+            {workspaceId && embeddedPage ? (
+              <button
+                type="button"
+                data-testid="inline-canvas-open"
+                onClick={() => router.push(`/workspace/${workspaceId}?page=${embeddedPage.id}`)}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-[var(--color-text-secondary)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-text-primary)]"
+              >
+                Open
+                <ExternalLink className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
         {isLoading ? (
           <div data-testid="inline-canvas-loading" className="flex h-64 items-center justify-center">
@@ -141,7 +143,7 @@ export function CanvasBlockView(props: ReactNodeViewProps) {
             />
           </div>
         ) : (
-          <div data-testid="inline-canvas-empty" className="px-4 py-8 text-sm text-zinc-500 dark:text-zinc-400">
+          <div data-testid="inline-canvas-empty" className="px-4 py-8 text-sm text-[var(--color-text-secondary)]">
             {isCreating
               ? "Creating Clearing..."
               : props.editor.isEditable

@@ -54,6 +54,7 @@ function LinkedDatabaseBlockView(props: ReactNodeViewProps) {
             : undefined
         }
         compact={false}
+        jungleLimit={500}
         maxContentHeightClass="max-h-[720px]"
         emptyMessage="데이터베이스를 불러올 수 없습니다."
       />

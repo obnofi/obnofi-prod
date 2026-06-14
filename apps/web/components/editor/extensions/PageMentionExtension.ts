@@ -44,7 +44,7 @@ export const PageLinkMark = Mark.create<{ workspaceId?: string }>({
     return [
       new InputRule({
         find: /\[\[([^\]]+)\]\]$/,
-        handler: ({ state, range, match, chain }) => {
+        handler: ({ range, match, chain }) => {
           const name = match[1].trim();
           const { pages } = usePageStore.getState();
           const page = pages.find(

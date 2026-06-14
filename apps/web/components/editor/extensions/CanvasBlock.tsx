@@ -15,7 +15,11 @@ export const CanvasBlock = Node.create<CanvasBlockExtensionOptions>({
   group: "block",
   atom: true,
   selectable: false,
-  draggable: true,
+  // Not draggable: a draggable node-view DOM makes the browser start a native drag
+  // when the user drags on the embedded canvas surface, which fires pointercancel
+  // and freezes shape draws. Block reordering uses the floating drag handle
+  // (blockActionsPlugin / startBlockDrag), not the node's native draggability.
+  draggable: false,
 
   addOptions() {
     return {

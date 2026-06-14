@@ -110,9 +110,11 @@ export function DatabaseBlockView(props: ReactNodeViewProps) {
         selection={selection}
         compact={false}
         editableTitle={props.editor.isEditable}
+        readOnly={!props.editor.isEditable}
         viewType={viewType}
         onViewTypeChange={handleViewTypeChange}
         onSurfaceStateChange={handleSurfaceStateChange}
+        jungleLimit={500}
         maxContentHeightClass="max-h-[720px]"
         emptyMessage={
           isCreating
