@@ -23,6 +23,8 @@ export function appendMark(
 
 function findNextInlineMatch(text: string) {
   const patterns = [
+    { type: "link", regex: /\[([^\]]*)\]\(([^)]+)\)/ },
+    { type: "image", regex: /!\[([^\]]*)\]\(([^)]+)\)/ },
     { type: "code", regex: /`([^`\n]+)`/ },
     { type: "bold", regex: /\*\*([^*\n]+)\*\*|__([^_\n]+)__/ },
     { type: "strike", regex: /~~([^~\n]+)~~/ },
@@ -69,7 +71,22 @@ export function parseInlineMarkdown(text: string): TiptapNode[] {
     nodes.push(createTextNode(text.slice(0, startIndex)));
   }
 
-  if (innerText) {
+  if (nextMatch.type === "link") {
+    const linkText = nextMatch.match[1] ?? "";
+    const linkUrl = nextMatch.match[2] ?? "";
+    nodes.push({
+      type: "text",
+      text: linkText || linkUrl,
+      marks: [{ type: "link", attrs: { href: linkUrl } }],
+    });
+  } else if (nextMatch.type === "image") {
+    const altText = nextMatch.match[1] ?? "";
+    const imageUrl = nextMatch.match[2] ?? "";
+    nodes.push({
+      type: "image",
+      attrs: { src: imageUrl, alt: altText },
+    });
+  } else if (innerText) {
     const inlineNodes = parseInlineMarkdown(innerText);
     const markType =
       nextMatch.type === "code"

@@ -7,6 +7,8 @@ import {
   BULLET_LIST_PATTERN,
   ORDERED_LIST_PATTERN,
   BLOCKQUOTE_PATTERN,
+  TOGGLE_SUMMARY_PATTERN,
+  TOGGLE_OPEN_SUMMARY_PATTERN,
   DETAILS_OPEN_PATTERN,
   DETAILS_CLOSE_PATTERN,
   DETAILS_SUMMARY_PATTERN,
@@ -19,6 +21,7 @@ import {
   consumeBulletList,
   consumeOrderedList,
   consumeBlockquote,
+  consumeToggleBlock,
   consumeParagraph,
 } from "./markdown/blockParsers";
 
@@ -147,6 +150,14 @@ function parseMarkdownBlocks(lines: string[]): TiptapNode[] {
 
     if (ORDERED_LIST_PATTERN.test(line)) {
       const result = consumeOrderedList(lines, index);
+      content.push(result.node);
+      index = result.nextIndex;
+      continue;
+    }
+
+    // Check for toggle blocks first (before regular blockquotes)
+    if (TOGGLE_SUMMARY_PATTERN.test(line) || TOGGLE_OPEN_SUMMARY_PATTERN.test(line)) {
+      const result = consumeToggleBlock(lines, index);
       content.push(result.node);
       index = result.nextIndex;
       continue;

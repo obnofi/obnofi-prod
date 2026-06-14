@@ -5,6 +5,8 @@ import {
   BULLET_LIST_PATTERN,
   ORDERED_LIST_PATTERN,
   BLOCKQUOTE_PATTERN,
+  TOGGLE_SUMMARY_PATTERN,
+  TOGGLE_OPEN_SUMMARY_PATTERN,
   HEADING_PATTERN,
   HORIZONTAL_RULE_PATTERN,
   CODE_FENCE_PATTERN,
@@ -30,6 +32,8 @@ export function isBlockBoundary(line: string) {
     BULLET_LIST_PATTERN.test(line) ||
     ORDERED_LIST_PATTERN.test(line) ||
     BLOCKQUOTE_PATTERN.test(line) ||
+    TOGGLE_SUMMARY_PATTERN.test(line) ||
+    TOGGLE_OPEN_SUMMARY_PATTERN.test(line) ||
     HORIZONTAL_RULE_PATTERN.test(line) ||
     CODE_FENCE_PATTERN.test(line)
   );
@@ -127,10 +131,100 @@ export function consumeOrderedList(lines: string[], startIndex: number) {
   };
 }
 
+export function consumeToggleBlock(lines: string[], startIndex: number) {
+  const openingLine = lines[startIndex];
+  let summary = "";
+  let isOpen = false;
+
+  // Check for open toggle pattern (>> summary)
+  const openMatch = openingLine.match(TOGGLE_OPEN_SUMMARY_PATTERN);
+  if (openMatch) {
+    summary = openMatch[1].trim();
+    isOpen = true;
+  } else {
+    // Check for closed toggle pattern (>! summary)
+    const closedMatch = openingLine.match(TOGGLE_SUMMARY_PATTERN);
+    if (closedMatch) {
+      summary = closedMatch[1].trim();
+    }
+  }
+
+  let index = startIndex + 1;
+  const bodyLines: string[] = [];
+
+  // Collect body lines (indented or consecutive blockquote lines that are not toggle patterns)
+  while (index < lines.length) {
+    const line = lines[index];
+    const trimmedLine = line.trim();
+
+    // Stop at empty line or new block boundary
+    if (trimmedLine === "") {
+      break;
+    }
+
+    // Stop at another toggle pattern
+    if (TOGGLE_SUMMARY_PATTERN.test(line) || TOGGLE_OPEN_SUMMARY_PATTERN.test(line)) {
+      break;
+    }
+
+    // Stop at other block boundaries
+    if (isBlockBoundary(line) && !BLOCKQUOTE_PATTERN.test(line)) {
+      break;
+    }
+
+    // If it's a regular blockquote line, extract content
+    const bqMatch = line.match(BLOCKQUOTE_PATTERN);
+    if (bqMatch) {
+      bodyLines.push(bqMatch[1]);
+    } else if (line.startsWith(" ") || line.startsWith("\t")) {
+      // Indented line (remove indentation)
+      bodyLines.push(line.replace(/^[\s]+/, ""));
+    } else {
+      bodyLines.push(line);
+    }
+
+    index += 1;
+  }
+
+  // Parse body content into paragraphs
+  const content: TiptapNode[] = [];
+  let currentParagraphLines: string[] = [];
+
+  for (const line of bodyLines) {
+    if (line.trim() === "") {
+      if (currentParagraphLines.length > 0) {
+        content.push(createParagraphNode(currentParagraphLines.join(" ")));
+        currentParagraphLines = [];
+      }
+    } else {
+      currentParagraphLines.push(line);
+    }
+  }
+
+  if (currentParagraphLines.length > 0) {
+    content.push(createParagraphNode(currentParagraphLines.join(" ")));
+  }
+
+  // Ensure at least one paragraph
+  if (content.length === 0) {
+    content.push(createParagraphNode(""));
+  }
+
+  return {
+    node: {
+      type: "toggleBlock",
+      attrs: { summary, open: isOpen },
+      content,
+    },
+    nextIndex: index,
+  };
+}
+
 export function consumeBlockquote(lines: string[], startIndex: number) {
   const quotedLines: string[] = [];
   let index = startIndex;
 
+  // Collect all consecutive blockquote lines
   while (index < lines.length) {
     const match = lines[index].match(BLOCKQUOTE_PATTERN);
     if (!match) {
@@ -140,10 +234,36 @@ export function consumeBlockquote(lines: string[], startIndex: number) {
     index += 1;
   }
 
+  // Split quoted content into paragraphs (separated by empty lines in the quoted content)
+  const paragraphs: TiptapNode[] = [];
+  let currentParagraphLines: string[] = [];
+
+  for (const line of quotedLines) {
+    if (line.trim() === "") {
+      // Empty line indicates paragraph break
+      if (currentParagraphLines.length > 0) {
+        paragraphs.push(createParagraphNode(currentParagraphLines.join(" ")));
+        currentParagraphLines = [];
+      }
+    } else {
+      currentParagraphLines.push(line);
+    }
+  }
+
+  // Don't forget the last paragraph
+  if (currentParagraphLines.length > 0) {
+    paragraphs.push(createParagraphNode(currentParagraphLines.join(" ")));
+  }
+
+  // If no paragraphs were created, create an empty one
+  if (paragraphs.length === 0) {
+    paragraphs.push(createParagraphNode(""));
+  }
+
   return {
     node: {
       type: "blockquote",
-      content: [createParagraphNode(quotedLines.join(" "))],
+      content: paragraphs,
     },
     nextIndex: index,
   };
