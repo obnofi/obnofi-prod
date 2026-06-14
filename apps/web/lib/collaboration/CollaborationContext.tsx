@@ -15,6 +15,7 @@ import { pickProfileImagePreset } from "@/lib/profileImagePresets";
 import { getUserColor } from "@/lib/collaborationUtils";
 import type {
   AwarenessState as CursorAwarenessState,
+  LaserPointerState,
   UserCursor,
 } from "@/types/collaboration";
 import { resolveCollaborationServerUrl } from "./wsUrl";
@@ -39,6 +40,7 @@ interface CollaborationContextValue {
   awarenessCount: number;
   awarenessStates: Array<CursorAwarenessState & { clientId: number; image?: string | null }>;
   updateCursor: (fields: Partial<UserCursor> | null) => void;
+  updateLaser: (state: LaserPointerState | null) => void;
   localUserId: string | null;
 }
 
@@ -47,6 +49,7 @@ interface ProviderAwarenessState {
   cursor?: unknown;
   userCursor?: UserCursor | null;
   cursorChat?: unknown;
+  laser?: unknown;
 }
 
 const defaultDocumentContext: CollaborationContextValue = {
@@ -57,6 +60,7 @@ const defaultDocumentContext: CollaborationContextValue = {
   awarenessCount: 0,
   awarenessStates: [],
   updateCursor: () => {},
+  updateLaser: () => {},
   localUserId: null,
 };
 
@@ -161,6 +165,16 @@ export function CollaborationProvider({
     [pageId, pageType, provider]
   );
 
+  const updateLaser = useMemo(
+    () => (state: LaserPointerState | null) => {
+      if (!provider) {
+        return;
+      }
+      provider.awareness.setLocalStateField("laser", state);
+    },
+    [provider]
+  );
+
   const value = useMemo(
     () => ({
       ydoc,
@@ -170,6 +184,7 @@ export function CollaborationProvider({
       awarenessCount,
       awarenessStates,
       updateCursor,
+      updateLaser,
       localUserId: localPresenceUser?.id ?? null,
     }),
     [
@@ -180,6 +195,7 @@ export function CollaborationProvider({
       awarenessCount,
       awarenessStates,
       updateCursor,
+      updateLaser,
       localPresenceUser?.id,
     ]
   );

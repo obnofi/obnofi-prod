@@ -17,6 +17,14 @@ export interface CursorChatState {
   updatedAt: number;
 }
 
+// Firefly — 레이저 포인터. trail 좌표는 scene(캔버스) 좌표계.
+export interface LaserPointerState {
+  points: { x: number; y: number }[];
+  color: string;
+  expiresAt: number;
+  updatedAt: number;
+}
+
 export interface AwarenessState {
   userId: string;
   userName: string;
@@ -27,4 +35,5 @@ export interface AwarenessState {
   userCursor: UserCursor | null;
   slashCommand?: { query: string } | null;
   cursorChat?: CursorChatState | null;
+  laser?: LaserPointerState | null;
 }

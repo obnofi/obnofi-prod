@@ -16,6 +16,7 @@ import { useWorkspacePageHandlers } from "@/hooks/useWorkspacePageHandlers";
 import type { MossNoteDockHandle } from "@/components/workspace/MossNoteDock";
 import { WorkspacePageHeader } from "@/components/workspace/WorkspacePageHeader";
 import { WorkspacePageContent } from "./WorkspacePageContent";
+import { LaserPointerOverlay } from "@/components/canvas/LaserPointerOverlay";
 
 const DatabaseViewModal = dynamic(
   () =>
@@ -275,6 +276,9 @@ function WorkspacePageInner({ workspaceId, pageId }: WorkspacePageInnerProps) {
 
       {isDatabaseModalOpen && <DatabaseViewModal />}
       {isGroveSideTabOpen && <GroveSideTab workspaceId={workspaceId} />}
+
+      {/* Firefly — 전역 레이저 포인터 (R + 흔들기 / Clearing laser 툴) */}
+      <LaserPointerOverlay />
     </CollaborationProvider>
   );
 }

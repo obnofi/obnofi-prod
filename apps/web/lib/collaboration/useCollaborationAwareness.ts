@@ -3,6 +3,7 @@ import { WebsocketProvider } from "y-websocket";
 import type {
   AwarenessState as CursorAwarenessState,
   CursorChatState,
+  LaserPointerState,
   UserCursor,
 } from "@/types/collaboration";
 import type {
@@ -25,6 +26,7 @@ interface ProviderAwarenessState {
   userCursor?: UserCursor | null;
   slashCommand?: { query: string } | null;
   cursorChat?: CursorChatState | null;
+  laser?: LaserPointerState | null;
 }
 
 export function useCollaborationAwareness(provider: WebsocketProvider | null): {
@@ -83,6 +85,23 @@ export function useCollaborationAwareness(provider: WebsocketProvider | null): {
                 updatedAt: awarenessState.cursorChat.updatedAt,
               }
             : null;
+        const laser =
+          Array.isArray(awarenessState.laser?.points) &&
+          typeof awarenessState.laser?.color === "string" &&
+          typeof awarenessState.laser?.expiresAt === "number"
+            ? {
+                points: awarenessState.laser.points.filter(
+                  (p): p is { x: number; y: number } =>
+                    typeof p?.x === "number" && typeof p?.y === "number"
+                ),
+                color: awarenessState.laser.color,
+                expiresAt: awarenessState.laser.expiresAt,
+                updatedAt:
+                  typeof awarenessState.laser.updatedAt === "number"
+                    ? awarenessState.laser.updatedAt
+                    : 0,
+              }
+            : null;
         const hasTextCursor = Boolean(
           awarenessState.cursor &&
             (awarenessState.cursor.anchor != null || awarenessState.cursor.head != null)
@@ -118,6 +137,7 @@ export function useCollaborationAwareness(provider: WebsocketProvider | null): {
             userCursor: userCursor ?? null,
             slashCommand: slashCommand ?? null,
             cursorChat,
+            laser,
             image: awarenessImage,
           });
         }

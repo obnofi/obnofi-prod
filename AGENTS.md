@@ -63,6 +63,7 @@ All features, components, and code variables follow the **Jungle System** metaph
 | `Trait` | A database property/column (Property model) |
 | `Marking` | A SELECT / MULTI_SELECT option tag |
 | `Parrot` (앵무새) | Speech-to-text (음성인식) — `useSpeechRecognition` hook + `SpeechRecognitionButton` |
+| `Firefly` (반딧불이) | Laser pointer (레이저 포인터) — 모든 페이지(문서/캔버스). 전역 오버레이 `LaserPointerOverlay`(WorkspacePage에 마운트) + `useLaserPointer` hook + `LaserPointerLayer`. client 좌표 fixed 렌더. 'R' hold + 흔들기(어디서나) 또는 Clearing toolbar laser 툴로 활성, 5초 후 페이드 |
 
 When adding new features, extend this metaphor. Do not use generic names (`create`, `save`, `editor`) where a Jungle System equivalent exists or can be defined. If unsure, propose a name and document it in `DESIGN.md`.
 
