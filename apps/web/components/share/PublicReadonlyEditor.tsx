@@ -60,7 +60,7 @@ export function PublicReadonlyEditor({ content }: PublicReadonlyEditorProps) {
   }
 
   return (
-    <div className="editor prose max-w-none text-[#111110] dark:prose-invert dark:text-zinc-100 [&_.ProseMirror]:outline-none dark:[&_.ProseMirror]:text-zinc-100">
+    <div className="editor prose max-w-none text-[var(--color-text-primary)] dark:prose-invert [&_.ProseMirror]:outline-none [&_.ProseMirror]:text-[var(--color-text-primary)]">
       <EditorContent editor={editor} />
     </div>
   );

@@ -16,18 +16,11 @@ export function PublicPageView({
   icon,
   coverImage,
   content,
-  updatedAt,
 }: PublicPageViewProps) {
-  const formattedDate = new Date(updatedAt).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
   const fakePage = { icon, type: "document" as const };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#111110]">
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)]">
       {coverImage ? (
         <div
           className="h-48 w-full bg-cover bg-center"
@@ -43,19 +36,15 @@ export function PublicPageView({
             <PageGlyph
               page={fakePage}
               emojiClassName="text-5xl leading-none"
-              typeClassName="w-10 h-10 text-zinc-400"
+              typeClassName="w-10 h-10 text-[var(--color-text-secondary)]"
             />
           </div>
 
-          <h1 className="text-4xl font-bold text-[#111110] dark:text-zinc-100 mb-4">
+          <h1 className="text-4xl font-bold text-[var(--color-text-primary)] mb-8">
             {title}
           </h1>
 
-          <div className="flex items-center gap-4 text-sm text-zinc-500 dark:text-zinc-400 mb-8">
-            <span>Last edited {formattedDate}</span>
-          </div>
-
-          <div className="text-[#111110] dark:text-zinc-300 leading-relaxed">
+          <div className="text-[var(--color-text-primary)] leading-relaxed">
             <PublicReadonlyEditor content={content} />
           </div>
         </article>

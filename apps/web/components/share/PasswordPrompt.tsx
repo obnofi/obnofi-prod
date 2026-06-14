@@ -48,16 +48,16 @@ export function PasswordPrompt({ shareId, onSuccess }: PasswordPromptProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#111110] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-6 h-6 text-zinc-600 dark:text-zinc-400" />
+          <div className="w-12 h-12 bg-[var(--color-surface)] rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-6 h-6 text-[var(--color-text-secondary)]" />
           </div>
-          <h1 className="text-xl font-semibold text-[#111110] dark:text-zinc-100 mb-2">
+          <h1 className="text-xl font-semibold text-[var(--color-text-primary)] mb-2">
             This page is password protected
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-[var(--color-text-secondary)]">
             Enter the password to view this page
           </p>
         </div>
@@ -70,12 +70,12 @@ export function PasswordPrompt({ shareId, onSuccess }: PasswordPromptProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full px-4 py-3 pr-12 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E7D45]/20 focus:border-[#2E7D45] text-[#111110] dark:text-zinc-100"
+              className="w-full px-4 py-3 pr-12 text-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2E7D45]/20 focus:border-[#2E7D45] text-[var(--color-text-primary)]"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             >
               {showPassword ? (
                 <EyeOff className="w-4 h-4" />
