@@ -38,6 +38,7 @@ export function PenTool({
 }: PenToolProps) {
   const drawingPointerIdRef = useRef<number | null>(null);
   const pointsRef = useRef<PathPoint[]>([]);
+  const pendingFrameRef = useRef<number | null>(null);
   const [points, setPoints] = useState<PathPoint[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -56,6 +57,17 @@ export function PenTool({
     return strokeWidth;
   }, [activeTool, strokeWidth]);
 
+  const flushPreviewPoints = () => {
+    if (pendingFrameRef.current != null) {
+      return;
+    }
+
+    pendingFrameRef.current = window.requestAnimationFrame(() => {
+      pendingFrameRef.current = null;
+      setPoints([...pointsRef.current]);
+    });
+  };
+
   const appendPoint = (clientX: number, clientY: number) => {
     const rect = boardRef.current?.getBoundingClientRect();
     if (!rect) {
@@ -63,12 +75,25 @@ export function PenTool({
     }
 
     const point = screenToCanvas(clientX, clientY, viewport, rect);
-    const nextPoints = [...pointsRef.current, point];
-    pointsRef.current = nextPoints;
-    setPoints(nextPoints);
+    const lastPoint = pointsRef.current[pointsRef.current.length - 1];
+    const minimumDistance = activeTool === "marker" ? 1.8 : 0.8;
+
+    if (
+      lastPoint &&
+      Math.hypot(point.x - lastPoint.x, point.y - lastPoint.y) < minimumDistance
+    ) {
+      return;
+    }
+
+    pointsRef.current = [...pointsRef.current, point];
+    flushPreviewPoints();
   };
 
   const resetDrawing = () => {
+    if (pendingFrameRef.current != null) {
+      window.cancelAnimationFrame(pendingFrameRef.current);
+      pendingFrameRef.current = null;
+    }
     pointsRef.current = [];
     setPoints([]);
     setIsDrawing(false);

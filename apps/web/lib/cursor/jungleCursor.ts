@@ -50,8 +50,11 @@ function buildState(
   };
 }
 
-function normalizeKey(value: string): string {
-  return value.length === 1 ? value.toLowerCase() : value.toLowerCase();
+function normalizeKey(value: string | undefined): string {
+  if (!value) {
+    return "";
+  }
+  return value.toLowerCase();
 }
 
 function readStoredColorKey(): JungleCursorColorKey {
@@ -115,12 +118,20 @@ function handleKeyDown(event: KeyboardEvent) {
   ) {
     return;
   }
-  pressedKeys.add(normalizeKey(event.key));
+  const normalized = normalizeKey(event.key);
+  if (!normalized) {
+    return;
+  }
+  pressedKeys.add(normalized);
   syncState();
 }
 
 function handleKeyUp(event: KeyboardEvent) {
-  pressedKeys.delete(normalizeKey(event.key));
+  const normalized = normalizeKey(event.key);
+  if (!normalized) {
+    return;
+  }
+  pressedKeys.delete(normalized);
   syncState();
 }
 

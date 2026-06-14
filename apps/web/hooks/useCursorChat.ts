@@ -6,6 +6,7 @@ import type { CursorChatState } from "@/types/collaboration";
 
 const CURSOR_CHAT_MAX_LENGTH = 52;
 const CURSOR_CHAT_TTL_MS = 5000;
+const CURSOR_CHAT_FADE_OUT_MS = 220;
 
 function clampCursorChatText(value: string) {
   return value.slice(0, CURSOR_CHAT_MAX_LENGTH);
@@ -15,6 +16,7 @@ export function useCursorChat(provider: WebsocketProvider | null) {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [isFadingOut, setIsFadingOut] = useState(false);
   const clearTimerRef = useRef<number | null>(null);
 
   const clearScheduledReset = useCallback(() => {
@@ -36,6 +38,7 @@ export function useCursorChat(provider: WebsocketProvider | null) {
     clearScheduledReset();
     setIsOpen(false);
     setDraft("");
+    setIsFadingOut(false);
     setMessage(null);
     syncAwareness(null);
   }, [clearScheduledReset, syncAwareness]);
@@ -45,9 +48,13 @@ export function useCursorChat(provider: WebsocketProvider | null) {
       clearScheduledReset();
       const remaining = Math.max(0, expiresAt - Date.now());
       clearTimerRef.current = window.setTimeout(() => {
-        setMessage(null);
-        syncAwareness(null);
-        clearTimerRef.current = null;
+        setIsFadingOut(true);
+        clearTimerRef.current = window.setTimeout(() => {
+          setIsFadingOut(false);
+          setMessage(null);
+          syncAwareness(null);
+          clearTimerRef.current = null;
+        }, CURSOR_CHAT_FADE_OUT_MS);
       }, remaining);
     },
     [clearScheduledReset, syncAwareness]
@@ -57,6 +64,7 @@ export function useCursorChat(provider: WebsocketProvider | null) {
     clearScheduledReset();
     setIsOpen(true);
     setDraft("");
+    setIsFadingOut(false);
     setMessage(null);
     syncAwareness(null);
   }, [clearScheduledReset, syncAwareness]);
@@ -92,6 +100,7 @@ export function useCursorChat(provider: WebsocketProvider | null) {
     clearScheduledReset();
     setIsOpen(false);
     setDraft(nextMessage);
+    setIsFadingOut(false);
     setMessage(nextMessage);
     syncAwareness({
       text: nextMessage,
@@ -112,6 +121,7 @@ export function useCursorChat(provider: WebsocketProvider | null) {
   return {
     draft,
     isOpen,
+    isFadingOut,
     maxLength: CURSOR_CHAT_MAX_LENGTH,
     message,
     remainingCharacters,

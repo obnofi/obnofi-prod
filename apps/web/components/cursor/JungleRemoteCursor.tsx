@@ -12,6 +12,7 @@ interface JungleRemoteCursorProps {
   color: string;
   colorKey?: JungleCursorColorKey;
   cursorChatMessage?: string | null;
+  isFadingOut?: boolean;
   userId: string;
   userName?: string;
   variant?: JungleCursorVariant;
@@ -23,6 +24,7 @@ export function JungleRemoteCursor({
   color,
   colorKey = "green",
   cursorChatMessage,
+  isFadingOut = false,
   userId,
   userName,
   variant = "pointing",
@@ -36,7 +38,9 @@ export function JungleRemoteCursor({
   return (
     <div
       data-user-cursor={userId}
-      className="pointer-events-none absolute z-40"
+      className={`pointer-events-none absolute z-[10010] transition-opacity duration-200 ${
+        isFadingOut ? "opacity-0" : "opacity-100"
+      }`}
       style={{
         left: x - metrics.hotspotX,
         top: y - metrics.hotspotY,

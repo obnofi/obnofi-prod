@@ -5,6 +5,7 @@ import type { AwarenessState } from "@/types/collaboration";
 import { useEffect, useMemo, useState } from "react";
 
 type ContextAwarenessState = AwarenessState & { clientId: number; image?: string | null };
+const CURSOR_CHAT_FADE_OUT_MS = 220;
 
 interface RemotePageCursorsProps {
   states: ContextAwarenessState[];
@@ -17,14 +18,18 @@ export function RemotePageCursors({ states }: RemotePageCursorsProps) {
     () =>
       states.filter((state) => {
         const expiresAt = state.cursorChat?.expiresAt;
-        return expiresAt == null || expiresAt > now;
+        return expiresAt == null || expiresAt + CURSOR_CHAT_FADE_OUT_MS > now;
       }),
     [now, states]
   );
 
   useEffect(() => {
     const expirations = visibleStates
-      .map((state) => state.cursorChat?.expiresAt ?? null)
+      .flatMap((state) => {
+        const expiresAt = state.cursorChat?.expiresAt;
+        if (typeof expiresAt !== "number") return [];
+        return [expiresAt, expiresAt + CURSOR_CHAT_FADE_OUT_MS];
+      })
       .filter((value): value is number => typeof value === "number");
     if (expirations.length === 0) return;
 
@@ -50,6 +55,10 @@ export function RemotePageCursors({ states }: RemotePageCursorsProps) {
             key={state.userId}
             color={state.color}
             colorKey={state.cursorColorKey}
+            isFadingOut={
+              typeof state.cursorChat?.expiresAt === "number" &&
+              state.cursorChat.expiresAt <= now
+            }
             userId={state.userId}
             userName={state.userName}
             variant={state.cursorVariant}
