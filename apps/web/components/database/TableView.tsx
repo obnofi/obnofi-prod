@@ -19,6 +19,7 @@ interface TableViewProps {
   onDeleteProperty?: (propertyId: string) => void;
   onMoveProperty?: (propertyId: string, direction: "left" | "right") => void;
   compact?: boolean;
+  readOnly?: boolean;
 }
 
 export function TableView({
@@ -32,6 +33,7 @@ export function TableView({
   onDeleteProperty,
   onMoveProperty,
   compact = false,
+  readOnly = false,
 }: TableViewProps) {
   const collaboration = useCollaboration();
   const awarenessStates = useMemo(
@@ -168,18 +170,20 @@ export function TableView({
             ))}
 
             {/* New row */}
-            <tr>
-              <td colSpan={table.getVisibleLeafColumns().length + 1} className="px-2 py-1.5">
-                <button
-                  type="button"
-                  onClick={onCreateRow}
-                  className="flex h-8 items-center gap-1.5 rounded-md px-2 text-[13px] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-text-primary)]"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  New seed
-                </button>
-              </td>
-            </tr>
+            {readOnly ? null : (
+              <tr>
+                <td colSpan={table.getVisibleLeafColumns().length + 1} className="px-2 py-1.5">
+                  <button
+                    type="button"
+                    onClick={onCreateRow}
+                    className="flex h-8 items-center gap-1.5 rounded-md px-2 text-[13px] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-text-primary)]"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    New seed
+                  </button>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

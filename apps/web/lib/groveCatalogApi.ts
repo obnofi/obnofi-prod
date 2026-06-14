@@ -44,8 +44,13 @@ async function groveRequest<T>(path: string, init?: RequestInit) {
   return (await response.json()) as T;
 }
 
-export async function fetchGroveCatalogPage(pageId: string) {
-  return groveRequest<DatabasePage>(`/api/pages/${pageId}?view=full`, {
+export async function fetchGroveCatalogPage(pageId: string, options?: { jungleLimit?: number }) {
+  const jungleLimit =
+    typeof options?.jungleLimit === "number" && options.jungleLimit > 0
+      ? `&jungleLimit=${Math.floor(options.jungleLimit)}`
+      : "";
+
+  return groveRequest<DatabasePage>(`/api/pages/${pageId}?view=full${jungleLimit}`, {
     cache: "no-store",
   });
 }
@@ -127,6 +132,18 @@ export async function sproutGroveView(
 ) {
   return groveRequest<View>(`/api/databases/${databaseId}/views`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function patchGroveView(
+  databaseId: string,
+  viewId: string,
+  input: Partial<Pick<View, "name" | "config">>
+) {
+  return groveRequest<View>(`/api/databases/${databaseId}/views?viewId=${viewId}`, {
+    method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });

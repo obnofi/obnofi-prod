@@ -24,9 +24,12 @@ interface DatabasePageCardProps {
   emptyTestId: string;
   containerTestId: string;
   compact?: boolean;
+  jungleLimit?: number;
   maxContentHeightClass?: string;
   state?: "loading" | "ready" | "creating" | "empty";
   editableTitle?: boolean;
+  // 공개 뷰 등 읽기 전용. 모든 변형 콜백을 차단해 익명 사용자가 no-auth API로 DB를 수정하지 못하게 한다.
+  readOnly?: boolean;
   viewType?: Extract<ViewType, "table" | "gallery" | "board" | "calendar">;
   onViewTypeChange?: (
     viewType: Extract<ViewType, "table" | "gallery" | "board" | "calendar">
@@ -51,9 +54,11 @@ export function DatabasePageCard({
   emptyTestId,
   containerTestId,
   compact = true,
+  jungleLimit,
   maxContentHeightClass,
   state,
   editableTitle = false,
+  readOnly = false,
   viewType,
   onViewTypeChange,
   onSurfaceStateChange,
@@ -65,10 +70,12 @@ export function DatabasePageCard({
     updateDatabaseTitle,
     createRow,
     createProperty,
+    createView,
+    updateView,
     updateProperty,
     deleteProperty,
     updatePropertyValue,
-  } = useDatabasePage(pageId);
+  } = useDatabasePage(pageId, { jungleLimit });
 
   return (
     <DatabaseTableCard
@@ -78,21 +85,20 @@ export function DatabasePageCard({
       emptyTestId={emptyTestId}
       databasePage={databasePage}
       isLoading={isLoading}
+      readOnly={readOnly}
       onDatabaseChange={setDatabasePage}
       onOpenRow={onOpenRow}
-      onCreateRow={createRow}
-      onCreateProperty={(name, type) => createProperty({ name, type })}
-      onUpdateProperty={updateProperty}
-      onDeleteProperty={deleteProperty}
-      onMoveProperty={(propertyId, direction) => {
-        // TODO: Implement property reordering
-        console.log("Move property", propertyId, direction);
-      }}
-      onUpdatePropertyValue={updatePropertyValue}
-      onTitleChange={editableTitle ? updateDatabaseTitle : undefined}
+      onCreateRow={readOnly ? undefined : createRow}
+      onCreateProperty={readOnly ? undefined : (name, type) => createProperty({ name, type })}
+      onCreateView={readOnly ? undefined : createView}
+      onUpdateView={readOnly ? undefined : updateView}
+      onUpdateProperty={readOnly ? undefined : updateProperty}
+      onDeleteProperty={readOnly ? undefined : deleteProperty}
+      onUpdatePropertyValue={readOnly ? undefined : updatePropertyValue}
+      onTitleChange={editableTitle && !readOnly ? updateDatabaseTitle : undefined}
       viewType={viewType}
       onViewTypeChange={onViewTypeChange}
-      onSurfaceStateChange={onSurfaceStateChange}
+      onSurfaceStateChange={readOnly ? undefined : onSurfaceStateChange}
       selection={selection}
       headerLabel={headerLabel}
       onOpenDatabase={onOpenDatabase}

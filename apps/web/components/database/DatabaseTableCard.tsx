@@ -8,6 +8,7 @@ import type {
   Page,
   PropertyValueData,
   ViewType,
+  View,
   SelectOption,
 } from "@obnofi/types";
 import { DatabaseSurface } from "@/components/database/DatabaseSurface";
@@ -27,6 +28,14 @@ interface DatabaseTableCardProps {
   onOpenRow: (rowId: string) => void;
   onCreateRow?: () => void | Promise<string | undefined>;
   onCreateProperty?: (name: string, type: PropertyType) => void;
+  onCreateView?: (input: {
+    name: string;
+    type: Extract<ViewType, "table" | "gallery" | "board" | "calendar">;
+  }) => Promise<View | undefined>;
+  onUpdateView?: (
+    viewId: string,
+    input: Partial<Pick<View, "name" | "config">>
+  ) => Promise<View | undefined>;
   onUpdateProperty?: (propertyId: string, updates: { name?: string; type?: PropertyType; options?: SelectOption[] }) => void;
   onDeleteProperty?: (propertyId: string) => void;
   onMoveProperty?: (propertyId: string, direction: "left" | "right") => void;
@@ -57,14 +66,18 @@ interface DatabaseTableCardProps {
   compact?: boolean;
   maxContentHeightClass?: string;
   state?: "loading" | "ready" | "creating" | "empty";
+  readOnly?: boolean;
 }
 
 export function DatabaseTableCard({
   databasePage,
   isLoading,
+  readOnly = false,
   onOpenRow,
   onCreateRow,
   onCreateProperty,
+  onCreateView,
+  onUpdateView,
   onUpdateProperty,
   onDeleteProperty,
   onMoveProperty,
@@ -231,12 +244,15 @@ export function DatabaseTableCard({
           <div className="min-h-0 flex-1">
             <DatabaseSurface
               databasePage={databasePage}
+              readOnly={readOnly}
               initialViewType={viewType}
               onViewTypeChange={onViewTypeChange}
               onSurfaceStateChange={onSurfaceStateChange}
               onOpenRow={onOpenRow}
               onCreateRow={onCreateRow}
               onCreateProperty={onCreateProperty}
+              onCreateView={onCreateView}
+              onUpdateView={onUpdateView}
               onUpdateProperty={onUpdateProperty}
               onDeleteProperty={onDeleteProperty}
               onMoveProperty={onMoveProperty}

@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { useGroveCatalogStore } from "@/store/useGroveCatalogStore";
 import { createBrowserSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 import type { PropertyValueData } from "@obnofi/types";
 
-interface PropertyValuePayload {
+interface PropertyValueRealtimeRow extends Record<string, unknown> {
   id: string;
   pageId: string;
   propertyId: string;
@@ -22,8 +23,7 @@ export function useDatabaseRealtime(pageId: string, enabled: boolean) {
     const supabase = createBrowserSupabaseClient();
     const channelName = `db-collab:${pageId}`;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const channel = (supabase.channel(channelName) as any).on(
+    const channel = supabase.channel(channelName).on(
       "postgres_changes",
       {
         event: "*",
@@ -31,10 +31,10 @@ export function useDatabaseRealtime(pageId: string, enabled: boolean) {
         table: "PropertyValue",
         filter: `pageId=eq.${pageId}`,
       },
-      (payload: { eventType: string; new: Record<string, unknown> }) => {
+      (payload: RealtimePostgresChangesPayload<PropertyValueRealtimeRow>) => {
         if (payload.eventType === "DELETE") return;
 
-        const record = payload.new as unknown as PropertyValuePayload;
+        const record = payload.new;
         if (!record?.pageId || !record?.propertyId) return;
 
         const key = `${record.pageId}:${record.propertyId}`;

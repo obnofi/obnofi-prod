@@ -9,16 +9,20 @@ import type {
   PropertyType,
   PropertyValueData,
   SelectOption,
+  View,
+  ViewType,
 } from "@obnofi/types";
 import {
   fetchGroveCatalogPage,
   patchGroveCell,
   patchGroveTitle,
+  patchGroveView,
   plantGroveSeed,
   pruneGroveProperty,
   renameGroveSeed,
   reshapeGroveProperty,
   sproutGroveProperty,
+  sproutGroveView,
 } from "@/lib/groveCatalogApi";
 import { createDefaultPropertyValue } from "@/lib/database-utils";
 import {
@@ -43,6 +47,10 @@ interface UpdatePropertyInput {
 
 interface LoadDatabasePageOptions {
   force?: boolean;
+}
+
+interface UseDatabasePageOptions {
+  jungleLimit?: number;
 }
 
 function buildOptimisticSeed(grovePage: DatabasePage): Page & { propertyValues: PropertyValue[] } {
@@ -103,7 +111,11 @@ function findPropertyValue(
   );
 }
 
-export function useDatabasePage(pageId: string | null | undefined) {
+export function useDatabasePage(
+  pageId: string | null | undefined,
+  options: UseDatabasePageOptions = {}
+) {
+  const jungleLimit = options.jungleLimit;
   const databasePage = useGroveCatalogStore((state) =>
     pageId ? state.grovePages[pageId] ?? null : null
   );
@@ -127,6 +139,8 @@ export function useDatabasePage(pageId: string | null | undefined) {
   const patchGroveCellValue = useGroveCatalogStore(
     (state) => state.patchGroveCellValue
   );
+  const appendGroveView = useGroveCatalogStore((state) => state.appendGroveView);
+  const replaceGroveView = useGroveCatalogStore((state) => state.replaceGroveView);
 
   const isGroveLoaded = useGroveCatalogStore((state) => state.isGroveLoaded);
   const markGroveLoaded = useGroveCatalogStore((state) => state.markGroveLoaded);
@@ -136,15 +150,18 @@ export function useDatabasePage(pageId: string | null | undefined) {
       return;
     }
 
-    // 이미 로드된 페이지는 다시 로드하지 않음 (force 옵션이 없는 경우)
+    // 제한 preview는 전체 로딩 완료로 취급하지 않지만,
+    // 이미 전체를 로드한 캐시를 제한 결과로 덮어쓰지는 않는다.
     if (!options.force && isGroveLoaded(pageId)) {
       return;
     }
 
-    markGroveLoaded(pageId);
+    if (!jungleLimit) {
+      markGroveLoaded(pageId);
+    }
     setGroveLoading(pageId, true);
     try {
-      const page = await fetchGroveCatalogPage(pageId);
+      const page = await fetchGroveCatalogPage(pageId, { jungleLimit });
       setGrovePage(pageId, page);
     } catch {
       setGrovePage(pageId, null);
@@ -152,12 +169,11 @@ export function useDatabasePage(pageId: string | null | undefined) {
     } finally {
       setGroveLoading(pageId, false);
     }
-  }, [pageId, isGroveLoaded, markGroveLoaded, setGroveLoading, setGrovePage]);
+  }, [pageId, jungleLimit, isGroveLoaded, markGroveLoaded, setGroveLoading, setGrovePage]);
 
   useEffect(() => {
     void loadDatabasePage();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageId]); // pageId가 변경될 때만 로드
+  }, [loadDatabasePage]);
 
   const setDatabasePage = useCallback(
     (nextPage: DatabasePage | null | ((current: DatabasePage | null) => DatabasePage | null)) => {
@@ -331,6 +347,64 @@ export function useDatabasePage(pageId: string | null | undefined) {
     }
   }, [loadDatabasePage, pageId, removeGroveProperty]);
 
+  const createView = useCallback(
+    async (input: { name: string; type: ViewType }) => {
+      if (!databasePage || !pageId) {
+        return undefined;
+      }
+
+      const existingView = databasePage.database.views?.find(
+        (view) => view.type === input.type
+      );
+      if (existingView) {
+        return existingView;
+      }
+
+      try {
+        const view = await sproutGroveView(databasePage.database.id, input);
+        appendGroveView(pageId, view);
+        return view;
+      } catch {
+        return undefined;
+      }
+    },
+    [appendGroveView, databasePage, pageId]
+  );
+
+  const updateView = useCallback(
+    async (
+      viewId: string,
+      input: Partial<Pick<View, "name" | "config">>
+    ) => {
+      if (!databasePage || !pageId) {
+        return undefined;
+      }
+
+      const currentView =
+        databasePage.database.views?.find((view) => view.id === viewId) ?? null;
+      if (!currentView) {
+        return undefined;
+      }
+
+      const optimisticView: View = {
+        ...currentView,
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.config !== undefined ? { config: input.config } : {}),
+      };
+
+      replaceGroveView(pageId, optimisticView);
+      try {
+        const view = await patchGroveView(databasePage.database.id, viewId, input);
+        replaceGroveView(pageId, view);
+        return view;
+      } catch {
+        replaceGroveView(pageId, currentView);
+        return undefined;
+      }
+    },
+    [databasePage, pageId, replaceGroveView]
+  );
+
   const updateRowTitle = useCallback(async (rowId: string, title: string) => {
     if (!pageId) {
       return;
@@ -391,6 +465,8 @@ export function useDatabasePage(pageId: string | null | undefined) {
     updateDatabaseTitle,
     createRow,
     createProperty,
+    createView,
+    updateView,
     updateProperty,
     deleteProperty,
     updateRowTitle,

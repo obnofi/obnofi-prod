@@ -9,6 +9,22 @@ import {
 
 import { logError } from "@/lib/logger";
 
+const MAX_JUNGLE_ROW_LIMIT = 5000;
+
+function getJungleRowLimit(request: NextRequest) {
+  const rawLimit = request.nextUrl.searchParams.get("jungleLimit");
+  if (!rawLimit) {
+    return undefined;
+  }
+
+  const limit = Number(rawLimit);
+  if (!Number.isFinite(limit) || limit <= 0) {
+    return undefined;
+  }
+
+  return Math.min(Math.floor(limit), MAX_JUNGLE_ROW_LIMIT);
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ databaseId: string }> }
@@ -41,6 +57,7 @@ export async function GET(
       });
     }
 
+    const jungleRowLimit = getJungleRowLimit(request);
     const database = await prisma.database.findUnique({
       where: { id: databaseId },
       include: {
@@ -49,6 +66,12 @@ export async function GET(
         rows: {
           where: { parentDatabaseId: databaseId },
           select: PAGE_SELECT_WITH_PROPERTY_VALUES,
+          ...(jungleRowLimit
+            ? {
+                take: jungleRowLimit,
+                orderBy: [{ order: "asc" as const }, { updatedAt: "desc" as const }],
+              }
+            : {}),
         },
       },
     });

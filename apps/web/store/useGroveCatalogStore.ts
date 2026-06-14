@@ -28,6 +28,7 @@ interface GroveCatalogState {
   removeGroveProperty: (pageId: string, propertyId: string) => void;
   patchGroveSeedTitle: (pageId: string, rowId: string, title: string) => void;
   appendGroveView: (pageId: string, view: View) => void;
+  replaceGroveView: (pageId: string, view: View) => void;
   patchGroveCellValue: (
     pageId: string,
     rowId: string,
@@ -207,6 +208,32 @@ export const useGroveCatalogStore = create<GroveCatalogState>((set, get) => ({
       const currentViews = grovePage.database.views ?? [];
       const nextViews = currentViews.some((current) => current.id === view.id)
         ? currentViews
+        : [...currentViews, view];
+
+      return {
+        grovePages: {
+          ...state.grovePages,
+          [pageId]: {
+            ...grovePage,
+            database: {
+              ...grovePage.database,
+              views: nextViews,
+            },
+          },
+        },
+      };
+    }),
+
+  replaceGroveView: (pageId, view) =>
+    set((state) => {
+      const grovePage = state.grovePages[pageId];
+      if (!grovePage) {
+        return state;
+      }
+
+      const currentViews = grovePage.database.views ?? [];
+      const nextViews = currentViews.some((current) => current.id === view.id)
+        ? currentViews.map((current) => (current.id === view.id ? view : current))
         : [...currentViews, view];
 
       return {

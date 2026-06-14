@@ -5,10 +5,11 @@ import {
   MoreHorizontal,
   Edit2,
   Trash2,
-  ArrowUp,
-  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
   Settings,
   GripVertical,
+  X,
 } from "lucide-react";
 import { Property, PropertyType, SelectOption } from "@obnofi/types";
 import { PropertyTypeSelector } from "./PropertyTypeSelector";
@@ -79,6 +80,7 @@ export function PropertyHeader({
               />
             ) : (
               <button
+                type="button"
                 onClick={() => setIsEditingName(true)}
                 className="truncate text-left text-[13px] font-medium text-[var(--color-text-primary)]"
                 title={property.name}
@@ -94,8 +96,10 @@ export function PropertyHeader({
 
         <div className="relative shrink-0">
           <button
+            type="button"
             ref={menuTriggerRef}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label={`Open ${property.name} property menu`}
             className="rounded-md p-1 opacity-0 transition hover:bg-[var(--color-hover)] group-hover:opacity-100 focus:opacity-100"
           >
             <MoreHorizontal className="h-4 w-4 text-[var(--color-text-secondary)]" />
@@ -124,6 +128,7 @@ export function PropertyHeader({
               </div>
 
               <button
+                type="button"
                 onClick={() => {
                   setIsEditingName(true);
                   setIsMenuOpen(false);
@@ -136,6 +141,7 @@ export function PropertyHeader({
 
               {requiresOptions(property.type) && (
                 <button
+                  type="button"
                   onClick={() => {
                     setIsEditingOptions(true);
                     setIsMenuOpen(false);
@@ -150,6 +156,7 @@ export function PropertyHeader({
               {onMove && (
                 <>
                   <button
+                    type="button"
                     onClick={() => {
                       onMove("left");
                       setIsMenuOpen(false);
@@ -157,10 +164,11 @@ export function PropertyHeader({
                     disabled={!canMoveLeft}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-hover)] disabled:opacity-50"
                   >
-                    <ArrowUp className="h-4 w-4 text-[var(--color-text-secondary)]" />
+                    <ArrowLeft className="h-4 w-4 text-[var(--color-text-secondary)]" />
                     Move left
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
                       onMove("right");
                       setIsMenuOpen(false);
@@ -168,7 +176,7 @@ export function PropertyHeader({
                     disabled={!canMoveRight}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-hover)] disabled:opacity-50"
                   >
-                    <ArrowDown className="h-4 w-4 text-[var(--color-text-secondary)]" />
+                    <ArrowRight className="h-4 w-4 text-[var(--color-text-secondary)]" />
                     Move right
                   </button>
                 </>
@@ -177,6 +185,7 @@ export function PropertyHeader({
               <div className="border-t border-[var(--color-border)]" />
 
               <button
+                type="button"
                 onClick={() => {
                   onDelete();
                   setIsMenuOpen(false);
@@ -200,10 +209,12 @@ export function PropertyHeader({
                 Edit options for &quot;{property.name}&quot;
               </h3>
               <button
+                type="button"
                 onClick={() => setIsEditingOptions(false)}
+                aria-label="Close property options"
                 className="rounded p-1 text-[var(--color-text-secondary)] hover:bg-[var(--color-hover)]"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
             <PropertyOptionsEditor
@@ -214,6 +225,7 @@ export function PropertyHeader({
             />
             <div className="mt-4 flex justify-end">
               <button
+                type="button"
                 onClick={() => setIsEditingOptions(false)}
                 className="rounded-md bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]"
               >

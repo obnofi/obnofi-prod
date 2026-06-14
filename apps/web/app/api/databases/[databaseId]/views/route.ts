@@ -86,3 +86,46 @@ export async function POST(
     );
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ databaseId: string }> }
+) {
+  try {
+    const { databaseId } = await params;
+    const viewId = request.nextUrl.searchParams.get("viewId");
+    const body = await request.json();
+    const { name, config } = body;
+
+    if (!viewId) {
+      return NextResponse.json({ error: "viewId is required" }, { status: 400 });
+    }
+
+    const existingView = await prisma.view.findFirst({
+      where: {
+        id: viewId,
+        databaseId,
+      },
+    });
+
+    if (!existingView) {
+      return NextResponse.json({ error: "View not found" }, { status: 404 });
+    }
+
+    const view = await prisma.view.update({
+      where: { id: viewId },
+      data: {
+        ...(typeof name === "string" ? { name } : {}),
+        ...(config !== undefined ? { config } : {}),
+      },
+    });
+
+    return NextResponse.json(toView(view));
+  } catch (error) {
+    logError("PATCH /api/databases/[databaseId]/views", error);
+    return NextResponse.json(
+      { error: "Failed to update view" },
+      { status: 500 }
+    );
+  }
+}

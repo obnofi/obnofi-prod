@@ -1,16 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
+  Check,
   KanbanSquare,
   LayoutGrid,
   ListFilter,
+  Plus,
   Search,
   SlidersHorizontal,
   Table2,
 } from "lucide-react";
-import type { PropertyType, ViewType, DatabasePage, PropertyValueData, SelectOption } from "@obnofi/types";
+import type {
+  PropertyType,
+  ViewType,
+  DatabasePage,
+  PropertyValueData,
+  SelectOption,
+  View,
+  ViewConfig,
+} from "@obnofi/types";
 import { useGroveTable } from "@/hooks/useGroveTable";
 import { TableView } from "@/components/database/TableView";
 import { GalleryView } from "@/components/database/views/GalleryView";
@@ -30,11 +40,20 @@ interface GroveSurfaceSnapshot {
 interface DatabaseSurfaceProps {
   databasePage: DatabasePage;
   compact?: boolean;
+  readOnly?: boolean;
   initialViewType?: GroveSurfaceView;
   onViewTypeChange?: (viewType: GroveSurfaceView) => void;
   onSurfaceStateChange?: (snapshot: GroveSurfaceSnapshot) => void;
   onCreateRow?: () => void;
   onCreateProperty?: (name: string, type: PropertyType) => void;
+  onCreateView?: (input: {
+    name: string;
+    type: GroveSurfaceView;
+  }) => Promise<View | undefined>;
+  onUpdateView?: (
+    viewId: string,
+    input: Partial<Pick<View, "name" | "config">>
+  ) => Promise<View | undefined>;
   onUpdateProperty?: (propertyId: string, updates: { name?: string; type?: PropertyType; options?: SelectOption[] }) => void;
   onDeleteProperty?: (propertyId: string) => void;
   onMoveProperty?: (propertyId: string, direction: "left" | "right") => void;
@@ -60,11 +79,14 @@ const viewItems: Array<{
 export function DatabaseSurface({
   databasePage,
   compact = false,
+  readOnly = false,
   initialViewType = "table",
   onViewTypeChange,
   onSurfaceStateChange,
   onCreateRow,
   onCreateProperty,
+  onCreateView,
+  onUpdateView,
   onUpdateProperty,
   onDeleteProperty,
   onMoveProperty,
@@ -85,10 +107,47 @@ export function DatabaseSurface({
       storedViews.some((view) => view.type === item.id)
     );
   }, [databasePage.database.views]);
-  const rows = databasePage.database.rows;
-  const scopeId = `grove:${databasePage.database.id}`;
   const [viewType, setViewType] = useState<GroveSurfaceView>(initialViewType);
+  const selectedView =
+    (databasePage.database.views ?? []).find((view) => view.type === viewType) ?? null;
+  const fallbackVisiblePropertyIds = useMemo(
+    () => properties.map((property) => property.id),
+    [properties]
+  );
+  const selectedViewConfig = useMemo<ViewConfig>(
+    () => ({
+      visibleProperties: selectedView?.config?.visibleProperties ?? fallbackVisiblePropertyIds,
+      propertyWidths: selectedView?.config?.propertyWidths ?? {},
+      sorts: selectedView?.config?.sorts ?? [],
+      filters: selectedView?.config?.filters ?? [],
+      groupBy: selectedView?.config?.groupBy,
+      boardColumns: selectedView?.config?.boardColumns,
+      calendarBy: selectedView?.config?.calendarBy,
+      timelineBy: selectedView?.config?.timelineBy,
+    }),
+    [fallbackVisiblePropertyIds, selectedView]
+  );
+  const visiblePropertyIds =
+    selectedViewConfig.visibleProperties.length > 0
+      ? selectedViewConfig.visibleProperties
+      : fallbackVisiblePropertyIds;
+  const visibleProperties = useMemo(
+    () =>
+      visiblePropertyIds
+        .map((propertyId) => properties.find((property) => property.id === propertyId) ?? null)
+        .filter((property): property is (typeof properties)[number] => property !== null),
+    [properties, visiblePropertyIds]
+  );
+  const rows = databasePage.database.rows;
+  const scopeId = `grove:${databasePage.database.id}:${selectedView?.id ?? viewType}`;
   const [isQueryPanelOpen, setIsQueryPanelOpen] = useState(false);
+  const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
+  const [isCreatingView, setIsCreatingView] = useState(false);
+  const [isColumnMenuOpen, setIsColumnMenuOpen] = useState(false);
+  const viewMenuRef = useRef<HTMLDivElement>(null);
+  const columnMenuRef = useRef<HTMLDivElement>(null);
+  const lastPersistedViewConfigKeyRef = useRef<string>("");
+  const viewConfigPersistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     table,
@@ -101,7 +160,7 @@ export function DatabaseSurface({
     resetQuery,
   } = useGroveTable({
     scopeId,
-    properties,
+    properties: visibleProperties,
     rows,
     onOpenRow,
     onUpdatePropertyValue,
@@ -124,8 +183,34 @@ export function DatabaseSurface({
   }, [onViewTypeChange, viewType]);
 
   useEffect(() => {
+    if (!isViewMenuOpen && !isColumnMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (viewMenuRef.current && !viewMenuRef.current.contains(event.target as Node)) {
+        setIsViewMenuOpen(false);
+      }
+      if (columnMenuRef.current && !columnMenuRef.current.contains(event.target as Node)) {
+        setIsColumnMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [isColumnMenuOpen, isViewMenuOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (viewConfigPersistTimerRef.current) {
+        clearTimeout(viewConfigPersistTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     onSurfaceStateChange?.({
-      columns: properties.map((property) => ({
+      columns: visibleProperties.map((property) => ({
         id: property.id,
         name: property.name,
         type: property.type,
@@ -143,15 +228,123 @@ export function DatabaseSurface({
     });
   }, [
     onSurfaceStateChange,
-    properties,
+    visibleProperties,
     queryState.columnFilters,
     queryState.columnSizing,
     queryState.sorting,
     rows,
   ]);
 
+  useEffect(() => {
+    if (!selectedView || !onUpdateView) {
+      return;
+    }
+
+    const nextConfig: ViewConfig = {
+      ...selectedViewConfig,
+      visibleProperties: visiblePropertyIds,
+      propertyWidths: visiblePropertyIds.reduce<Record<string, number>>((acc, propertyId) => {
+        const width = queryState.columnSizing[propertyId];
+        if (typeof width === "number") {
+          acc[propertyId] = width;
+        }
+        return acc;
+      }, {}),
+      sorts: queryState.sorting.map((sort) => ({
+        propertyId: sort.id,
+        direction: sort.desc ? "descending" : "ascending",
+      })),
+      filters: queryState.columnFilters.map((filter) => ({
+        propertyId: String(filter.id),
+        operator: "contains" as const,
+        value: filter.value,
+      })),
+    };
+
+    const selectedConfigKey = JSON.stringify({
+      visibleProperties: selectedViewConfig.visibleProperties,
+      propertyWidths: selectedViewConfig.propertyWidths,
+      sorts: selectedViewConfig.sorts,
+      filters: selectedViewConfig.filters,
+    });
+    const nextConfigKey = JSON.stringify({
+      visibleProperties: nextConfig.visibleProperties,
+      propertyWidths: nextConfig.propertyWidths,
+      sorts: nextConfig.sorts,
+      filters: nextConfig.filters,
+    });
+
+    if (
+      selectedConfigKey === nextConfigKey ||
+      lastPersistedViewConfigKeyRef.current === nextConfigKey
+    ) {
+      return;
+    }
+
+    lastPersistedViewConfigKeyRef.current = nextConfigKey;
+    if (viewConfigPersistTimerRef.current) {
+      clearTimeout(viewConfigPersistTimerRef.current);
+    }
+    viewConfigPersistTimerRef.current = setTimeout(() => {
+      void onUpdateView(selectedView.id, { config: nextConfig });
+    }, 500);
+  }, [
+    onUpdateView,
+    queryState.columnFilters,
+    queryState.columnSizing,
+    queryState.sorting,
+    selectedView,
+    selectedViewConfig,
+    visiblePropertyIds,
+  ]);
+
   const activeSort = queryState.sorting[0];
   const rowCountLabel = `${table.getRowModel().rows.length} ${table.getRowModel().rows.length === 1 ? "seed" : "seeds"}`;
+  const missingViewItems = viewItems.filter(
+    (item) => !availableViewItems.some((availableItem) => availableItem.id === item.id)
+  );
+
+  const handleCreateView = async (nextViewType: GroveSurfaceView) => {
+    if (!onCreateView || isCreatingView) {
+      return;
+    }
+
+    setIsCreatingView(true);
+    try {
+      const createdView = await onCreateView({
+        type: nextViewType,
+        name: viewItems.find((item) => item.id === nextViewType)?.label ?? nextViewType,
+      });
+
+      if (createdView) {
+        setViewType(createdView.type as GroveSurfaceView);
+        setIsViewMenuOpen(false);
+      }
+    } finally {
+      setIsCreatingView(false);
+    }
+  };
+
+  const handleTogglePropertyVisibility = async (propertyId: string) => {
+    if (!selectedView || !onUpdateView) {
+      return;
+    }
+
+    const nextVisibleProperties = visiblePropertyIds.includes(propertyId)
+      ? visiblePropertyIds.filter((id) => id !== propertyId)
+      : [...visiblePropertyIds, propertyId];
+
+    if (nextVisibleProperties.length === 0) {
+      return;
+    }
+
+    await onUpdateView(selectedView.id, {
+      config: {
+        ...selectedViewConfig,
+        visibleProperties: nextVisibleProperties,
+      },
+    });
+  };
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -209,6 +402,66 @@ export function DatabaseSurface({
               )}
               Filter
             </button>
+            {selectedView ? (
+              <div className="relative" ref={columnMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsColumnMenuOpen((current) => !current)}
+                  className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-text-primary)]"
+                >
+                  Columns
+                </button>
+                {isColumnMenuOpen ? (
+                  <div className="absolute right-0 top-full z-20 mt-1 min-w-52 rounded-md bg-[var(--color-background)] py-1 shadow-lg ring-1 ring-[var(--color-border)]">
+                    {properties.map((property) => {
+                      const isVisible = visiblePropertyIds.includes(property.id);
+                      return (
+                        <button
+                          key={property.id}
+                          type="button"
+                          onClick={() => void handleTogglePropertyVisibility(property.id)}
+                          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[13px] text-[var(--color-text-primary)] transition hover:bg-[var(--color-hover)]"
+                        >
+                          <span className="truncate">{property.name}</span>
+                          {isVisible ? <Check className="h-4 w-4" /> : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+            {onCreateView && missingViewItems.length > 0 ? (
+              <div className="relative" ref={viewMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsViewMenuOpen((current) => !current)}
+                  className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-hover)] hover:text-[var(--color-text-primary)]"
+                >
+                  <Plus className="h-4 w-4" />
+                  View
+                </button>
+                {isViewMenuOpen ? (
+                  <div className="absolute right-0 top-full z-20 mt-1 min-w-40 rounded-md bg-[var(--color-background)] py-1 shadow-lg ring-1 ring-[var(--color-border)]">
+                    {missingViewItems.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => void handleCreateView(item.id)}
+                          disabled={isCreatingView}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-[var(--color-text-primary)] transition hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:text-[var(--color-text-placeholder)]"
+                        >
+                          <Icon className="h-4 w-4" />
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -220,7 +473,7 @@ export function DatabaseSurface({
               activeFilterValue={activeFilterValue}
               activeSortId={activeSort?.id}
               activeSortDesc={activeSort?.desc ?? false}
-              columns={properties}
+              columns={visibleProperties}
               onGlobalFilterChange={setGlobalFilter}
               onFilterColumnChange={setActiveFilterColumn}
               onFilterValueChange={setActiveFilterValue}
@@ -236,7 +489,8 @@ export function DatabaseSurface({
           <TableView
             pageId={databasePage.id}
             table={table}
-            properties={properties}
+            properties={visibleProperties}
+            readOnly={readOnly}
             onOpenRow={onOpenRow}
             onCreateRow={onCreateRow}
             onCreateProperty={onCreateProperty}
@@ -249,7 +503,7 @@ export function DatabaseSurface({
         {viewType === "gallery" ? (
           <GalleryView
             table={table}
-            properties={properties}
+            properties={visibleProperties}
             onCreateRow={onCreateRow}
             onOpenRow={onOpenRow}
           />
@@ -257,7 +511,7 @@ export function DatabaseSurface({
         {viewType === "board" ? (
           <BoardView
             table={table}
-            properties={properties}
+            properties={visibleProperties}
             groupByPropertyId={queryState.grouping[0]}
             onCreateRow={onCreateRow}
             onOpenRow={onOpenRow}
@@ -267,7 +521,7 @@ export function DatabaseSurface({
         {viewType === "calendar" ? (
           <CalendarView
             table={table}
-            properties={properties}
+            properties={visibleProperties}
             onCreateRow={onCreateRow}
             onOpenRow={onOpenRow}
           />
