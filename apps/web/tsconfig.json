@@ -11,7 +11,8 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@obnofi/db": ["../../packages/db/src"],
+      "@obnofi/db": ["../../packages/db/src/index.ts"],
+      "@obnofi/db/*": ["../../packages/db/src/*"],
       "@obnofi/types": ["../../packages/types/src/index.ts"],
       "@obnofi/types/*": ["../../packages/types/src/*"]
     }
