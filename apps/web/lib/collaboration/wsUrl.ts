@@ -1,7 +1,10 @@
 export function resolveCollaborationServerUrl(): string {
   const configuredUrl = process.env.NEXT_PUBLIC_WS_URL?.trim();
   if (configuredUrl) {
-    const normalized = configuredUrl.replace(/\/+$/, "");
+    const normalized = configuredUrl
+      .replace(/^https:\/\//i, "wss://")
+      .replace(/^http:\/\//i, "ws://")
+      .replace(/\/+$/, "");
     return normalized.endsWith("/ws") ? normalized : `${normalized}/ws`;
   }
 

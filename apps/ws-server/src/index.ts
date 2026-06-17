@@ -82,7 +82,14 @@ fastify.register(async (fastify) => {
   })
 })
 
-fastify.listen({ port: 3001, host: '0.0.0.0' }).catch((err) => {
+const port = Number(process.env.PORT ?? 3001)
+
+if (!Number.isFinite(port) || port <= 0) {
+  fastify.log.error({ port: process.env.PORT }, 'invalid PORT')
+  process.exit(1)
+}
+
+fastify.listen({ port, host: '0.0.0.0' }).catch((err) => {
   fastify.log.error(err)
   process.exit(1)
 })

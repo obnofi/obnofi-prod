@@ -8,6 +8,8 @@ import {
   pickProfileImagePreset,
 } from "@/lib/profileImagePresets";
 
+const enableDevelopmentCredentials = process.env.NODE_ENV !== "production";
+
 const googleClientId =
   process.env.GOOGLE_CLIENT_ID ??
   process.env.AUTH_GOOGLE_ID ??
@@ -84,32 +86,36 @@ export const authOptions: NextAuthOptions = {
       },
     }),
     // 임시 개발용: credentials 로그인
-    CredentialsProvider({
-      name: "Development",
-      credentials: {
-        username: { label: "Username", type: "text" },
-      },
-      async authorize(credentials) {
-        // Credentials provider는 adapter와 함께 써도 Account 레코드를 생성하지 않으므로
-        // User를 직접 upsert한다.
-        const username = credentials?.username?.trim() || "dev1";
-        const userId = `dev-user-${username}`;
-        const email = `${username}@obnofi.com`;
-        const user = await prisma.user.upsert({
-          where: { email },
-          update: {
-            image: pickProfileImagePreset(userId),
-          },
-          create: {
-            id: userId,
-            name: username === "dev1" ? "Developer" : `Dev ${username}`,
-            email,
-            image: pickProfileImagePreset(userId),
-          },
-        });
-        return user;
-      },
-    }),
+    ...(enableDevelopmentCredentials
+      ? [
+          CredentialsProvider({
+            name: "Development",
+            credentials: {
+              username: { label: "Username", type: "text" },
+            },
+            async authorize(credentials) {
+              // Credentials provider는 adapter와 함께 써도 Account 레코드를 생성하지 않으므로
+              // User를 직접 upsert한다.
+              const username = credentials?.username?.trim() || "dev1";
+              const userId = `dev-user-${username}`;
+              const email = `${username}@obnofi.com`;
+              const user = await prisma.user.upsert({
+                where: { email },
+                update: {
+                  image: pickProfileImagePreset(userId),
+                },
+                create: {
+                  id: userId,
+                  name: username === "dev1" ? "Developer" : `Dev ${username}`,
+                  email,
+                  image: pickProfileImagePreset(userId),
+                },
+              });
+              return user;
+            },
+          }),
+        ]
+      : []),
   ],
   callbacks: {
     async session({ session, token }) {
