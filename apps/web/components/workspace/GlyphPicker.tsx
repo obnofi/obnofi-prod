@@ -1,6 +1,7 @@
 "use client";
 
-import { ImagePlus, Loader2, Search, SmilePlus, Trash2, X } from "lucide-react";
+import { ImagePlus, Search, SmilePlus, Trash2, X } from "lucide-react";
+import { FallingLeavesLoader } from "@/components/FallingLeavesLoader";
 import type { Page } from "@obnofi/types";
 import { PageGlyph } from "@/components/workspace/PageGlyph";
 
@@ -140,7 +141,7 @@ export function GlyphPickerDropdown({
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] transition hover:bg-[var(--color-hover)] disabled:cursor-wait disabled:opacity-60"
         >
           {isUploadingIcon ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <FallingLeavesLoader size="sm" className="text-[var(--color-text-primary)]" />
           ) : (
             <ImagePlus className="h-4 w-4" />
           )}

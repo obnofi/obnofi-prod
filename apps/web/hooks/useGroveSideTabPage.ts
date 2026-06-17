@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { patchGroveCell } from "@/lib/groveCatalogApi";
 import { patchCachedPageTitle } from "@/lib/page/pageStoreSync";
 import { isOptimisticPageId } from "@/lib/page/pageUtils";
@@ -30,6 +30,22 @@ interface AncestorPage {
   icon?: string | null;
 }
 
+interface GroveSideTabPageState {
+  page: Page | null;
+  database: Database | null;
+  rowPropertyValues: PropertyValue[];
+  isLoadingPage: boolean;
+  ancestors: AncestorPage[];
+}
+
+const EMPTY_SIDE_TAB_PAGE_STATE: GroveSideTabPageState = {
+  page: null,
+  database: null,
+  rowPropertyValues: [],
+  isLoadingPage: false,
+  ancestors: [],
+};
+
 export function useGroveSideTabPage(pageId: string | null, isOpen: boolean) {
   const patchGrovePageTitle = useGroveCatalogStore(
     (state) => state.patchGrovePageTitle
@@ -40,32 +56,34 @@ export function useGroveSideTabPage(pageId: string | null, isOpen: boolean) {
   const patchGroveCellValue = useGroveCatalogStore(
     (state) => state.patchGroveCellValue
   );
-  const [page, setPage] = useState<Page | null>(null);
-  const [database, setDatabase] = useState<Database | null>(null);
-  const [rowPropertyValues, setRowPropertyValues] = useState<PropertyValue[]>([]);
-  const [isLoadingPage, setIsLoadingPage] = useState(false);
-  const [ancestors, setAncestors] = useState<AncestorPage[]>([]);
+  const [sideTabPageState, setSideTabPageState] =
+    useState<GroveSideTabPageState>(EMPTY_SIDE_TAB_PAGE_STATE);
+  const { page, database, rowPropertyValues, isLoadingPage, ancestors } = sideTabPageState;
+  const titleSaveSeqRef = useRef(0);
 
   useEffect(() => {
     if (!isOpen || !pageId) {
-      setPage(null);
-      setDatabase(null);
-      setRowPropertyValues([]);
+      setSideTabPageState(EMPTY_SIDE_TAB_PAGE_STATE);
       return;
     }
 
     let isActive = true;
-    setIsLoadingPage(true);
+    setSideTabPageState({
+      ...EMPTY_SIDE_TAB_PAGE_STATE,
+      isLoadingPage: true,
+    });
 
     // 낙관적 row는 서버에 아직 없으므로 fetch 시 404. 캐시에서 바로 채워 낙관적 표시.
     if (isOptimisticPageId(pageId)) {
       const cachedRow = findOptimisticGroveRow(pageId);
 
-      setPage(cachedRow?.page ?? null);
-      setAncestors([]);
-      setDatabase(cachedRow?.database ?? null);
-      setRowPropertyValues(cachedRow?.page.propertyValues ?? []);
-      setIsLoadingPage(false);
+      setSideTabPageState({
+        page: cachedRow?.page ?? null,
+        ancestors: [],
+        database: cachedRow?.database ?? null,
+        rowPropertyValues: cachedRow?.page.propertyValues ?? [],
+        isLoadingPage: false,
+      });
 
       return () => {
         isActive = false;
@@ -83,11 +101,7 @@ export function useGroveSideTabPage(pageId: string | null, isOpen: boolean) {
 
         const nextPage = pageResponse.ok ? ((await pageResponse.json()) as Page | null) : null;
         const ancestorsData = ancestorsResponse.ok ? ((await ancestorsResponse.json()) as AncestorPage[]) : [];
-
-        setPage(nextPage);
-        setAncestors(ancestorsData);
-        setDatabase(null);
-        setRowPropertyValues(nextPage?.propertyValues ?? []);
+        let nextDatabase: Database | null = null;
 
         if (nextPage?.parentDatabaseId) {
           const cachedDatabasePage = Object.values(
@@ -97,24 +111,34 @@ export function useGroveSideTabPage(pageId: string | null, isOpen: boolean) {
           );
 
           if (cachedDatabasePage) {
-            setDatabase(cachedDatabasePage.database);
-            return;
-          }
+            nextDatabase = cachedDatabasePage.database;
+          } else {
+            const databaseResponse = await fetch(
+              `/api/databases/${nextPage.parentDatabaseId}?view=schema`
+            );
+            if (!isActive || !databaseResponse.ok) {
+              return;
+            }
 
-          const databaseResponse = await fetch(
-            `/api/databases/${nextPage.parentDatabaseId}?view=schema`
-          );
-          if (!isActive || !databaseResponse.ok) {
-            return;
+            nextDatabase = (await databaseResponse.json()) as Database;
           }
-
-          const nextDatabase = (await databaseResponse.json()) as Database;
-          setDatabase(nextDatabase);
         }
+
+        if (!isActive) {
+          return;
+        }
+
+        setSideTabPageState({
+          page: nextPage,
+          ancestors: ancestorsData,
+          database: nextDatabase,
+          rowPropertyValues: nextPage?.propertyValues ?? [],
+          isLoadingPage: false,
+        });
       })
-      .finally(() => {
+      .catch(() => {
         if (isActive) {
-          setIsLoadingPage(false);
+          setSideTabPageState(EMPTY_SIDE_TAB_PAGE_STATE);
         }
       });
 
@@ -130,9 +154,13 @@ export function useGroveSideTabPage(pageId: string | null, isOpen: boolean) {
 
     const previousTitle = page.title;
     const parentDatabasePageId = database?.pageId ?? null;
+    const saveSeq = ++titleSaveSeqRef.current;
     const nextPage = { ...page, title };
 
-    setPage(nextPage);
+    setSideTabPageState((current) => ({
+      ...current,
+      page: current.page?.id === page.id ? nextPage : current.page,
+    }));
     patchCachedPageTitle(page.id, title);
 
     if (page.type === "database") {
@@ -154,18 +182,38 @@ export function useGroveSideTabPage(pageId: string | null, isOpen: boolean) {
       }
 
       const savedPage = (await response.json()) as Page;
-      setPage(savedPage);
-      patchCachedPageTitle(savedPage.id, savedPage.title);
+      if (saveSeq !== titleSaveSeqRef.current) {
+        return;
+      }
+
+      setSideTabPageState((current) => ({
+        ...current,
+        page:
+          current.page?.id === savedPage.id
+            ? { ...current.page, updatedAt: savedPage.updatedAt }
+            : current.page,
+      }));
+      patchCachedPageTitle(savedPage.id, title);
 
       if (savedPage.type === "database") {
-        patchGrovePageTitle(savedPage.id, savedPage.title);
+        patchGrovePageTitle(savedPage.id, title);
       }
 
       if (parentDatabasePageId) {
-        patchGroveSeedTitle(parentDatabasePageId, savedPage.id, savedPage.title);
+        patchGroveSeedTitle(parentDatabasePageId, savedPage.id, title);
       }
     } catch {
-      setPage({ ...page, title: previousTitle });
+      if (saveSeq !== titleSaveSeqRef.current) {
+        return;
+      }
+
+      setSideTabPageState((current) => ({
+        ...current,
+        page:
+          current.page?.id === page.id
+            ? { ...current.page, title: previousTitle }
+            : current.page,
+      }));
       patchCachedPageTitle(page.id, previousTitle);
 
       if (page.type === "database") {
@@ -206,42 +254,54 @@ export function useGroveSideTabPage(pageId: string | null, isOpen: boolean) {
       value,
     };
 
-    setRowPropertyValues((current) => {
-      const existingIndex = current.findIndex(
+    setSideTabPageState((current) => {
+      const existingIndex = current.rowPropertyValues.findIndex(
         (propertyValue) =>
           propertyValue.propertyId === propertyId ||
           propertyValue.columnId === propertyId
       );
 
       if (existingIndex === -1) {
-        return [...current, optimisticValue];
+        return {
+          ...current,
+          rowPropertyValues: [...current.rowPropertyValues, optimisticValue],
+        };
       }
 
-      return current.map((propertyValue, index) =>
-        index === existingIndex
-          ? { ...propertyValue, value }
-          : propertyValue
-      );
+      return {
+        ...current,
+        rowPropertyValues: current.rowPropertyValues.map((propertyValue, index) =>
+          index === existingIndex
+            ? { ...propertyValue, value }
+            : propertyValue
+        ),
+      };
     });
     patchGroveCellValue(database.pageId, page.id, propertyId, value);
 
     try {
       const savedValue = await patchGroveCell(page.id, propertyId, value);
       if (savedValue) {
-        setRowPropertyValues((current) => {
-          const existingIndex = current.findIndex(
+        setSideTabPageState((current) => {
+          const existingIndex = current.rowPropertyValues.findIndex(
             (propertyValue) =>
               propertyValue.propertyId === propertyId ||
               propertyValue.columnId === propertyId
           );
 
           if (existingIndex === -1) {
-            return [...current, savedValue];
+            return {
+              ...current,
+              rowPropertyValues: [...current.rowPropertyValues, savedValue],
+            };
           }
 
-          return current.map((propertyValue, index) =>
-            index === existingIndex ? savedValue : propertyValue
-          );
+          return {
+            ...current,
+            rowPropertyValues: current.rowPropertyValues.map((propertyValue, index) =>
+              index === existingIndex ? savedValue : propertyValue
+            ),
+          };
         });
         patchGroveCellValue(database.pageId, page.id, propertyId, savedValue);
       }
@@ -249,8 +309,11 @@ export function useGroveSideTabPage(pageId: string | null, isOpen: boolean) {
       const pageResponse = await fetch(`/api/pages/${page.id}`);
       if (pageResponse.ok) {
         const nextPage = (await pageResponse.json()) as Page;
-        setPage(nextPage);
-        setRowPropertyValues(nextPage.propertyValues ?? []);
+        setSideTabPageState((current) => ({
+          ...current,
+          page: nextPage,
+          rowPropertyValues: nextPage.propertyValues ?? [],
+        }));
       }
     }
   };

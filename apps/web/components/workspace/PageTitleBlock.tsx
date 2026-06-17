@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 interface PageTitleBlockProps {
   value: string;
   onChange: (value: string) => void;
+  commitOnBlur?: boolean;
   placeholder?: string;
   size?: "page" | "side-tab";
   testId?: string;
@@ -18,6 +19,7 @@ const sizeClasses: Record<NonNullable<PageTitleBlockProps["size"]>, string> = {
 export function PageTitleBlock({
   value,
   onChange,
+  commitOnBlur = false,
   placeholder = "Untitled",
   size = "page",
   testId,
@@ -101,12 +103,16 @@ export function PageTitleBlock({
           isComposingRef.current = false;
           const nextValue = event.currentTarget.value;
           setDraftValue(nextValue);
-          reportValue(nextValue);
+          if (!commitOnBlur) {
+            reportValue(nextValue);
+          }
         }}
         onChange={(event) => {
           const nextValue = event.target.value;
           setDraftValue(nextValue);
-          reportValue(nextValue);
+          if (!commitOnBlur) {
+            reportValue(nextValue);
+          }
         }}
         onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey) {

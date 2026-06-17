@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Loader2 } from "lucide-react";
+import { FallingLeavesLoader } from "@/components/FallingLeavesLoader";
 import type { Editor as TiptapEditor } from "@tiptap/react";
 import type { Page } from "@obnofi/types";
 import { useCollaboration } from "@/lib/collaboration/CollaborationContext";
@@ -14,7 +14,7 @@ const Editor = dynamic(
   {
     loading: () => (
       <div className="flex h-[200px] items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-accent)]" />
+        <FallingLeavesLoader size="lg" />
       </div>
     ),
     ssr: false,

@@ -1,6 +1,7 @@
 "use client";
 
-import { ImagePlus, Loader2, RefreshCw, Trash2, X } from "lucide-react";
+import { ImagePlus, RefreshCw, Trash2, X } from "lucide-react";
+import { FallingLeavesLoader } from "@/components/FallingLeavesLoader";
 import type { Page } from "@obnofi/types";
 import { pageCanopyPresets } from "@/lib/pageCanopyPresets";
 
@@ -48,7 +49,7 @@ export function CanopyCoverArea({
           className="inline-flex items-center gap-2 rounded-lg disabled:opacity-70"
         >
           {isUploadingCanopy ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <FallingLeavesLoader size="sm" className="text-[var(--color-text-primary)]" />
           ) : page.coverImage ? (
             <RefreshCw className="h-4 w-4" />
           ) : (

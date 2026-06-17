@@ -7,8 +7,8 @@ import {
   Palette,
   Database,
   Plus,
-  Loader2,
 } from "lucide-react";
+import { FallingLeavesLoader } from "@/components/FallingLeavesLoader";
 import type { Editor as TiptapEditor } from "@tiptap/react";
 import type { Page, PageType } from "@obnofi/types";
 import { GrovePageCanopy } from "@/components/workspace/GrovePageCanopy";
@@ -125,7 +125,7 @@ export function DocumentPageBody({
                       {childTypeIcons[type]}
                     </span>
                     {isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <FallingLeavesLoader size="sm" className="text-[#2E7D45]" />
                     ) : null}
                   </div>
                   <div>
@@ -149,7 +149,7 @@ export function DocumentPageBody({
         {/* Editor */}
         {isLoading && activePage.content === null ? (
           <div className="flex min-h-[240px] items-center justify-center">
-            <Loader2 className="h-7 w-7 animate-spin text-[var(--color-accent)]" />
+            <FallingLeavesLoader size="md" />
           </div>
         ) : (
           <CollaborativeEditorSurface

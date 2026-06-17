@@ -129,6 +129,7 @@ export function GroveSideTab({ workspaceId }: { workspaceId: string }) {
                   <PageTitleBlock
                     value={page.title}
                     onChange={(nextTitle) => void handlePageTitleChange(nextTitle)}
+                    commitOnBlur={Boolean(database || page.parentDatabaseId || page.type === "database")}
                     placeholder="Untitled"
                     size="side-tab"
                   />

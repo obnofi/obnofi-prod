@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Globe, Loader2 } from "lucide-react";
+import { Globe } from "lucide-react";
+import { FallingLeavesLoader } from "@/components/FallingLeavesLoader";
 import { usePageStore } from "@/store/pageStore";
 import { markdownToTiptap } from "@/lib/markdownToTiptap";
 import type { ReactNode } from "react";
@@ -154,7 +155,7 @@ export function ImportFromUrlControl({
                 disabled={isLoading}
                 className="inline-flex items-center gap-1 rounded-md bg-[var(--color-accent)] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:cursor-wait disabled:opacity-60"
               >
-                {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                {isLoading ? <FallingLeavesLoader size="sm" className="text-white" /> : null}
                 가져오기
               </button>
             </div>

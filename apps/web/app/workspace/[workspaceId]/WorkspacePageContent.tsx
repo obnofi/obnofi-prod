@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Editor as TiptapEditor } from "@tiptap/react";
-import { Loader2 } from "lucide-react";
+import { FallingLeavesLoader } from "@/components/FallingLeavesLoader";
 import { Page, PageType } from "@obnofi/types";
 import { GroveInsertionToolbar } from "@/components/toolbar/GroveInsertionToolbar";
 import { MobileNotice } from "@/components/mobile/MobileNotice";
@@ -18,7 +18,7 @@ const ClearingBoard = dynamic(
   {
     loading: () => (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-accent)]" />
+        <FallingLeavesLoader size="lg" />
       </div>
     ),
     ssr: false,
@@ -33,7 +33,7 @@ const DatabaseWorkspace = dynamic(
   {
     loading: () => (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-accent)]" />
+        <FallingLeavesLoader size="lg" />
       </div>
     ),
   }
@@ -47,7 +47,7 @@ const MindGroveBoard = dynamic(
   {
     loading: () => (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-accent)]" />
+        <FallingLeavesLoader size="lg" />
       </div>
     ),
     ssr: false,
