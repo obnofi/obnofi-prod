@@ -8,6 +8,9 @@
     "clean": "turbo run clean && rm -rf node_modules",
     "start": "turbo run start"
   },
+  "dependencies": {
+    "next": "^14.2.35"
+  },
   "devDependencies": {
     "turbo": "latest"
   },
