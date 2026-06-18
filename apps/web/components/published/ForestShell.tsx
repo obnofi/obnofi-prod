@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Compass, Leaf, Trees } from "lucide-react";
 import { SiteLogo } from "@/components/branding/SiteLogo";
 
 interface ForestShellProps {
@@ -7,51 +6,50 @@ interface ForestShellProps {
   children: React.ReactNode;
 }
 
-function navLinkClassName(isActive: boolean) {
-  return `rounded-full px-4 py-2 text-[13px] font-medium transition ${
-    isActive
-      ? "bg-[var(--color-accent)] text-white"
-      : "bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-  }`;
-}
-
 export function ForestShell({ currentSection, children }: ForestShellProps) {
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
       <header
         className="sticky top-0 z-20 backdrop-blur-sm"
-        style={{ background: "color-mix(in srgb, var(--color-background) 88%, transparent)" }}
+        style={{
+          background: "color-mix(in srgb, var(--color-background) 90%, transparent)",
+          borderBottom: "1px solid var(--color-border)",
+        }}
       >
-        <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-4 px-5 py-4 sm:px-8 lg:px-10">
-          <Link href="/" className="inline-flex items-center">
-            <SiteLogo width={108} />
-          </Link>
+        <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-4 px-5 py-3 sm:px-8 lg:px-10">
+          <div className="flex items-center gap-6">
+            <Link href="/" className="inline-flex items-center">
+              <SiteLogo width={96} />
+            </Link>
 
-          <nav className="hidden items-center gap-2 md:flex">
-            <Link href="/forest" className={navLinkClassName(currentSection === "forest")}>
-              <span className="inline-flex items-center gap-2">
-                <Trees className="h-4 w-4" />
+            <nav className="hidden items-center gap-1 md:flex">
+              <Link
+                href="/forest"
+                className="rounded-lg px-3 py-1.5 text-[13px] font-medium transition"
+                style={{
+                  color: currentSection === "forest" ? "var(--color-text-primary)" : "var(--color-text-secondary)",
+                  background: currentSection === "forest" ? "var(--color-hover)" : "transparent",
+                }}
+              >
                 Forest
-              </span>
-            </Link>
-            <Link href="/workspace" className={navLinkClassName(false)}>
-              <span className="inline-flex items-center gap-2">
-                <Compass className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/workspace"
+                className="rounded-lg px-3 py-1.5 text-[13px] font-medium transition hover:bg-[var(--color-hover)]"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
                 Workspace
-              </span>
-            </Link>
-            <div className={navLinkClassName(currentSection === "snapshot")}>
-              <span className="inline-flex items-center gap-2">
-                <Leaf className="h-4 w-4" />
-                Snapshot
-              </span>
-            </div>
-          </nav>
+              </Link>
+            </nav>
+          </div>
 
           <Link
             href="/workspace"
-            className="rounded-full px-4 py-2 text-[13px] font-medium transition"
-            style={{ background: "var(--color-surface)", color: "var(--color-text-primary)" }}
+            className="rounded-lg px-4 py-2 text-[13px] font-medium transition"
+            style={{
+              background: "var(--color-accent)",
+              color: "#fff",
+            }}
           >
             Open Workspace
           </Link>
