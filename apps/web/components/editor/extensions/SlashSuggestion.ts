@@ -52,6 +52,7 @@ export function createSlashSuggestion(
           showOnCreate: true,
           interactive: true,
           trigger: "manual",
+          zIndex: 100010,
           placement: "bottom-start",
           offset: [0, 8],
           maxWidth: "none",

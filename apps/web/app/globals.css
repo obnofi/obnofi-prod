@@ -1346,7 +1346,7 @@ html.jungle {
   background-color: transparent;
   border: 0;
   box-shadow: none;
-  z-index: 100000 !important;
+  z-index: 100010 !important;
 }
 
 .tippy-box[data-theme~="slash-command"] > .tippy-content {
